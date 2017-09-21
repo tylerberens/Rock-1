@@ -188,6 +188,11 @@ namespace Rock.SystemGuid
         public const string PERSON_ALIAS = "90F5E87B-F0D5-4617-8AE9-EB57E673F36F";
 
         /// <summary>
+        /// The guid for the Rock.Model.PersonBookmark entity
+        /// </summary>
+        public const string PERSON_BOOKMARK = "E07A503C-7398-4677-8E91-BEF1994244F3";
+
+        /// <summary>
         /// The guid for the Rock.Model.RegistrationTemplate entity
         /// </summary>
         public const string REGISTRATION_TEMPLATE = "A01E3E99-A8AD-4C6C-BAAC-98795738BA70";
