@@ -527,7 +527,7 @@ TransactionAccountDetails: [
             }
 
             // Update the total amount
-            lblTotalAmount.Text = GlobalAttributesCache.Value("CurrencySymbol") + SelectedAccounts.Sum( f => f.Amount ).ToString( "F2" );
+            lblTotalAmount.Text = GlobalAttributesCache.Value( "CurrencySymbol" ) + SelectedAccounts.Sum( f => f.Amount ).ToString( "F2" );
 
             // Set the frequency date label based on if 'One Time' is selected or not
             if ( btnFrequency.Items.Count > 0 )
@@ -672,7 +672,14 @@ TransactionAccountDetails: [
                             hfStep2AutoSubmit.Value = "true";
                         }
 
-                        SetPage( 2 );
+                        if ( hfStep2Url.Value.IsNotNullOrWhitespace() )
+                        {
+                            SetPage( 2 );
+                        }
+                        else
+                        {
+                            SetPage( 3 );
+                        }
                     }
                     else
                     {
@@ -791,7 +798,7 @@ TransactionAccountDetails: [
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void lbSaveAccount_Click( object sender, EventArgs e )
         {
-            if ( string.IsNullOrWhiteSpace( TransactionCode ) )
+            if ( TransactionCode.IsNullOrWhiteSpace() && !ScheduleId.HasValue )
             {
                 nbSaveAccount.Text = "Sorry, the account information cannot be saved as there's not a valid transaction code to reference";
                 nbSaveAccount.Visible = true;
@@ -859,7 +866,7 @@ TransactionAccountDetails: [
 
                         if ( !ScheduleId.HasValue )
                         {
-                            var transaction = new FinancialTransactionService( rockContext ).GetByTransactionCode( (financialGateway != null ? financialGateway.Id : (int?)null), TransactionCode );
+                            var transaction = new FinancialTransactionService( rockContext ).GetByTransactionCode( ( financialGateway != null ? financialGateway.Id : (int?)null ), TransactionCode );
                             if ( transaction != null && transaction.AuthorizedPersonAlias != null )
                             {
                                 if ( transaction.FinancialGateway != null )
@@ -1255,7 +1262,7 @@ TransactionAccountDetails: [
                         .Where( a => a.TransactionDetails.Any( d => d.EntityTypeId.HasValue && d.EntityTypeId == transactionEntityTypeId && d.EntityId == transactionEntity.Id ) )
                         .ToList();
 
-                    var transactionEntityTransactionsTotal = transactionEntityTransactions.SelectMany( d => d.TransactionDetails ).Sum( d => ( decimal? ) d.Amount );
+                    var transactionEntityTransactionsTotal = transactionEntityTransactions.SelectMany( d => d.TransactionDetails ).Sum( d => (decimal?)d.Amount );
                     mergeFields.Add( "TransactionEntityTransactions", transactionEntityTransactions );
                     mergeFields.Add( "TransactionEntityTransactionsTotal", transactionEntityTransactionsTotal );
                 }
@@ -2671,6 +2678,8 @@ TransactionAccountDetails: [
                 paymentInfo.Comment1 = GetAttributeValue( "PaymentComment" );
             }
 
+            paymentInfo.AdditionalParameters = gateway.GetStep3Parameters( paymentInfo );
+
             var transactionAlreadyExists = new FinancialTransactionService( rockContext ).Queryable().FirstOrDefault( a => a.Guid == transactionGuid );
             if ( transactionAlreadyExists != null )
             {
@@ -2684,7 +2693,7 @@ TransactionAccountDetails: [
             FinancialPaymentDetail paymentDetail = null;
             if ( schedule != null )
             {
-                var scheduledTransaction = gateway.AddScheduledPaymentStep3( financialGateway, resultQueryString, out errorMessage );
+                var scheduledTransaction = gateway.AddScheduledPaymentStep3( financialGateway, schedule, paymentInfo, resultQueryString, out errorMessage );
                 if ( scheduledTransaction == null )
                 {
                     return false;
@@ -2695,7 +2704,7 @@ TransactionAccountDetails: [
             }
             else
             {
-                var transaction = gateway.ChargeStep3( financialGateway, resultQueryString, out errorMessage );
+                var transaction = gateway.ChargeStep3( financialGateway, paymentInfo, resultQueryString, out errorMessage );
                 if ( transaction == null || !string.IsNullOrWhiteSpace( errorMessage ) )
                 {
                     return false;
@@ -3014,7 +3023,7 @@ TransactionAccountDetails: [
 
             // If there was a transaction code returned and this was not already created from a previous saved account,
             // show the option to save the account.
-            if ( !( paymentInfo is ReferencePaymentInfo ) && !string.IsNullOrWhiteSpace( TransactionCode ) && gatewayComponent.SupportsSavedAccount( paymentInfo.CurrencyTypeValue ) )
+            if ( !( paymentInfo is ReferencePaymentInfo ) && gatewayComponent.SupportsSavedAccount( paymentInfo.CurrencyTypeValue ) && ( TransactionCode.IsNotNullOrWhitespace() || ScheduleId.HasValue ) )
             {
                 cbSaveAccount.Visible = true;
                 pnlSaveAccount.Visible = true;

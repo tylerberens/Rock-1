@@ -54,6 +54,16 @@ namespace Rock.Financial
         public abstract string ChargeStep1( FinancialGateway financialGateway, PaymentInfo paymentInfo, out string errorMessage );
 
         /// <summary>
+        /// Gets the financial transaction parameters that are passed to step 3
+        /// </summary>
+        /// <param name="paymentInfo">The payment information.</param>
+        /// <returns></returns>
+        public virtual Dictionary<string, string> GetStep3Parameters( PaymentInfo paymentInfo )
+        {
+            return new Dictionary<string, string>();
+        }
+
+        /// <summary>
         /// Performs the final step of a three-step charge.
         /// </summary>
         /// <param name="financialGateway">The financial gateway.</param>
@@ -61,6 +71,19 @@ namespace Rock.Financial
         /// <param name="errorMessage">The error message.</param>
         /// <returns></returns>
         public abstract FinancialTransaction ChargeStep3( FinancialGateway financialGateway, string resultQueryString, out string errorMessage );
+
+        /// <summary>
+        /// Performs the final step of a three-step charge. This method includes a PaymentInfo object that can be used if needed to finalize any transaction.
+        /// </summary>
+        /// <param name="financialGateway">The financial gateway.</param>
+        /// <param name="paymentInfo">The payment information.</param>
+        /// <param name="resultQueryString">The result query string.</param>
+        /// <param name="errorMessage">The error message.</param>
+        /// <returns></returns>
+        public virtual FinancialTransaction ChargeStep3( FinancialGateway financialGateway, PaymentInfo paymentInfo, string resultQueryString, out string errorMessage )
+        {
+            return ChargeStep3( financialGateway, resultQueryString, out errorMessage );
+        }
 
         /// <summary>
         /// Performs the first step of adding a new payment schedule
@@ -80,6 +103,19 @@ namespace Rock.Financial
         /// <param name="errorMessage">The error message.</param>
         /// <returns></returns>
         public abstract FinancialScheduledTransaction AddScheduledPaymentStep3( FinancialGateway financialGateway, string resultQueryString, out string errorMessage );
+
+        /// <summary>
+        /// Performs the third step of adding a new payment schedule. This method includes a PaymentSchedule and PaymentInfo object that can be used if needed to finalize any transaction.
+        /// </summary>
+        /// <param name="financialGateway">The financial gateway.</param>
+        /// <param name="paymentInfo">The payment information.</param>
+        /// <param name="resultQueryString">The result query string.</param>
+        /// <param name="errorMessage">The error message.</param>
+        /// <returns></returns>
+        public virtual FinancialScheduledTransaction AddScheduledPaymentStep3( FinancialGateway financialGateway, PaymentSchedule schedule, PaymentInfo paymentInfo, string resultQueryString, out string errorMessage )
+        {
+            return AddScheduledPaymentStep3( financialGateway, resultQueryString, out errorMessage );
+        }
 
     }
 }

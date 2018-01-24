@@ -141,7 +141,7 @@ namespace Rock.NMI
         /// <returns></returns>
         public override bool SupportsSavedAccount( bool isRepeating )
         {
-            return !isRepeating;
+            return true;
         }
         
         /// <summary>
@@ -153,6 +153,23 @@ namespace Rock.NMI
         {
             var parameters = new Dictionary<string, string>();
             parameters.Add( "redirect-url", redirectUrl );
+            return parameters;
+        }
+
+        /// <summary>
+        /// Gets the financial transaction parameters that are passed to step 3
+        /// </summary>
+        /// <param name="paymentInfo">The payment information.</param>
+        /// <returns></returns>
+        public override Dictionary<string, string> GetStep3Parameters( PaymentInfo paymentInfo )
+        {
+            var parameters = new Dictionary<string, string>();
+
+            var referencePayment = paymentInfo as ReferencePaymentInfo;
+            if ( referencePayment != null )
+            {
+                parameters.Add( "customer-vault-id", referencePayment.ReferenceNumber );
+            }
             return parameters;
         }
 
@@ -185,61 +202,42 @@ namespace Rock.NMI
 
             try
             {
+                // Make sure valid parameters were passed
+                if ( financialGateway == null )
+                {
+                    throw new ArgumentNullException( "finacialGateway" );
+                }
                 if ( paymentInfo == null )
                 {
                     throw new ArgumentNullException( "paymentInfo" );
                 }
 
-                var rootElement = GetRoot( financialGateway, "sale" );
+                // If this is a reference payment, the three-step process is not required, so just return an empty 
+                //string so that block knows to skip to step 3
+                if ( paymentInfo is ReferencePaymentInfo )
+                {
+                    return string.Empty;
+                }
 
+                // Create XML for a Hybrid Validate/AddCustomer Transaction (First Step)
+                XElement rootElement = GetRoot( financialGateway, "validate", paymentInfo );
                 rootElement.Add(
+                    new XElement( "add-customer" ),
                     new XElement( "ip-address", paymentInfo.IPAddress ),
-                    new XElement( "currency", "USD" ),
-                    new XElement( "amount", paymentInfo.Amount.ToString() ),
-                    new XElement( "order-description", paymentInfo.Description ),
-                    new XElement( "tax-amount", "0.00" ),
-                    new XElement( "shipping-amount", "0.00" ) );
-
-                bool isReferencePayment = ( paymentInfo is ReferencePaymentInfo );
-                if ( isReferencePayment )
-                {
-                    var reference = paymentInfo as ReferencePaymentInfo;
-                    rootElement.Add( new XElement( "customer-vault-id", reference.ReferenceNumber ) );
-                }
-
-                if ( paymentInfo.AdditionalParameters != null )
-                {
-                    if ( !isReferencePayment )
-                    {
-                        rootElement.Add( new XElement( "add-customer" ) );
-                    }
-
-                    foreach ( var keyValue in paymentInfo.AdditionalParameters )
-                    {
-                        XElement xElement = new XElement( keyValue.Key, keyValue.Value );
-                        rootElement.Add( xElement );
-                    }
-                }
-
+                    new XElement( "order-description", paymentInfo.Description ) );
                 rootElement.Add( GetBilling( paymentInfo ) );
 
+                // Post the XML
                 XDocument xdoc = new XDocument( new XDeclaration( "1.0", "UTF-8", "yes" ), rootElement );
-                var result = PostToGateway( financialGateway, xdoc );
+                var result = PostToGateway( financialGateway, xdoc, out errorMessage );
 
-                if ( result == null )
+                // If result was valid, return the url that Step 2 should post to
+                if ( result != null )
                 {
-                    errorMessage = "Invalid Response from NMI!";
-                    return null;
+                    return result.GetValueOrNull( "form-url" );
                 }
 
-                if ( result.GetValueOrNull( "result" ) != "1" )
-                {
-                    errorMessage = result.GetValueOrNull( "result-text" );
-                    return null;
-                }
-
-                return result.GetValueOrNull( "form-url" );
-
+                return null;
             }
 
             catch ( WebException webException )
@@ -266,40 +264,63 @@ namespace Rock.NMI
         /// <returns></returns>
         public override FinancialTransaction ChargeStep3( FinancialGateway financialGateway, string resultQueryString, out string errorMessage )
         {
+            return ChargeStep3( financialGateway, null, resultQueryString, out errorMessage );
+        }
+
+        /// <summary>
+        /// Performs the final step of a three-step charge. This method includes a PaymentInfo object that can be used if needed to finalize any transaction.
+        /// </summary>
+        /// <param name="financialGateway">The financial gateway.</param>
+        /// <param name="paymentInfo">The payment information.</param>
+        /// <param name="resultQueryString">The result query string.</param>
+        /// <param name="errorMessage">The error message.</param>
+        /// <returns></returns>
+        public override FinancialTransaction ChargeStep3( FinancialGateway financialGateway, PaymentInfo paymentInfo, string resultQueryString, out string errorMessage )
+        {
             errorMessage = string.Empty;
 
             try
             {
-                var rootElement = GetRoot( financialGateway, "complete-action" );
-                rootElement.Add( new XElement( "token-id", resultQueryString.Substring(10) ) );
-                XDocument xdoc = new XDocument( new XDeclaration( "1.0", "UTF-8", "yes" ), rootElement );
-                var result = PostToGateway( financialGateway, xdoc );
+                // Make sure valid parameters were passed
+                if ( financialGateway == null )
+                {
+                    throw new ArgumentNullException( "finacialGateway" );
+                }
+                if ( paymentInfo == null )
+                {
+                    throw new ArgumentNullException( "paymentInfo" );
+                }
 
+                // Check to see if third step is not needed or succesfully completed
+                if ( !CompleteThirdStep( financialGateway, paymentInfo, resultQueryString, out errorMessage ))
+                {
+                    return null;
+                }
+
+                // Create the XML for a Sale transaction
+                var rootElement = GetRoot( financialGateway, "sale", paymentInfo );
+                rootElement.Add(
+                    new XElement( "ip-address", paymentInfo.IPAddress ),
+                    new XElement( "currency", "USD" ),
+                    new XElement( "amount", paymentInfo.Amount.ToString() ),
+                    new XElement( "order-description", paymentInfo.Description ),
+                    new XElement( "tax-amount", "0.00" ),
+                    new XElement( "shipping-amount", "0.00" ) );
+
+                // Post the Sale transaction
+                var xdoc = new XDocument( new XDeclaration( "1.0", "UTF-8", "yes" ), rootElement );
+                var result = PostToGateway( financialGateway, xdoc, out errorMessage );
+
+                // If not valid, return null
                 if ( result == null )
                 {
-                    errorMessage = "Invalid Response from NMI!";
                     return null;
                 }
 
-                if ( result.GetValueOrNull( "result" ) != "1" )
-                {
-                    errorMessage = result.GetValueOrNull( "result-text" );
-
-                    string resultCodeMessage = GetResultCodeMessage( result );
-                    if ( resultCodeMessage.IsNotNullOrWhitespace() )
-                    {
-                        errorMessage += string.Format( " ({0})", resultCodeMessage );
-                    }
-
-                    // write result error as an exception
-                    ExceptionLogService.LogException( new Exception( $"Error processing NMI transaction. Result Code:  {result.GetValueOrNull( "result-code" )} ({resultCodeMessage}). Result text: {result.GetValueOrNull( "result-text" )}. Card Holder Name: {result.GetValueOrNull( "first-name" )} {result.GetValueOrNull( "last-name" )}. Amount: {result.GetValueOrNull( "total-amount" )}. Transaction id: {result.GetValueOrNull( "transaction-id" )}. Descriptor: {result.GetValueOrNull( "descriptor" )}. Order description: {result.GetValueOrNull( "order-description" )}." ) );
-                    
-                    return null;
-                }
-
+                // Otherwise create a transaction record
                 var transaction = new FinancialTransaction();
                 transaction.TransactionCode = result.GetValueOrNull( "transaction-id" );
-                transaction.ForeignKey = result.GetValueOrNull( "customer-vault-id" );
+                transaction.ForeignKey = paymentInfo.AdditionalParameters.GetValueOrNull( "customer-vault-id" );
                 transaction.FinancialPaymentDetail = new FinancialPaymentDetail();
 
                 string ccNumber = result.GetValueOrNull( "billing_cc-number" );
@@ -367,22 +388,15 @@ namespace Rock.NMI
                 !string.IsNullOrWhiteSpace( origTransaction.TransactionCode ) &&
                 origTransaction.FinancialGateway != null )
             {
-                var rootElement = GetRoot( origTransaction.FinancialGateway, "refund" );
+                var rootElement = GetRoot( origTransaction.FinancialGateway, "refund", null );
                 rootElement.Add( new XElement( "transaction-id", origTransaction.TransactionCode ) );
                 rootElement.Add( new XElement( "amount", amount.ToString( "0.00" ) ) );
 
                 XDocument xdoc = new XDocument( new XDeclaration( "1.0", "UTF-8", "yes" ), rootElement );
-                var result = PostToGateway( origTransaction.FinancialGateway, xdoc );
+                var result = PostToGateway( origTransaction.FinancialGateway, xdoc, out errorMessage );
 
                 if ( result == null )
                 {
-                    errorMessage = "Invalid Response from NMI!";
-                    return null;
-                }
-
-                if ( result.GetValueOrNull( "result" ) != "1" )
-                {
-                    errorMessage = result.GetValueOrNull( "result-text" );
                     return null;
                 }
 
@@ -423,74 +437,8 @@ namespace Rock.NMI
         /// <exception cref="System.ArgumentNullException">paymentInfo</exception>
         public override string AddScheduledPaymentStep1( FinancialGateway financialGateway, PaymentSchedule schedule, PaymentInfo paymentInfo, out string errorMessage )
         {
-            errorMessage = string.Empty;
-
-            try
-            {
-                if ( paymentInfo == null )
-                {
-                    throw new ArgumentNullException( "paymentInfo" );
-                }
-
-                var rootElement = GetRoot( financialGateway, "add-subscription" );
-
-                rootElement.Add(
-                    new XElement( "start-date", schedule.StartDate.ToString( "yyyyMMdd" ) ),
-                    new XElement( "order-description", paymentInfo.Description ),
-                    new XElement( "currency", "USD" ),
-                    new XElement( "tax-amount", "0.00" ) );
-
-                bool isReferencePayment = ( paymentInfo is ReferencePaymentInfo );
-                if ( isReferencePayment )
-                {
-                    var reference = paymentInfo as ReferencePaymentInfo;
-                    rootElement.Add( new XElement( "customer-vault-id", reference.ReferenceNumber ) );
-                }
-
-                if ( paymentInfo.AdditionalParameters != null )
-                {
-                    foreach ( var keyValue in paymentInfo.AdditionalParameters )
-                    {
-                        XElement xElement = new XElement( keyValue.Key, keyValue.Value );
-                        rootElement.Add( xElement );
-                    }
-                }
-
-                rootElement.Add( GetPlan( schedule, paymentInfo ) );
-
-                rootElement.Add( GetBilling( paymentInfo ) );
-
-                XDocument xdoc = new XDocument( new XDeclaration( "1.0", "UTF-8", "yes" ), rootElement );
-                var result = PostToGateway( financialGateway, xdoc );
-
-                if ( result == null )
-                {
-                    errorMessage = "Invalid Response from NMI!";
-                    return null;
-                }
-
-                if ( result.GetValueOrNull( "result" ) != "1" )
-                {
-                    errorMessage = result.GetValueOrNull( "result-text" );
-                    return null;
-                }
-
-                return result.GetValueOrNull( "form-url" );
-            }
-
-            catch ( WebException webException )
-            {
-                string message = GetResponseMessage( webException.Response.GetResponseStream() );
-                errorMessage = webException.Message + " - " + message;
-                return null;
-            }
-
-            catch ( Exception ex )
-            {
-                errorMessage = ex.Message;
-                return null;
-            }
-
+            // The Scheduled Payment Step 1 is exactly same as Charge Step 1 (Validate if not using saved account, otherwise return empty string and skip to step 3)
+            return ChargeStep1( financialGateway, paymentInfo, out errorMessage );
         }
 
         /// <summary>
@@ -503,32 +451,72 @@ namespace Rock.NMI
         /// <exception cref="System.ArgumentNullException">tokenId</exception>
         public override FinancialScheduledTransaction AddScheduledPaymentStep3( FinancialGateway financialGateway, string resultQueryString, out string errorMessage )
         {
+            return AddScheduledPaymentStep3( financialGateway, null, null, resultQueryString, out errorMessage );
+        }
+
+        /// <summary>
+        /// Performs the third step of adding a new payment schedule. This method includes a PaymentSchedule and PaymentInfo object that can be used if needed to finalize any transaction.
+        /// </summary>
+        /// <param name="financialGateway">The financial gateway.</param>
+        /// <param name="schedule">The schedule.</param>
+        /// <param name="paymentInfo">The payment information.</param>
+        /// <param name="resultQueryString">The result query string.</param>
+        /// <param name="errorMessage">The error message.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException">paymentInfo</exception>
+        public override FinancialScheduledTransaction AddScheduledPaymentStep3( FinancialGateway financialGateway, PaymentSchedule schedule, PaymentInfo paymentInfo, string resultQueryString, out string errorMessage )
+        {
             errorMessage = string.Empty;
 
             try
             {
-                var rootElement = GetRoot( financialGateway, "complete-action" );
-                rootElement.Add( new XElement( "token-id", resultQueryString.Substring( 10 ) ) );
-                XDocument xdoc = new XDocument( new XDeclaration( "1.0", "UTF-8", "yes" ), rootElement );
-                var result = PostToGateway( financialGateway, xdoc );
+                // Make sure valid parameters were passed
+                if ( financialGateway == null )
+                {
+                    throw new ArgumentNullException( "finacialGateway" );
+                }
+                if ( schedule == null )
+                {
+                    throw new ArgumentNullException( "schedule" );
+                }
+                if ( paymentInfo == null )
+                {
+                    throw new ArgumentNullException( "paymentInfo" );
+                }
 
+                // Check to see if third step is not needed or succesfully completed
+                if ( !CompleteThirdStep( financialGateway, paymentInfo, resultQueryString, out errorMessage ) )
+                {
+                    return null;
+                }
+
+                // Start to create the XML for an Add Subscription txn
+                var rootElement = GetRoot( financialGateway, "add-subscription", paymentInfo );
+                rootElement.Add(
+                    new XElement( "start-date", schedule.StartDate.ToString( "yyyyMMdd" ) ),
+                    new XElement( "order-description", paymentInfo.Description ),
+                    new XElement( "currency", "USD" ),
+                    new XElement( "tax-amount", "0.00" ) );
+
+                // Add the plan details
+                rootElement.Add( GetPlan( schedule, paymentInfo ) );
+
+                // Post the Add Subscription transaction
+                XDocument xdoc = new XDocument( new XDeclaration( "1.0", "UTF-8", "yes" ), rootElement );
+                var result = PostToGateway( financialGateway, xdoc, out errorMessage );
+
+                // If not valid, return null
                 if ( result == null )
                 {
-                    errorMessage = "Invalid Response from NMI!";
                     return null;
                 }
 
-                if ( result.GetValueOrNull( "result" ) != "1" )
-                {
-                    errorMessage = result.GetValueOrNull( "result-text" );
-                    return null;
-                }
-
+                // Otherwise create a scheduled transaction record
                 var scheduledTransaction = new FinancialScheduledTransaction();
                 scheduledTransaction.IsActive = true;
                 scheduledTransaction.GatewayScheduleId = result.GetValueOrNull( "subscription-id" );
                 scheduledTransaction.FinancialGatewayId = financialGateway.Id;
-
+                scheduledTransaction.ForeignKey = paymentInfo.AdditionalParameters.GetValueOrNull( "customer-vault-id" );
                 scheduledTransaction.FinancialPaymentDetail = new FinancialPaymentDetail();
                 string ccNumber = result.GetValueOrNull( "billing_cc-number" );
                 if ( !string.IsNullOrWhiteSpace( ccNumber ) )
@@ -632,21 +620,14 @@ namespace Rock.NMI
                 !string.IsNullOrWhiteSpace( transaction.GatewayScheduleId ) &&
                 transaction.FinancialGateway != null )
             {
-                var rootElement = GetRoot( transaction.FinancialGateway, "delete-subscription" );
+                var rootElement = GetRoot( transaction.FinancialGateway, "delete-subscription", null );
                 rootElement.Add( new XElement( "subscription-id", transaction.GatewayScheduleId ) );
 
                 XDocument xdoc = new XDocument( new XDeclaration( "1.0", "UTF-8", "yes" ), rootElement );
-                var result = PostToGateway( transaction.FinancialGateway, xdoc );
+                var result = PostToGateway( transaction.FinancialGateway, xdoc, out errorMessage );
 
                 if ( result == null )
                 {
-                    errorMessage = "Invalid Response from NMI!";
-                    return false;
-                }
-
-                if ( result.GetValueOrNull( "result" ) != "1" )
-                {
-                    errorMessage = result.GetValueOrNull( "result-text" );
                     return false;
                 }
 
@@ -826,16 +807,75 @@ namespace Rock.NMI
         public override string GetReferenceNumber( FinancialScheduledTransaction scheduledTransaction, out string errorMessage )
         {
             errorMessage = string.Empty;
-            return string.Empty;
+            return scheduledTransaction.ForeignKey;
         }
 
-        private XElement GetRoot( FinancialGateway financialGateway, string elementName )
+        /// <summary>
+        /// Gets the root.
+        /// </summary>
+        /// <param name="financialGateway">The financial gateway.</param>
+        /// <param name="elementName">Name of the element.</param>
+        /// <param name="paymentInfo">The payment information.</param>
+        /// <returns></returns>
+        private XElement GetRoot( FinancialGateway financialGateway, string elementName, PaymentInfo paymentInfo )
         {
             XElement rootElement = new XElement( elementName,
                 new XElement( "api-key", GetAttributeValue( financialGateway, "SecurityKey" ) )
             );
 
+            if ( paymentInfo != null && paymentInfo.AdditionalParameters != null )
+            {
+                foreach ( var keyValue in paymentInfo.AdditionalParameters )
+                {
+                    XElement xElement = new XElement( keyValue.Key, keyValue.Value );
+                    rootElement.Add( xElement );
+                }
+            }
+
             return rootElement;
+        }
+
+        /// <summary>
+        /// Completes the third step.
+        /// </summary>
+        /// <param name="financialGateway">The financial gateway.</param>
+        /// <param name="paymentInfo">The payment information.</param>
+        /// <param name="resultQueryString">The result query string.</param>
+        /// <param name="errorMessage">The error message.</param>
+        /// <returns></returns>
+        private bool CompleteThirdStep ( FinancialGateway financialGateway, PaymentInfo paymentInfo, string resultQueryString, out string errorMessage )
+        {
+            // If this was for a saved account, there's nothing to complete
+            if ( paymentInfo is ReferencePaymentInfo )
+            {
+                errorMessage = string.Empty;
+                return true;
+            }
+
+            // Create XML for completing third step of three-step Validate process
+            var rootElement = GetRoot( financialGateway, "complete-action", paymentInfo );
+            rootElement.Add( new XElement( "token-id", resultQueryString.Substring( 10 ) ) );
+
+            // Post the Complete txn
+            var xdoc = new XDocument( new XDeclaration( "1.0", "UTF-8", "yes" ), rootElement );
+            var result = PostToGateway( financialGateway, xdoc, out errorMessage );
+
+            // If validate was successful, save the customer's new vault id to the payment info record 
+            if ( result != null )
+            {
+                string customerVaultId = result.GetValueOrNull( "customer-vault-id" );
+                if ( customerVaultId.IsNotNullOrWhitespace() )
+                {
+                    if ( paymentInfo.AdditionalParameters == null )
+                    {
+                        paymentInfo.AdditionalParameters = new Dictionary<string, string>();
+                    }
+                    paymentInfo.AdditionalParameters.Add( "customer-vault-id", result.GetValueOrNull( "customer-vault-id" ) );
+                }
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -916,7 +956,7 @@ namespace Rock.NMI
         /// <param name="data">The data.</param>
         /// <returns></returns>
         /// <exception cref="System.Exception"></exception>
-        private Dictionary<string, string> PostToGateway( FinancialGateway financialGateway, XDocument data )
+        private Dictionary<string, string> PostToGateway( FinancialGateway financialGateway, XDocument data, out string errorMessage )
         {
             var restClient = new RestClient( GetAttributeValue( financialGateway, "APIUrl" ) );
             var restRequest = new RestRequest( Method.POST );
@@ -946,7 +986,36 @@ namespace Rock.NMI
                             result.AddOrIgnore( element.Name.LocalName, element.Value.Trim() );
                         }
                     }
+
+                    if ( result == null )
+                    {
+                        errorMessage = "Invalid Response from NMI!";
+                        return null;
+                    }
+
+                    if ( result.GetValueOrNull( "result" ) != "1" )
+                    {
+                        errorMessage = result.GetValueOrNull( "result-text" );
+
+                        string resultCodeMessage = GetResultCodeMessage( result );
+                        if ( resultCodeMessage.IsNotNullOrWhitespace() )
+                        {
+                            errorMessage += string.Format( " ({0})", resultCodeMessage );
+                        }
+
+                        // write result error as an exception
+                        ExceptionLogService.LogException( new Exception( $"Error processing NMI transaction. Result Code: {result.GetValueOrNull( "result-code" )} ({resultCodeMessage}). Result text: {result.GetValueOrNull( "result-text" )}. Card Holder Name: {result.GetValueOrNull( "first-name" )} {result.GetValueOrNull( "last-name" )}. Amount: {result.GetValueOrNull( "total-amount" )}. Transaction id: {result.GetValueOrNull( "transaction-id" )}. Descriptor: {result.GetValueOrNull( "descriptor" )}. Order description: {result.GetValueOrNull( "order-description" )}." ) );
+
+                        return null;
+                    }
+
+                    errorMessage = string.Empty;
                     return result;
+                }
+                else
+                {
+                    errorMessage = "Invalid Response from NMI!";
+                    return null;
                 }
             }
             catch ( WebException webException )
@@ -958,9 +1027,6 @@ namespace Rock.NMI
             {
                 throw ex;
             }
-
-            return null;
-
         }
 
         /// <summary>
