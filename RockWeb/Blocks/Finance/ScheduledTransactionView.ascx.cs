@@ -650,7 +650,7 @@ namespace RockWeb.Blocks.Finance
                 }
 
                 lbRefresh.Visible = gateway != null && gateway.GetScheduledPaymentStatusSupported;
-                lbUpdate.Visible = gateway != null && gateway.UpdateScheduledPaymentSupported;
+                lbUpdate.Visible = gateway != null && gateway.UpdateScheduledPaymentSupported || gateway.UpdateScheduledPaymentMethodSupported;
                 lbCancelSchedule.Visible = txn.IsActive;
                 lbReactivateSchedule.Visible = !txn.IsActive && gateway != null && gateway.ReactivateScheduledPaymentSupported;
             }

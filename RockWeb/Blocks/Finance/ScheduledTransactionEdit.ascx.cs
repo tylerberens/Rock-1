@@ -246,7 +246,8 @@ achieve our mission.  We are so grateful for your commitment.
                         page.PageNavigate += page_PageNavigate;
                     }
 
-                    FluidLayout = GetAttributeValue( "LayoutStyle" ) == "Fluid";
+                    FluidLayout = GetAttributeValue( "LayoutStyle" ) == "Fluid" && Gateway.UpdateScheduledPaymentMethodSupported;
+                    pnlPaymentMethod.Visible = Gateway.UpdateScheduledPaymentMethodSupported;
 
                     btnAddAccount.Title = GetAttributeValue( "AddAccountText" );
 
@@ -1067,9 +1068,12 @@ achieve our mission.  We are so grateful for your commitment.
 
                 if ( Gateway.UpdateScheduledPayment( scheduledTransaction, paymentInfo, out errorMessage ) )
                 {
-                    if ( hfPaymentTab.Value == "CreditCard" || hfPaymentTab.Value == "ACH" )
+                    if ( Gateway.UpdateScheduledPaymentMethodSupported )
                     {
-                        scheduledTransaction.FinancialPaymentDetail.SetFromPaymentInfo( paymentInfo, Gateway, rockContext );
+                        if ( hfPaymentTab.Value == "CreditCard" || hfPaymentTab.Value == "ACH" )
+                        {
+                            scheduledTransaction.FinancialPaymentDetail.SetFromPaymentInfo( paymentInfo, Gateway, rockContext );
+                        }
                     }
 
                     var selectedAccountIds = SelectedAccounts
@@ -1129,6 +1133,7 @@ achieve our mission.  We are so grateful for your commitment.
                 }
                 else
                 {
+                    rockContext.SaveChanges();
                     return false;
                 }
 

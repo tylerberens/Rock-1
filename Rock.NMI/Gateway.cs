@@ -585,10 +585,20 @@ namespace Rock.NMI
         }
 
         /// <summary>
-        /// Updates the scheduled payment supported.
+        /// Flag indicating if gateway supports updating the amount/frequency of a scheduled payment.
         /// </summary>
-        /// <returns></returns>
         public override bool UpdateScheduledPaymentSupported
+        {
+            get { return true; }
+        }
+
+        /// <summary>
+        /// Flag indicating if gateway supports updating the payment method of a scheduled payment.
+        /// </summary>
+        /// <value>
+        /// <c>true</c> if [update scheduled payment method supported]; otherwise, <c>false</c>.
+        /// </value>
+        public override bool UpdateScheduledPaymentMethodSupported
         {
             get { return false; }
         }
@@ -602,8 +612,52 @@ namespace Rock.NMI
         /// <returns></returns>
         public override bool UpdateScheduledPayment( FinancialScheduledTransaction transaction, PaymentInfo paymentInfo, out string errorMessage )
         {
-            errorMessage = "The payment gateway associated with this scheduled transaction (NMI) does not support updating an existing scheduled transaction. A new scheduled transaction should be created instead.";
-            return false;
+            string vaultId = transaction.ForeignKey;
+            if ( vaultId.IsNullOrWhiteSpace() )
+            {
+                errorMessage = "The selected scheduled transaction does not have a valid customer vault id, and can not be updated.";
+                return false;
+            }
+
+            // First try to delete the previous subscription
+            if ( !CancelScheduledPayment( transaction, out errorMessage ))
+            {
+                // If an error occurred while trying to delete the previous subscription, but it was due to 
+                // subscription not existing, that's ok, so don't stop.
+                if ( !errorMessage.StartsWith( "No recurring subscriptions found" ) )
+                {
+                    errorMessage = $"An error occurred trying to delete the original schedule details: {errorMessage}";
+                    return false;
+                }
+            }
+
+            // Start to create the XML for an Add Subscription txn
+            var rootElement = GetRoot( transaction.FinancialGateway, "add-subscription", paymentInfo );
+            rootElement.Add(
+                new XElement( "customer-vault-id", vaultId ),
+                new XElement( "start-date", transaction.StartDate.ToString( "yyyyMMdd" ) ),
+                new XElement( "order-description", paymentInfo.Description ),
+                new XElement( "currency", "USD" ),
+                new XElement( "tax-amount", "0.00" ) );
+
+            // Add the plan details
+            rootElement.Add( GetPlan( transaction, paymentInfo ) );
+
+            // Post the Add Subscription transaction
+            XDocument xdoc = new XDocument( new XDeclaration( "1.0", "UTF-8", "yes" ), rootElement );
+            var result = PostToGateway( transaction.FinancialGateway, xdoc, out errorMessage );
+
+            // If not valid, return null
+            if ( result == null )
+            {
+                return false;
+            }
+
+            // Otherwise update the current scheduled transaction with the new information
+            transaction.IsActive = true;
+            transaction.GatewayScheduleId = result.GetValueOrNull( "subscription-id" );
+
+            return true;
         }
 
         /// <summary>
@@ -906,6 +960,22 @@ namespace Rock.NMI
             }
 
             return billingElement;
+        }
+
+        /// <summary>
+        /// Gets the plan.
+        /// </summary>
+        /// <param name="scheduledTransaction">The scheduled transaction.</param>
+        /// <param name="paymentInfo">The payment information.</param>
+        /// <returns></returns>
+        private XElement GetPlan( FinancialScheduledTransaction scheduledTransaction, PaymentInfo paymentInfo )
+        {
+            var schedule = new PaymentSchedule();
+            schedule.TransactionFrequencyValue = DefinedValueCache.Read( scheduledTransaction.TransactionFrequencyValueId );
+            schedule.NumberOfPayments = scheduledTransaction.NumberOfPayments;
+            schedule.StartDate = schedule.StartDate;
+
+            return GetPlan( schedule, paymentInfo );
         }
 
         /// <summary>

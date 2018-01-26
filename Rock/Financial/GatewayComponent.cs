@@ -262,12 +262,23 @@ namespace Rock.Financial
         public abstract FinancialScheduledTransaction AddScheduledPayment( FinancialGateway financialGateway, PaymentSchedule schedule, PaymentInfo paymentInfo, out string errorMessage );
 
         /// <summary>
-        /// Flag indicating if gateway supports updating a scheduled payment.
+        /// Flag indicating if gateway supports updating the amount/frequency of a scheduled payment.
         /// </summary>
         /// <returns></returns>
         public virtual bool UpdateScheduledPaymentSupported
         {
             get { return true; }
+        }
+
+        /// <summary>
+        /// Flag indicating if gateway supports updating the payment method of a scheduled payment.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [update scheduled payment method supported]; otherwise, <c>false</c>.
+        /// </value>
+        public virtual bool UpdateScheduledPaymentMethodSupported
+        {
+            get { return UpdateScheduledPaymentSupported; }
         }
 
         /// <summary>

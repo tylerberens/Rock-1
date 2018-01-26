@@ -54,7 +54,7 @@
                         <div class="col-md-6">
                         <% } %>
 
-                            <div class="panel panel-default contribution-payment">
+                            <asp:Panel ID="pnlPaymentMethod" runat="server" CssClass="panel panel-default contribution-payment">
 
                                 <asp:HiddenField ID="hfPaymentTab" runat="server" />
 
@@ -117,7 +117,8 @@
 
                                     </div>
                                 </div>
-                            </div>
+
+                            </asp:Panel>
 
                     <% if ( FluidLayout )
                     { %>
