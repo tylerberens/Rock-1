@@ -199,6 +199,7 @@ We have saved your unsubscribed you from the following lists:
                             rbUpdateEmailAddress.Checked = true;
                         }
                     }
+                    tbEmail.Text = _person.Email;
                 }
             }
 
@@ -343,7 +344,6 @@ We have saved your unsubscribed you from the following lists:
 
                     rockContext.SaveChanges();
 
-                    tbEmail.Text = string.Empty;
                     nbEmailPreferenceSuccessMessage.Text = "<h4>Thank You</h4>We have updated your email address.";
                     nbEmailPreferenceSuccessMessage.Visible = true;
 
