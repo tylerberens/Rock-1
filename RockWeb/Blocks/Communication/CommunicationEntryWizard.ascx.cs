@@ -57,11 +57,13 @@ namespace RockWeb.Blocks.Communication
     [BooleanField( "Send When Approved", "Should communication be sent once it's approved (vs. just being queued for scheduled job to send)?", true, "", 7 )]
     [IntegerField( "Max SMS Image Width", "The maximum width (in pixels) of an image attached to a mobile communication. If its width is over the max, Rock will automatically resize image to the max width.", false, 600, order: 8 )]
     [LinkedPage( "Simple Communication Page", "The page to use if the 'Use Simple Editor' panel heading icon is clicked. Leave this blank to not show the 'Use Simple Editor' heading icon", false, order: 9 )]
+    [BooleanField("Enable CC/BCC", "Should the CC and BCC options be available for email communications? If used, any address entered into either of these fields would recieve a seperate email for every recipient.", false, "", 11, "EnableCcBcc")]
     public partial class CommunicationEntryWizard : RockBlock, IDetailBlock
     {
         #region Fields
 
         private const string CATEGORY_COMMUNICATION_TEMPLATE = "CategoryCommunicationTemplate";
+        private bool _enableCcBcc = false;
 
         #endregion
 
@@ -127,6 +129,10 @@ namespace RockWeb.Blocks.Communication
 
             btnUseSimpleEditor.Visible = !string.IsNullOrEmpty( this.GetAttributeValue( "SimpleCommunicationPage" ) );
             pnlHeadingLabels.Visible = btnUseSimpleEditor.Visible;
+
+            _enableCcBcc = GetAttributeValue("EnableCcBcc").AsBoolean();
+            ebCCList.Visible = _enableCcBcc;
+            ebBCCList.Visible = _enableCcBcc;
         }
 
         /// <summary>
@@ -366,8 +372,11 @@ namespace RockWeb.Blocks.Communication
 
             // Email Summary fields: additional fields
             ebReplyToAddress.Text = communication.ReplyToEmail;
-            ebCCList.Text = communication.CCEmails;
-            ebBCCList.Text = communication.BCCEmails;
+            if (_enableCcBcc)
+            {
+                ebCCList.Text = communication.CCEmails;
+                ebBCCList.Text = communication.BCCEmails;
+            }
 
             hfShowAdditionalFields.Value = ( !string.IsNullOrEmpty( communication.ReplyToEmail ) || !string.IsNullOrEmpty( communication.CCEmails ) || !string.IsNullOrEmpty( communication.BCCEmails ) ).ToTrueFalse().ToLower();
 
@@ -1181,17 +1190,20 @@ namespace RockWeb.Blocks.Communication
                 ebReplyToAddress.Text = communicationTemplate.ReplyToEmail;
             }
 
-            if ( communicationTemplate.CCEmails.IsNotNullOrWhitespace() )
+            if (_enableCcBcc)
             {
-                ebCCList.Text = communicationTemplate.CCEmails;
+                if (communicationTemplate.CCEmails.IsNotNullOrWhitespace())
+                {
+                    ebCCList.Text = communicationTemplate.CCEmails;
+                }
+
+                if (communicationTemplate.BCCEmails.IsNotNullOrWhitespace())
+                {
+                    ebBCCList.Text = communicationTemplate.BCCEmails;
+                }
             }
 
-            if ( communicationTemplate.BCCEmails.IsNotNullOrWhitespace() )
-            {
-                ebBCCList.Text = communicationTemplate.BCCEmails;
-            }
-
-            hfShowAdditionalFields.Value = ( !string.IsNullOrEmpty( communicationTemplate.ReplyToEmail ) || !string.IsNullOrEmpty( communicationTemplate.CCEmails ) || !string.IsNullOrEmpty( communicationTemplate.BCCEmails ) ).ToTrueFalse().ToLower();
+            hfShowAdditionalFields.Value = ( !string.IsNullOrEmpty( ebReplyToAddress.Text ) || !string.IsNullOrEmpty( ebCCList.Text ) || !string.IsNullOrEmpty( ebBCCList.Text ) ).ToTrueFalse().ToLower();
 
             // only set the subject if the template has one (just in case they already typed in an email subject for this communication
             if ( communicationTemplate.Subject.IsNotNullOrWhitespace() )
@@ -2412,8 +2424,11 @@ sendCountTerm.PluralizeIf( sendCount != 1 ) );
             communication.FromName = tbFromName.Text.TrimForMaxLength( communication, "FromName" );
             communication.FromEmail = ebFromAddress.Text.TrimForMaxLength( communication, "FromEmail" );
             communication.ReplyToEmail = ebReplyToAddress.Text.TrimForMaxLength( communication, "ReplyToEmail" );
-            communication.CCEmails = ebCCList.Text;
-            communication.BCCEmails = ebBCCList.Text;
+            if (_enableCcBcc)
+            {
+                communication.CCEmails = ebCCList.Text;
+                communication.BCCEmails = ebBCCList.Text;
+            }
 
             List<int> emailBinaryFileIds = hfEmailAttachedBinaryFileIds.Value.SplitDelimitedValues().AsIntegerList();
             List<int> smsBinaryFileIds = new List<int>();
