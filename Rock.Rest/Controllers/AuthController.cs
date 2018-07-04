@@ -38,7 +38,8 @@ namespace Rock.Rest.Controllers
         {
             bool valid = false;
 
-            var userLoginService = new UserLoginService( new Rock.Data.RockContext() );
+            var rockContext = new Rock.Data.RockContext();
+            var userLoginService = new UserLoginService( rockContext );
             var userLogin = userLoginService.GetByUserName( loginParameters.Username );
             if ( userLogin != null && userLogin.EntityType != null) 
             {
@@ -55,7 +56,14 @@ namespace Rock.Rest.Controllers
 
             if ( !valid )
             {
+                userLoginService.UpdateFailureCount( userLogin );
+                rockContext.SaveChanges();
                 throw new HttpResponseException( HttpStatusCode.Unauthorized );
+            }
+            else
+            {
+                userLoginService.ResetFailureCount( userLogin );
+                rockContext.SaveChanges();
             }
         }
 
