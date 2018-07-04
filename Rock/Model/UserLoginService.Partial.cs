@@ -86,10 +86,10 @@ namespace Rock.Model
         }
 
         /// <summary>
-        /// Updates the <see cref="Rock.Model.UserLogin"/> failed password attempt count.
+        /// Updates the <see cref="Rock.Model.UserLogin"/> failed password attempt count following a failed authentication.
         /// </summary>
         /// <param name="user">The <see cref="Rock.Model.UserLogin"/> to update the failure count on.</param>
-        private void UpdateFailureCount( UserLogin user )
+        public void UpdateFailureCount( UserLogin user )
         {
             int passwordAttemptWindow = 0;
             int maxInvalidPasswordAttempts = int.MaxValue;
@@ -120,6 +120,16 @@ namespace Rock.Model
                 user.FailedPasswordAttemptCount = 1;
                 user.FailedPasswordAttemptWindowStartDateTime = RockDateTime.Now;
             }
+        }
+
+        /// <summary>
+        /// Resets the failure count following a succesful authentication.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        public void ResetFailureCount(UserLogin user)
+        {
+            user.FailedPasswordAttemptCount = 0;
+            user.FailedPasswordAttemptWindowStartDateTime = null;
         }
 
         /// <summary>

@@ -20,6 +20,7 @@ using System.ComponentModel.Composition;
 using System.DirectoryServices.AccountManagement;
 
 using Rock.Attribute;
+using Rock.Data;
 using Rock.Model;
 
 namespace Rock.Security.Authentication
@@ -73,10 +74,26 @@ namespace Rock.Security.Authentication
             }
 
             var context = new PrincipalContext( ContextType.Domain, GetAttributeValue( "Server" ) );
+            bool success = false;
             using ( context )
             {
-                return context.ValidateCredentials( user.UserName, password );
+                success = context.ValidateCredentials( user.UserName, password );
             }
+
+            var rockContext = new RockContext();
+            var userLoginService = new UserLoginService( rockContext );
+
+            if (!success)
+            {
+                userLoginService.UpdateFailureCount( user );
+            }
+            else
+            {
+                userLoginService.ResetFailureCount( user );
+            }
+
+            rockContext.SaveChanges();
+            return success;
         }
 
         /// <summary>

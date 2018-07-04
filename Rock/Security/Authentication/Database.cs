@@ -101,18 +101,26 @@ namespace Rock.Security.Authentication
         {
             try
             {
-                if ( AuthenticateBcrypt( user, password ) )
-                {
-                    return true;
-                }
+                bool success = AuthenticateBcrypt( user, password ) || AuthenticateSha1( user, password );
 
-                return AuthenticateSha1( user, password );
+                var rockContext = new RockContext();
+                var userLoginService = new UserLoginService( rockContext );
+
+                if ( !success )
+                {
+                    userLoginService.UpdateFailureCount( user );
+                }
+                else
+                {
+                    userLoginService.ResetFailureCount( user );
+                }
+                rockContext.SaveChanges();
+                return success;
             }
             catch
             {
                 return false;
             }
-
         }
 
         /// <summary>
