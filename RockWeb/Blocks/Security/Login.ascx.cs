@@ -253,9 +253,10 @@ Thank you for logging in, however, we need to confirm the email associated with 
             var userLoginService = new UserLoginService( rockContext );
             var userLogin = userLoginService.GetByUserName( tbUserName.Text );
             // Don't leak whether the password or username is wrong
-            if ( userLogin == null && userLogin.EntityType == null )
+            if ( userLogin == null || userLogin.EntityType == null )
             {
                 DisplayNoAccountText();
+                return;
             }
 
             var component = AuthenticationContainer.GetComponent( userLogin.EntityType.Name );
@@ -263,16 +264,19 @@ Thank you for logging in, however, we need to confirm the email associated with 
             {
                 // TODO: Improve this text
                 DisplayError( "Something appears to have gone wrong during login" );
+                return;
             }
 
             if ( userLogin.IsLockedOut ?? false )
             {
                 var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( RockPage, CurrentPerson );
                 DisplayLockedOut( mergeFields );
+                return;
             }
             else if ( !component.Authenticate( userLogin, tbPassword.Text ) )
             {
                 DisplayNoAccountText();
+                return;
             }
 
             CheckUser( userLogin, Request.QueryString["returnurl"], cbRememberMe.Checked );
