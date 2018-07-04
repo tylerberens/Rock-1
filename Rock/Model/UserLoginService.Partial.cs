@@ -104,7 +104,8 @@ namespace Rock.Model
             int attempts = user.FailedPasswordAttemptCount ?? 0;
 
             TimeSpan window = new TimeSpan( 0, passwordAttemptWindow, 0 );
-            if ( RockDateTime.Now.CompareTo( firstAttempt.Add( window ) ) < 0 )
+            var comparisonPoint = firstAttempt.Add( window );
+            if ( RockDateTime.Now.CompareTo( comparisonPoint ) > 0 )
             {
                 attempts++;
                 if ( attempts >= maxInvalidPasswordAttempts )
