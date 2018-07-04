@@ -45,7 +45,7 @@ namespace Rock.Rest.Controllers
                 var component = AuthenticationContainer.GetComponent(userLogin.EntityType.Name);
                 if ( component != null && component.IsActive)
                 {
-                    if ( component.Authenticate( userLogin, loginParameters.Password ) )
+                    if ( (userLogin.IsConfirmed ?? true) && !(userLogin.IsLockedOut ?? false ) && component.Authenticate( userLogin, loginParameters.Password ) )
                     {
                         valid = true;
                         Rock.Security.Authorization.SetAuthCookie( loginParameters.Username, loginParameters.Persisted, false );
