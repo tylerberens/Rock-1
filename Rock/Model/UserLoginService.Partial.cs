@@ -91,35 +91,20 @@ namespace Rock.Model
         /// <param name="user">The <see cref="Rock.Model.UserLogin"/> to update the failure count on.</param>
         public void UpdateFailureCount( UserLogin user )
         {
-            int passwordAttemptWindow = 0;
             int maxInvalidPasswordAttempts = int.MaxValue;
 
             var globalAttributes = CacheGlobalAttributes.Get();
-            if ( !Int32.TryParse( globalAttributes.GetValue( "PasswordAttemptWindow" ), out passwordAttemptWindow ) )
-                passwordAttemptWindow = 0;
             if ( !Int32.TryParse( globalAttributes.GetValue( "MaxInvalidPasswordAttempts" ), out maxInvalidPasswordAttempts ) )
                 maxInvalidPasswordAttempts = int.MaxValue;
 
-            DateTime firstAttempt = user.FailedPasswordAttemptWindowStartDateTime ?? DateTime.MinValue;
             int attempts = user.FailedPasswordAttemptCount ?? 0;
+            attempts++;
 
-            TimeSpan window = new TimeSpan( 0, passwordAttemptWindow, 0 );
-            var comparisonPoint = firstAttempt.Add( window );
-            if ( RockDateTime.Now.CompareTo( comparisonPoint ) > 0 )
+            user.FailedPasswordAttemptCount = attempts; 
+            if ( attempts >= maxInvalidPasswordAttempts )
             {
-                attempts++;
-                if ( attempts >= maxInvalidPasswordAttempts )
-                {
-                    user.IsLockedOut = true;
-                    user.LastLockedOutDateTime = RockDateTime.Now;
-                }
-
-                user.FailedPasswordAttemptCount = attempts;
-            }
-            else
-            {
-                user.FailedPasswordAttemptCount = 1;
-                user.FailedPasswordAttemptWindowStartDateTime = RockDateTime.Now;
+                user.IsLockedOut = true;
+                user.LastLockedOutDateTime = RockDateTime.Now;
             }
         }
 

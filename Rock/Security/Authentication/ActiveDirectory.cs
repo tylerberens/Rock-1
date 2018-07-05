@@ -67,6 +67,11 @@ namespace Rock.Security.Authentication
         /// <returns></returns>
         public override bool Authenticate( UserLogin user, string password )
         {
+            var rockContext = new RockContext();
+            var userLoginService = new UserLoginService( rockContext );
+            // reget user as entity is being tracked by a different context
+            user = userLoginService.Get( user.Id );
+
             string username = user.UserName;
             if ( !String.IsNullOrWhiteSpace( GetAttributeValue( "Domain" ) ) )
             {
@@ -79,10 +84,6 @@ namespace Rock.Security.Authentication
             {
                 success = context.ValidateCredentials( user.UserName, password );
             }
-
-            var rockContext = new RockContext();
-            var userLoginService = new UserLoginService( rockContext );
-
             if (!success)
             {
                 userLoginService.UpdateFailureCount( user );

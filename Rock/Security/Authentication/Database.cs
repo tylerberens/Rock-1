@@ -99,28 +99,23 @@ namespace Rock.Security.Authentication
         /// <returns></returns>
         public override Boolean Authenticate( UserLogin user, string password )
         {
-            try
-            {
-                bool success = AuthenticateBcrypt( user, password ) || AuthenticateSha1( user, password );
+            var rockContext = new RockContext();
+            var userLoginService = new UserLoginService( rockContext );
 
-                var rockContext = new RockContext();
-                var userLoginService = new UserLoginService( rockContext );
+            // Need to reget the user as it is being tracked by a different change tracker
+            user = userLoginService.Get( user.Id );
+            bool success = AuthenticateBcrypt( user, password ) || AuthenticateSha1( user, password );
 
-                if ( !success )
-                {
-                    userLoginService.UpdateFailureCount( user );
-                }
-                else
-                {
-                    userLoginService.ResetFailureCount( user );
-                }
-                rockContext.SaveChanges();
-                return success;
-            }
-            catch
+            if ( !success )
             {
-                return false;
+                userLoginService.UpdateFailureCount( user );
             }
+            else
+            {
+                userLoginService.ResetFailureCount( user );
+            }
+            rockContext.SaveChanges();
+            return success;
         }
 
         /// <summary>
