@@ -971,7 +971,7 @@ namespace Rock.NMI
         private XElement GetPlan( FinancialScheduledTransaction scheduledTransaction, PaymentInfo paymentInfo )
         {
             var schedule = new PaymentSchedule();
-            schedule.TransactionFrequencyValue = DefinedValueCache.Read( scheduledTransaction.TransactionFrequencyValueId );
+            schedule.TransactionFrequencyValue = CacheDefinedValue.Get( scheduledTransaction.TransactionFrequencyValueId );
             schedule.NumberOfPayments = scheduledTransaction.NumberOfPayments;
             schedule.StartDate = schedule.StartDate;
 
