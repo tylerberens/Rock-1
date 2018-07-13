@@ -64,7 +64,10 @@ namespace Rock.Transactions
         public void Execute()
         {
             var rockContext = new RockContext();
-            LaunchWorkflow( rockContext, Trigger.WorkflowTypeId, Trigger.Name );
+            if ( Trigger.IsActive )
+            {
+                LaunchWorkflow( rockContext, Trigger.WorkflowTypeId, Trigger.Name );
+            }
         }
 
         /// <summary>
@@ -75,7 +78,7 @@ namespace Rock.Transactions
         /// <param name="name">The name.</param>
         private void LaunchWorkflow( RockContext rockContext, int workflowTypeId, string name )
         {
-            var workflowType = Web.Cache.WorkflowTypeCache.Read( workflowTypeId );
+            var workflowType = Cache.CacheWorkflowType.Get( workflowTypeId );
             if ( workflowType != null && ( workflowType.IsActive ?? true ) )
             {
                 var workflow = Rock.Model.Workflow.Activate( workflowType, name );

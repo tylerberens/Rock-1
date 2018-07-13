@@ -24,7 +24,7 @@ using Rock;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
-using Rock.Web.Cache;
+using Rock.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 
@@ -34,7 +34,7 @@ namespace RockWeb.Blocks.Prayer
     [Category( "Prayer" )]
     [Description( "Allows a user to start a session to pray for active, approved prayer requests." )]
 
-    [CodeEditorField( "Welcome Introduction Text", "Some text (or HTML) to display on the first step.", CodeEditorMode.Html, height: 100, required: false, defaultValue: "<h2>Let's get ready to pray...</h2>", order: 1 )]
+    [CodeEditorField( "Welcome Introduction Text", "Some text (or HTML) to display on the first step.", CodeEditorMode.Html, height: 100, required: false, defaultValue: "<h2>Let’s get ready to pray...</h2>", order: 1 )]
     [CategoryField( "Category", "A top level category. This controls which categories are shown when starting a prayer session.", false, "Rock.Model.PrayerRequest", "", "", false, "", "Filtering", 2, "CategoryGuid" )]
     [BooleanField( "Enable Prayer Team Flagging", "If enabled, members of the prayer team can flag a prayer request if they feel the request is inappropriate and needs review by an administrator.", false, "Flagging", 3, "EnableCommunityFlagging" )]
     [IntegerField( "Flag Limit", "The number of flags a prayer request has to get from the prayer team before it is automatically unapproved.", false, 1, "Flagging", 4 )]
@@ -54,17 +54,17 @@ namespace RockWeb.Blocks.Prayer
     </div>
     <div class='col-md-6 text-right'>
       {% if PrayerRequest.EnteredDateTime  %}
-          Date Entered: {{  PrayerRequest.EnteredDateTime | Date:'M/d/yyyy'  }}          
+          Date Entered: {{  PrayerRequest.EnteredDateTime | Date:'M/d/yyyy'  }}
       {% endif %}
     </div>
 </div>
-                                                
+
 {{ PrayerRequest.Text | NewlineToBr }}
 
 <div class='attributes margin-t-md'>
 {% for prayerRequestAttribute in PrayerRequest.AttributeValues %}
     {% if prayerRequestAttribute.Value != '' %}
-    <strong>{{ prayerRequestAttribute.AttributeName }}</strong> 
+    <strong>{{ prayerRequestAttribute.AttributeName }}</strong>
     <p>{{ prayerRequestAttribute.ValueFormatted }}</p>
     {% endif %}
 {% endfor %}
@@ -72,16 +72,19 @@ namespace RockWeb.Blocks.Prayer
 
 {% if PrayerRequest.Answer %}
 <div class='margin-t-lg'>
-    <strong>Update</strong> 
+    <strong>Update</strong>
     <br />
     {{ PrayerRequest.Answer | Escape | NewlineToBr }}
 </div>
 {% endif %}
 
 " )]
+    [BooleanField( "Display Campus", "Display the campus filter", true,category: "Filtering", order: 6 )]
     public partial class PrayerSession : RockBlock
     {
         #region Fields
+
+        private const string CAMPUS_PREFERENCE = "prayer-session-{0}-campus";
         private bool _enableCommunityFlagging = false;
         private string _categoryGuidString = string.Empty;
         private int? _flagLimit = 1;
@@ -144,6 +147,7 @@ namespace RockWeb.Blocks.Prayer
             _categoryGuidString = GetAttributeValue( "CategoryGuid" );
             _enableCommunityFlagging = GetAttributeValue( "EnableCommunityFlagging" ).AsBoolean();
             lWelcomeInstructions.Text = GetAttributeValue( "WelcomeIntroductionText" );
+            cpCampus.Visible = GetAttributeValue( "DisplayCampus" ).AsBoolean();
         }
 
         /// <summary>
@@ -159,19 +163,20 @@ namespace RockWeb.Blocks.Prayer
                 DisplayCategories();
                 SetNoteType();
                 lbStart.Focus();
+                cpCampus.SetValue(this.GetUserPreference( string.Format( CAMPUS_PREFERENCE, this.BlockId ) ).AsIntegerOrNull());
                 lbFlag.Visible = _enableCommunityFlagging;
             }
 
             if ( NoteTypeId.HasValue )
             {
-                var noteType = NoteTypeCache.Read( NoteTypeId.Value );
+                var noteType = CacheNoteType.Get( NoteTypeId.Value );
                 if ( noteType != null )
                 {
-                    notesComments.NoteTypes = new List<NoteTypeCache> { noteType };
+                    notesComments.NoteOptions.NoteTypes = new CacheNoteType[] { noteType };
                 }
             }
 
-            notesComments.EntityId = CurrentPrayerRequestId;
+            notesComments.NoteOptions.EntityId = CurrentPrayerRequestId;
 
             if ( lbNext.Visible )
             {
@@ -202,15 +207,26 @@ namespace RockWeb.Blocks.Prayer
                 nbSelectCategories.Visible = false;
             }
 
+            string categoriesPrefix = string.Format( "prayer-categories-{0}-", this.BlockId );
+            SavePreferences( categoriesPrefix );
+            this.SetUserPreference( string.Format( CAMPUS_PREFERENCE, this.BlockId ), cpCampus.SelectedValue );
+
+            SetAndDisplayPrayerRequests( cblCategories );
+
+            if ( PrayerRequestIds.Count <= 0 )
+            {
+                nbPrayerRequests.Visible = true;
+                return;
+            }
+            else
+            {
+                nbPrayerRequests.Visible = false;
+            }
+
             lbNext.Focus();
             lbBack.Visible = false;
 
             pnlChooseCategories.Visible = false;
-
-            string settingPrefix = string.Format( "prayer-categories-{0}-", this.BlockId );
-            SavePreferences( settingPrefix );
-
-            SetAndDisplayPrayerRequests( cblCategories );
         }
 
         /// <summary>
@@ -385,7 +401,7 @@ namespace RockWeb.Blocks.Prayer
         }
 
         /// <summary>
-        /// Binds the 'active' categories for the given top-level category GUID to the list for 
+        /// Binds the 'active' categories for the given top-level category GUID to the list for
         /// the user to choose.
         /// </summary>
         /// <param name="categoryGuid">the guid string of a top-level prayer category</param>
@@ -400,7 +416,7 @@ namespace RockWeb.Blocks.Prayer
             if ( !string.IsNullOrEmpty( categoryGuid ) )
             {
                 Guid guid = new Guid( categoryGuid );
-                var filterCategory = CategoryCache.Read( guid );
+                var filterCategory = CacheCategory.Get( guid );
                 if ( filterCategory != null )
                 {
                     prayerRequestQuery = prayerRequestQuery.Where( p => p.Category.ParentCategoryId == filterCategory.Id );
@@ -469,7 +485,15 @@ namespace RockWeb.Blocks.Prayer
         {
             RockContext rockContext = new RockContext();
             PrayerRequestService service = new PrayerRequestService( rockContext );
-            var prayerRequests = service.GetByCategoryIds( categoriesList.SelectedValuesAsInt ).OrderByDescending( p => p.IsUrgent ).ThenBy( p => p.PrayerCount ).ToList();
+            var prayerRequestQuery = service.GetByCategoryIds( categoriesList.SelectedValuesAsInt );
+
+            var campusId = cpCampus.SelectedValueAsInt();
+            if ( campusId.HasValue )
+            {
+                prayerRequestQuery = prayerRequestQuery.Where( a => a.CampusId == campusId );
+            }
+
+            var prayerRequests = prayerRequestQuery.OrderByDescending( p => p.IsUrgent ).ThenBy( p => p.PrayerCount ).ToList();
             List<int> list = prayerRequests.Select( p => p.Id ).ToList<int>();
 
             PrayerRequestIds = list;
@@ -511,8 +535,7 @@ namespace RockWeb.Blocks.Prayer
             pnlPrayerComments.Visible = prayerRequest.AllowComments ?? false;
             if ( notesComments.Visible )
             {
-                notesComments.EntityId = prayerRequest.Id;
-                notesComments.RebuildNotes( true );
+                notesComments.NoteOptions.EntityId = prayerRequest.Id;
             }
 
             CurrentPrayerRequestId = prayerRequest.Id;

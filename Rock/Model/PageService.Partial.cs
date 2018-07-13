@@ -18,7 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Rock.Data;
-using Rock.Web.Cache;
+using Rock.Cache;
 
 namespace Rock.Model
 {
@@ -119,7 +119,7 @@ namespace Rock.Model
         /// <returns></returns>
         public override Guid? GetGuid( int id )
         {
-            var cacheItem = Rock.Web.Cache.PageCache.Read( id );
+            var cacheItem = Rock.Cache.CachePage.Get( id );
             if ( cacheItem != null )
             {
                 return cacheItem.Guid;
@@ -152,11 +152,6 @@ namespace Rock.Model
 
                 pageService.Add( newPage );
                 rockContext.SaveChanges();
-
-                if ( newPage.ParentPageId.HasValue )
-                {
-                    PageCache.Flush( newPage.ParentPageId.Value );
-                }
                 newPageGuid= newPage.Guid;
 
                 GenerateBlockAttributeValues( pageGuidDictionary, blockGuidDictionary, rockContext, currentPersonAliasId );

@@ -27,7 +27,7 @@ using Rock.Communication;
 using Rock.Data;
 using Rock.Follow;
 using Rock.Model;
-using Rock.Web.Cache;
+using Rock.Cache;
 
 namespace Rock.Jobs
 {
@@ -79,7 +79,9 @@ namespace Rock.Jobs
                             m.GroupMemberStatus == GroupMemberStatus.Active &&
                             m.Person != null &&
                             m.Person.Email != null &&
-                            m.Person.Email != "" )
+                            m.Person.Email != "" &&
+                            m.Person.EmailPreference != EmailPreference.DoNotEmail &&
+                            m.Person.IsEmailActive )
                         .Select( m => m.PersonId )
                         .Distinct();
 
@@ -138,7 +140,7 @@ namespace Rock.Jobs
                                     components.Add( suggestionType.Id, suggestionComponent );
 
                                     // Get the entitytype for this suggestion type
-                                    var suggestionEntityType = EntityTypeCache.Read( suggestionComponent.FollowedType );
+                                    var suggestionEntityType = CacheEntityType.Get( suggestionComponent.FollowedType );
                                     if ( suggestionEntityType != null )
                                     {
                                         var entityIds = new List<int>();
@@ -287,7 +289,7 @@ namespace Rock.Jobs
                             .Distinct()
                             .ToList();
 
-                        var appRoot = Rock.Web.Cache.GlobalAttributesCache.Read( rockContext ).GetValue( "PublicApplicationRoot" );
+                        var appRoot = CacheGlobalAttributes.Get().GetValue( "PublicApplicationRoot", rockContext );
 
                         foreach ( var person in new PersonService( rockContext )
                             .Queryable().AsNoTracking()

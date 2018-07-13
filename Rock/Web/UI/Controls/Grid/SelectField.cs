@@ -36,6 +36,7 @@ namespace Rock.Web.UI.Controls
             : base()
         {
             this.ItemStyle.HorizontalAlign = HorizontalAlign.Center;
+            this.HeaderStyle.HorizontalAlign = HorizontalAlign.Center;
             this.ItemStyle.CssClass = "grid-select-field";
         }
 
@@ -239,7 +240,7 @@ namespace Rock.Web.UI.Controls
             var grid = control as Grid;
             if ( grid != null )
             {
-                ColumnIndex = grid.Columns.IndexOf( this );
+                ColumnIndex = grid.GetColumnIndex( this );
             }
 
             string script = string.Format( @"

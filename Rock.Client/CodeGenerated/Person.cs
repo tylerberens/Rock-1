@@ -35,6 +35,9 @@ namespace Rock.Client
         public int Id { get; set; }
 
         /// <summary />
+        public Rock.Client.Enums.AgeClassification AgeClassification { get; set; }
+
+        /// <summary />
         public DateTime? AnniversaryDate { get; set; }
 
         /// <summary />
@@ -51,6 +54,9 @@ namespace Rock.Client
 
         /// <summary />
         public int? ConnectionStatusValueId { get; set; }
+
+        /// <summary />
+        public DateTime? DeceasedDate { get; set; }
 
         /// <summary />
         public string Email { get; set; }
@@ -99,6 +105,9 @@ namespace Rock.Client
         private bool _IsEmailActive = true;
 
         /// <summary />
+        public bool IsLockedAsChild { get; set; }
+
+        /// <summary />
         public bool IsSystem { get; set; }
 
         /// <summary />
@@ -126,6 +135,9 @@ namespace Rock.Client
 
         /// <summary />
         public int? PhotoId { get; set; }
+
+        /// <summary />
+        public int? PrimaryFamilyId { get; set; }
 
         /// <summary />
         public DateTime? RecordStatusLastModifiedDateTime { get; set; }
@@ -199,12 +211,14 @@ namespace Rock.Client
         public void CopyPropertiesFrom( Person source )
         {
             this.Id = source.Id;
+            this.AgeClassification = source.AgeClassification;
             this.AnniversaryDate = source.AnniversaryDate;
             this.BirthDay = source.BirthDay;
             this.BirthMonth = source.BirthMonth;
             this.BirthYear = source.BirthYear;
             this.CommunicationPreference = source.CommunicationPreference;
             this.ConnectionStatusValueId = source.ConnectionStatusValueId;
+            this.DeceasedDate = source.DeceasedDate;
             this.Email = source.Email;
             this.EmailNote = source.EmailNote;
             this.EmailPreference = source.EmailPreference;
@@ -218,6 +232,7 @@ namespace Rock.Client
             this.InactiveReasonNote = source.InactiveReasonNote;
             this.IsDeceased = source.IsDeceased;
             this.IsEmailActive = source.IsEmailActive;
+            this.IsLockedAsChild = source.IsLockedAsChild;
             this.IsSystem = source.IsSystem;
             this.LastName = source.LastName;
             this.MaritalStatusValueId = source.MaritalStatusValueId;
@@ -227,6 +242,7 @@ namespace Rock.Client
             this.ModifiedAuditValuesAlreadyUpdated = source.ModifiedAuditValuesAlreadyUpdated;
             this.NickName = source.NickName;
             this.PhotoId = source.PhotoId;
+            this.PrimaryFamilyId = source.PrimaryFamilyId;
             this.RecordStatusLastModifiedDateTime = source.RecordStatusLastModifiedDateTime;
             this.RecordStatusReasonValueId = source.RecordStatusReasonValueId;
             this.RecordStatusValueId = source.RecordStatusValueId;
@@ -260,6 +276,9 @@ namespace Rock.Client
 
         /// <summary />
         public DefinedValue ConnectionStatusValue { get; set; }
+
+        /// <summary />
+        public int? DaysUntilAnniversary { get; set; }
 
         /// <summary />
         public int? DaysUntilBirthday { get; set; }

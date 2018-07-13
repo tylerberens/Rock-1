@@ -1,3 +1,347 @@
+Rock McKinley 8.0
+
++ Added a block setting to Communication Entry for simple mode to be non-bulk.
++ Added a block setting to require a campus on the prayer request detail block.
++ Added a block setting to the pre-registration block to require a campus.
++ Added a block to assign attribute values to an Event Occurrence.
++ Added a 'Can Manage Members' option to Group Type Roles, similar to the existing 'Can View' and 'Can Edit' options that can be used to give a role the ability to manage members only for the group they are a member of.
++ Added a connection type filter to the Connection Opportunities filed type. This will allow Connection Opportunity Attribute values to be constrained to the selected Connection Type.
++ Added a file watcher for BlockTypes.
++ Added a new block type for converting Person records to and from Businesses.
++ Added a new connection type filter to the Connection Opportunities filed type. This will allow Connection Opportunity Attribute values to be constrained to the selected Connection Type.
++ Added a new Content Channel View Detail block that can be used to present a content channel item.
++ Added a new data view filter to allow for filtering people who have clicked and opened a specific communication.
++ Added a new Days Until Anniversary field for use with Person Data Views and Reports.
++ Added a new developer control to provide a Captcha for validating a real person.
++ Added a new Fee Report to Registrations.
++ Added a new field type to select a content channel, then an item of that content channel.
++ Added a new 'HasPhoneFilter' DataView filter that will allow filtering people based on if they have a specific phone number type and if they have SMS enabled.
++ Added a new Is Public filter option to the Group Tree.
++ Added a new job and block for automatically and manually processing results from the National Change of Address (NCOA) database.
++ Added a new job that automates the moving of children to their own family when they become an adult based on their age.
++ Added a new person data view filter for Attendance at Campus(es).
++ Added a new PersonByAliasGuid Lava filter.
++ Added a new Post-Add option to the workflow triggers and expanded previous value checking on post-save triggers.
++ Added a new Registration Instruction field to Registrations that will be displayed on the first page of a new registration.
++ Added a new Uniq Lava filter to return a unique set of values from a collection of values.
++ Added a new workflow action for processing a message as if it was being received by the Text-To-Person system directly.
++ Added a Save Then Add button to the Attribute Editor when editing workflows. This should decrease the time it takes to enter attributes for larger workflows.
++ Added a 'Sent Date Time' field to both the Communication and Recipient models, and updated the Communication History block to display the sent (or future send) times.
++ Added a site logo option to sites so that theme editors can make logo changes in Site Detail.
++ Added a workflow action for adding new content channel items.
++ Added a workflow action that sends a web request based on the configured action setting.
++ Added ability to copy ConnectionType in the Connection Type Detail block.
++ Added Age Classification property to the Person model. This will allow for simple and quick filtering on whether someone is an Adult or a Child. An adult is anyone over the age of 18 or marked as an adult in one or more families. A child is anyone less than 18 or a child in all families. If either of these conditions are not met, they are marked as unknown.
++ Added an Add Member capability to the Group Attendance Detail block.
++ Added an internal communications Homepage content channel.
++ Added an option to the Baptism Following Event to support being notified a configured number of years after a baptism date.
++ Added audit panel details to the Registration Template Detail and Registration Instance Detail blocks.
++ Added block settting to hide or show inactive Connection Requests in the Connection Request profile block.
++ Added configurable labels for Group Finder filters.
++ Added Configuration properties to the GroupType Detail block to control which panels are visible on the Group Detail block when editing groups of that type.
++ Added Data Automation for setting Person Connection Status and Family Status.
++ Added Default Connection Status to the block settings for the Public Profile Edit block. If there is no default, the logged-in person's status is used.
++ Added enhancements to Notes.
++ Added Event Occurrence Specific Attribute Values. Added block to assign attribute values to an Event Occurrence.
++ Added 'Family Members Transform' post-filter transformation.
++ Added Family Status to Family.
++ Added Gender Autofill method to the DataAutomation Jobs task.
++ Added IsActive property to Registration template fee. If the fee is not active, it will no longer appear in new registrations. The fee will be listed for existing ones.
++ Added Lucene Search Engine to Universal Search.
++ Added more options on how to use Persisted Data Views when using the 'In Other Data View' filters.
++ Added new avatars and better gender-unknown avatars to use when a profile photo is missing.
++ Added new blocks for viewing interaction data.
++ Added new blocks to show the Fundraising donations for a group and for each member of a group.
++ Added new Data Integrity Settings block and jobs to configure and automate a process for inactivating, reactivating and updating campus of individuals and their family members.
++ Added new FieldType and Attribute for Social Media Accounts.
++ Added new homepage block to allow organizations to easily add staff-related content.
++ Added new Lava command 'taglist' to list registered Lava tags.
++ Added new Lava command to cache the results of a Lava template. See the Lava documentation for usage details.
++ Added new Lava filter to create a Shortlink. See Lava docs for details.
++ Added new Lava filters for 'ToMidnight', 'NextDayOfTheWeek', 'DaysSince' and 'DaysUntil'.
++ Added new UrlDecode and UnescapeDataString Lava filters. Also made an alias for EscapeDataString called 'UrlEncode'.
++ Added new workflow actions for managing registration discount codes.
++ Added option to have a Group Status on Groups.
++ Added option to persist Dataviews to help improve the performance of complex dataviews.
++ Added Person Connection Request data view filter.
++ Added properties to store image dimensions for a BinaryFile.
++ Added requirement that a group sync be tied to a role for Group Sync By Role. Unsynced roles can be manually added to a group. Synced roles cannot be manually added or removed from a group.
++ Added run once job to create the index Interaction.ForiegnKey.
++ Added SanitizeSql to Lava filters to help protect against SQL Injection.
++ Added setting to lock an individual as a child for use with the Age Classification feature.
++ Added support for automated event registration discounts.
++ Added support for Checkr background check.
++ Added support for in-place editing of HTML contents.
++ Added support to the Lava Sql block and Run SQL workflow for Parameterized SQL statements.
++ Added the ability to add Lava directly on a Theme Master Page or Layout file.
++ Added the ability to add/manage HTTP modules inside of Rock.
++ Added the ability to assign security settings to a merge template from the Merge Template Detail block.
++ Added the ability to filter by campus on the Prayer Sessions block. The default is 'enabled'.
++ Added the ability to filter on active Connection Types on the My Connection Requests block.
++ Added the ability to group attendance records by group, location, schedule and date.
++ Added the ability to have alternate search keys for people when checking for existing records. Specifically this will add the ability to search for people by former email addresses.
++ Added the ability to have CSS classes on zones.
++ Added the ability to have inactive interaction channels.
++ Added the ability to mark a registration template fee as inactive. This will prevent the external website from showing the fee while still showing it internally on reports and on the internal registration site. Inactive fees will be listed in gray on the Registration Template Details block.
++ Added the ability to provide instructions on Event Registrations.
++ Added the ability to specify up to three attachments in the SendMail workflow action. 
++ Added the CapitalizeFirstWord Lava text filter.
++ Added the Discount Code report to the Registration Instance Detail.
++ Added the GetEventCalendarFeed webhook for an iCal Feed.
++ Added the Group History feature.
++ Added the ID of the entity to the panel drawer of all detail blocks. This is helpful when writing Lava.
++ Added the option to add people to a tag when viewing the tag's detail page.
++ Cleaned up legacy Lava.
++ Fixed Address Field in registrations not respecting Show in Grid.
++ Fixed an error that would occur in the Group Detail block when saving a group without admin security.
++ Fixed an exception that would occur if a saved short link included a line feed character.
++ Fixed an exception that would occur when deleting a role that has a Member or GroupSync associated with it. The user will now be given a message and a delete will not occur.
++ Fixed an issue where 2/29 of a leap year would change to 2/28.
++ Fixed an issue where personal merge templates were displayed for all users in the template picker when performing a merge.
++ Fixed an issue where selecting a different payment method on Give Now would not work.
++ Fixed an issue where SMS communication templates would give an error when selected in the Communication Wizard.
++ Fixed an issue where the Defined Type list displayed IDs instead of friendly names on reports or dynamic reports.
++ Fixed an issue with connection type workflow qualifiers not being set correctly when first viewed.
++ Fixed an issue with the Attendance Analytics block where despite it being configured to use a group type it still displayed a message indicating a check-in type was required.
++ Fixed and enhanced Captive Portal (Windows version number, incorrect phone number). See Asana tasks 'Add Existing Page to Personal Device Badge', 'FrontPorch Tweaks' and 'FrontPorch'. Updated block settings. Replaced First Name and Last Name block settings with Show Name.
++ Fixed anniversary date persistence after Marital Status is changed from Married to something else. The anniversary date control will only display if the Marital Status is 'married'. If the Marital Status is changed to 'married', the anniversary date will be set to null when the person is saved.
++ Fixed Background Check Grid sorting by name.
++ Fixed Batch List not being able to open closed batches from the dropdown menu in Chrome.
++ Fixed Entity Not Supported Exception in GroupFinder.
++ Fixed form sorting for Person Attribute forms.
++ Fixed group member triggers (from the group or from the group type) to only fire if they are active.
++ Fixed In Group Together following suggestions so inactive group members are not included.
++ Fixed issue where the Data Automation job inactivated new people by adding a setting to ignore new records when inactivating records.
++ Fixed missing Workflow Trigger Qualifier columns.
++ Fixed order of Financial Account lists in the Transaction Matching block. Ordering is now a flattened hierarchical list (i.e., sub accounts are listed under the parent accounts but are not indented).
++ Fixed required expiration for content channel date ranges without time.
++ Fixed re-selecting Registered By person not overwriting existing fields.
++ Fixed scrolling issue on the Transaction Entry block (Give Now). Default behavior will be to scroll to the same window position after clicking Next.
++ Fixed sorting in Bio Action menu. Workflow items are sorted alphabetically at the bottom of the menu.
++ Fixed SSN Control to honor the Required property.
++ Fixed the Group Detail block so a group sync configuration will not prevent the group from being deleted.
++ Fixed the Registration Detail block to always set the template group member status.
++ Fixed the Tag grid Export to Excel function to prevent it from creating an invalid file.
++ Fixed Universal Search Site Crawler to honor the 'robots nofollow' tag to indicate that links should not be followed.
++ Fixed unlisted phone numbers causing errors when giving.
++ Fixed validation errors on FamilyPreRegistration block for adult #2 when there is no redirect URL specified. Redirect URL is now required.
++ Fixed 'workflowactivate' Lava command not to make attribute names lowercase.
++ Implement Required Fees
++ Improved the Group Detail Group Sync display. The panel will now only show if the group type allows sync or if the group has at least one sync already. If the group type does not allow syncing, the add button under the grid will not be displayed. If the user does not have access, the section will not display.
++ Improved the Group Member List active sync label to show all the roles being synced in a tool tip.
++ Improved the Group Member list grid not to display IsAddedbySync column if the group has no GroupSyncs configured.
++ Removed redundant Group Type history option from Calculate Family Analytics. The new Group History feature will now do this instead. To enable group history for these group types, edit each group type and select the 'Enable Group History' option.
++ Removed the test mode from the Protect My Ministry integration by their request. This function should only be used by developers as these test requests do not go anywhere.
++ Switched Mailgun to use HTTP API.
++ Updated Calculate Person Duplicates Command Timeout from 5 minutes to 30 minutes.
++ Updated currency box control to allow negative values.
++ Updated Event Registrants list to include age of registrant if BirthDate field is set to show on grid.
++ Updated Font Awesome to 5.0.12.
++ Updated FontAwesome to 5.0.13.
++ Updated Group Map to only show active group members.
++ Updated label printing to removing '^JUS' from labels as they are created or edited. This should speed up printing and increase the memory life of the printer.
++ Updated Page View Interactions to report the actual browser title instead of the page title stored in the database. This makes the title more specific as many pages dynamically update the page title on load.
++ Updated Rock's built-in theme to a new/update look. If you've made customizations to the internal theme, you may wish to make a backup of the old theme before upgrading. (In general, though, we don't support custom changes to the core internal theme other than what's available through the theme editor).
++ Updated Scheduled Transaction list Lava to include the masked card number.
++ Updated Text to Workflow to use new Age Classification property to order duplicate person matches (adults first).
++ Updated the Activate Workflow Action to optionally allow saving the new workflow to an Attribute on the originating workflow.
++ Updated the attribute editor so when it is used inside a modal dialog it will display the ID of the attribute being edited in the title of the dialog.
++ Updated the Badge 'In Group of Type' to use the color picker.
++ Updated the Block Properties and Zone modals to provide better information on the type and location of the blocks on the page.
++ Updated the Calendar Lava block to support configuring a specific list of campuses that should be enabled on the block.
++ Updated the Check-in Identifiers to be associated with a person instead of a family. This allows for saving the person that did the check-in with the attendance records.
++ Updated the Check-in Schedule Builder to display schedule columns in name order.
++ Updated the default CalendarItem.lava to use the event's Summary as the meta description for better SEO behavior. Any custom CalendarItem lava files should be updated with the same change.
++ Updated the default image resizing to mode=clip. This resizes the image to fit without cropping or stretching.
++ Updated the Defined Value List block to remove the tooltip that displayed the ID, as it often conflicts with the modal. The ID is available on the modal.
++ Updated the Download Payments job so it can be configured to download payments only for a specific gateway.
++ Updated the Email Editor to improve drag and drop usability.
++ Updated the Entity Type list block to only show true entities.
++ Updated the Giving Analytics block to include Phone and Address when exporting the grid.
++ Updated the Group Detail block to allow the view mode to be defined using Lava.
++ Updated the Group Member Add workflow actions to not error if a selected person already belongs to the selected group.
++ Updated the homepage, moving staff updates to the top of the page and removing the Welcome to Rock default content if it is unchanged.
++ Updated the Model Map block to support filters and query string parsing.
++ Updated the Person Merge block so that the family  name and campus can be selected.
++ Updated the Personal Device List block to enable it to be used when not tied to a specific Person.
++ Updated the Pledge List block to display summary totals at the bottom by fund.
++ Updated the Pre-HTML and Post-HTML block properties to support all Lava commands.
++ Updated the Registration template to allow making fees required.
++ Updated the Rock Clean-up job to delete any communications labeled 'Transient' that are over one week old.
++ Updated the Rock Shop page to load the documentation link in a new browser window.
++ Updated the sending of future communications to a communication list so the recipients reflect the members of the list at the time the communication is sent rather than the time the communication was created.
++ Updated the Spouse Name person report select field to optionally include the last name.
++ Updated the Theme Editor to show which theme is being edited.
++ Updated the Transaction Matching block so that financial transaction images are magnified when clicked.
++ Updated the Workflow Type picker to only show workflow types that are active and that the user is authorized to view.
++ Updated workflow editing to support adding multiple attributes at a time (using new Save Then Add button).
+
+
+Rock McKinley 7.4
+
++ Added a new badge that shows interactions for a specific channel.
++ Added a new check-in workflow action that allows filtering groups by gender.
++ Added a new Data Automation job and a block to configure how data is automatically updated. This includes the inactivating/reactivating of person records, changing family campus, and moving adult children into their own new families.
++ Added a new 'Decrypt' Lava filter.
++ Added a new 'Family Registration' block for families to pre-register before visiting for the first time.
++ Added a new Gender field type.
++ Added a new option to the Prayer Request List block that can be used to limit the list of prayer requests to only those that are public.
++ Added a Previous button to the Transaction Detail block.
++ Added additional data view filters and report selects for Benevolence, Prayer Requests, and Scheduled Transactions.
++ Added an additional merge field to the Interaction Component List block to return the number of interactions by component.
++ Added an option to hide the internal login option on the Login block.
++ Added an option to the Login Block so that it will go immediately to the external auth url if that is the login option.
++ Added an option to the Person detail screen in Check-in Manager to enable showing related people who are allowed to check-in the selected person, in addition to only family members.
++ Added an optional append order to the Lava Fallback text filter.
++ Added CC and BCC support to the Email Form block.
++ Added Connection Status as a possible Person Field when building Registration Templates.
++ Added email address to the information displayed on the Prayer Request Detail block.
++ Added filters for the Interactions List block.
++ Added Lava shortcode to embed videos from Vimeo.
++ Added Person ID to the Excel file when exporting from the Transaction List block.
++ Added Spark integration reference number to Payflow Pro gateway. This will help Payflow Pro identify transactions that came from Rock.
++ Added support for plugins to use custom SQL Functions in LINQ queries.
++ Added the ability to filter interaction blocks by a specific person through the query string.
++ Added the ability to set the connection opportunity via a block setting on the Connection Opportunity Sign-up block.
++ Fixed a bug in the Calendarlava block where switching between week and month without clicking on the calendar first would select the first week then the previous month.
++ Fixed a history point creation exception on event registration.
++ Fixed an exception that would occur in the Group Sync job when attempting to create a login for a person with no name.
++ Fixed an issue preventing user-drawn geofences from filtering groups and people.
++ Fixed an issue that kept inline Lava shortcodes from having recursive capabilities.
++ Fixed an issue when impersonating another user that would result in the Restore button not always being visible in the administrator toolbar.
++ Fixed an issue where copying a communication template would not reset IsSystem to false.
++ Fixed an issue where text and SMS messages created through a workflow, job, etc., would not resolve Lava commands successfully.
++ Fixed an issue where the URL value on Redirect workflow actions was getting lost.
++ Fixed an issue with communication recipient fields not working for a dataview when used by a Dynamic Report block.
++ Fixed an issue with not being able to scroll vertically on an IOS device from a tree view (i.e. Group Tree, Account Tree, Page Map, etc).
++ Fixed an issue with several list blocks where filtering the list by an attribute's default value would not return all of the correct items.
++ Fixed Attribute Matrix editor not enforcing validation in some situations. This fixes an issue where validation would not be enforced when an attribute matrix was used in the Person Profile attributes.
++ Fixed bug in Purchased Plugins page that would throw exception if a previously purchased plugin was not installed.
++ Fixed check-in so that the age comparisons are only as precise as the specified number of digits, and will no longer require entering extremely precise age ranges with a large number of decimal places.
++ Fixed check-out success message to correctly show the schedule name instead of the frequency.
++ Fixed Communication Entry to create recipient correctly when linked to a person from another page (i.e., from Person Profile).
++ Fixed confirmation email for registration never being received. Changed email send logic to better fall back on global org email for the from address if one is not specified in the email object.
++ Fixed error in the batch list that prevented batches in the grid list from being opened or closed using the drop down list. (Fixes #2977)
++ Fixed error that could occur when using the Attribute Editor to edit attributes with different field types and at least one of the field types had multiple configuration controls.
++ Fixed error when adding a person to a new family in a workflow.
++ Fixed event registration so that it displays fees in the correct order.
++ Fixed exception that would occur if creating a communication on a page who's URL was longer than 200 characters (i.e., a shared attendance analytics link).
++ Fixed exceptions that would occur if an attribute's value was null (possibly caused from migrating data).
++ Fixed FileUploader to pass correct arguments when using a grid to store the control.
++ Fixed Group Edit showing Security Role checkbox for users with Edit privileges but not Administrator. Group Edit will only show the Security Role checkbox if the current user is a Rock Administrator.
++ Fixed issue in Fundraising Matching (Transaction Entity Matching) where transactions could be falsely matched after saving changes to one batch, switching to another batch, then saving changes on that batch. (The selection would sometimes be stuck on the selections from the first batch for the corresponding row.)
++ Fixed issue that would result in having to login again after restoring an impersonated user if you never navigated to another page after impersonating them.
++ Fixed issue where communication approval emails did not include the correct link to the communication needing approval.
++ Fixed issue where escaped HTML gets displayed in a grid.
++ Fixed issue where new Content Channel Items were not added to the bottom of the grid if manually reordered.
++ Fixed issue where site's default page was being rendered instead of a 404 page when requesting an invalid page/route.
++ Fixed issue where the registrant's campus was not showing up on the Registrants tab, WaitList tab, and GroupPlacement tab in the Registration Instance Detail block.
++ Fixed issue with not being able to check in a person using the manager override option.
++ Fixed issue with not being able to create a personal communication template from My Settings.
++ Fixed issue with several HTML content areas showing a warning in the code editor.
++ Fixed issue with the pager in the footer of the Podcast Series List for the external example themes.
++ Fixed issue with the RockListBlock saving correct values when an item value included a space.
++ Fixed label security codes not to use variations of '666' for numerical increments.
++ Fixed link paths to send the entire path in notification emails.
++ Fixed Simple Communication Entry block to show SMS medium correctly if that was the only medium configured.
++ Fixed sort ordering on the Notes Lava filter. Both asc and desc are now working as expected.
++ Fixed the ability to link a Registration Instance to an existing Calendar Item.
++ Fixed the age formatting on the My Account page so that "old" displays correctly now after "yrs" instead of after the birth date.
++ Fixed the Benevolence statement to show correct case worker address while printing.
++ Fixed the Communication List block so that it no longer causes an exception when a query error occurs.
++ Fixed the Group Context Setting to allow the Clear Selection option to be blank to match the help text description of the feature.
++ Fixed the Group Context Setting to allow the 'Clear Selection' option to be blank to match the help text description of the feature.
++ Fixed the In Registration Instance data view filter to include anyone who registered multiple times.
++ Fixed the Interaction Session List block so that it does not timeout with a large number of page views.
++ Fixed the Key Value List to correctly display the ^ character.
++ Fixed the links for sharing items to be encoded correctly.
++ Fixed the 'Right' Lava filter to not throw an exception if the request length is  greater than the string length.
++ Fixed the SetPageTitle Lava filter to also update the breadcrumbs.
++ Fixed the standard account confirmation messages for the Account Confirmation block.
++ Fixed the way Person is retrieved in the Lava filters.
++ Fixed Transaction List block to filter transactions correctly when using the 'Campus (of Batch)' filter.
++ Fixed workflow email issue where action buttons would not work.
++ Improved performance of the Batch List block.
++ Removed hyphens from "Thank-you" and "on-going" throughout Rock.
++ Updated EventItemOccurrencesSearchLava, EventDetailWithOccurrencesSearchLava and EventItemOccurrenceListLava to include 'All Campuses' event occurrences when filtering by campus. This makes the functionality consistent with the CalendarLava and EventItemOccurrenceListByAudienceLava block, which include 'All Campuses' events when filtering by campus.
++ Updated exception logging to always log to the RockExceptions.csv file during startup.
++ Updated Giving Amount data filter to include people who didn't have any transactions when doing a Less Than filter.
++ Updated how person and family history records are created so that it is now only created in one shared place instead of each block having to create the history records.
++ Updated Number box to display integers, and Currency box to display with two decimal places. iOS keyboards default to the correct input.
++ Updated the Account Picker control so that it defaults to using the account Name (instead of Public Name) and added a new property to control whether the public name should be used.
++ Updated the Attendance Analytics block so that it can be specific to an individual group.
++ Updated the attendance block to add an additional merge field (AttendanceDate) to the roster merge document for passing in the date that the attendance is for.
++ Updated the attribute editor so that when it is used inside a modal dialog it will display the id of the attribute being edited in the title of the dialog.
++ Updated the Auto Select Days Back option in Family Check-in so that a value of zero will never auto select anyone.
++ Updated the Bulk Update block to improve performance when updating a large number of people.
++ Updated the Calendar Lava block to accept date parameters from the query string.
++ Updated the Check-in Schedule Builder block to support configuring schedules for group types that support check-in, but are not configured through the check-in areas.
++ Updated the Communication Entry Wizard block to remember the template category selection a user selects and default to that same category the next time they create a communication.
++ Updated the Communication Entry wizard not to use hard-coded table widths in order to assist with media queries.
++ Updated the Communication Wizard to indicate that CC/BCC recipients will recieve an email for every recipient in the communication.
++ Updated the configuration of Event Registration so if a '$' character is included with fee cost(s), it will no longer cause an issue.
++ Updated the Connection Request Detail block to hide workflows that are inactive or the user is not authorized to view.
++ Updated the custom Rock check-in font. If you've installed this on your printers, you may want to update it. In some cases, the icons on this font will not accept the proper placement information from the label. See the related Github issue for more details.
++ Updated the Dynamic Data block to support decrypting encrypted values returned by the query.
++ Updated the editor in the new Communication Wizard block so that the controls toolbar is fixed and does not scroll off the screen when scrolling the email content down.
++ Updated the Email Preference Entry block to allow user the option of updating their email address, and added configuration option for customizing which options are displayed.
++ Updated the Family Pre-Registration block to use the Date Part Picker instead of the Date Picker for birth dates.
++ Updated the File Browser to actually disable the Rename, Move and Delete buttons when they are disabled.
++ Updated the Giving Analytics block to support filtering transactions by Transaction Type.
++ Updated the Grade Transition Date global attribute to use a month/day picker, and updated the grade and graduation date logic so it works consistently regardless of culture.
++ Updated the Group Attendance Detail block to allow people with Manage Members security to update attendance.
++ Updated the Group Finder block to only consider 'Active' group members when calculating capacity (to be consistent with all the other places capacity is checked).
++ Updated the Help text on the pledge blocks to clarify the meaning of the total amount and pledge frequency.
++ Updated the HtmlEditor to prevent an issue where switching to WYSIWYG mode would rearrange the text if there were Lava commands. Now Rock will detect if there are Lava commands and automatically start in code editor mode. It will also display a warning and prevent the editor from going to WYSIWYG mode if there are any Lava commands (e.g., if the code contains a {% for %} loop around an HTML Table Row [tr], Rock will detect the Lava and prevent WYSIWYG mode).
++ Updated the Interaction reporting for Short Links to be more readable and show the fields that one would be interested in when looking at short links.
++ Updated the Line Chart Dashboard Widget block to support getting more than one metric partition context from the page.
++ Updated the location services to automatically enable the Smarty Streets integration if no other location services were enabled. Now that Smarty Streets is free it will be default ON. You can turn it off if you wish and it will not be enabled again in the future. Also, removed the Administrator Check-list item for enabling location services.
++ Updated the person badges to align better with Font Awesome 5.
++ Updated the Person Merge block to show unlisted phone numbers with an indicator that it is unlisted. This makes it easier to determine the correct phone number to use.
++ Updated the 'Set Defaults' text on the Dynamic Report block to say 'Reset Filters' so that it better indicates what the link will do.
++ Updated the site's 404 page to display with a result status of 404. Before it would show the page 404 page, but not set the HTTP status to be 404.
++ Updated the Summary of Contributions panel on the Contributions tab of the Person Profile to allow showing less after the user has selected to show more.
++ Updated the text of the Next button on family check-in to be configurable.
++ Updated the Transaction Matching block to remove the unused 'Show Selected Accounts Only' block setting. This functionality is actually controlled by a filter setting and is specific to each user.
++ Updated the Universal Search site crawler to process a robots.txt file correctly and fixed a possible stack overflow issue that would occur if page hierarchy was deep enough.
++ Updated the way SMS Response Codes are generated to prevent infinite loops.
+
+
+Rock McKinley 7.3
+
++ Added 'Order Top-Level Accounts' option to Accounts configuration.
++ Fixed an issue where a person could be removed from a synced group (or security role).
++ Fixed an issue in the Communication Entry blocks where Approvers wouldn't be able to edit a communication that was pending approval.
++ Fixed an issue where Font Awesome font weights were not calculating correctly, causing checkboxes to appear solid.
++ Fixed an issue where the Workflow Entry block would get stuck in a loop if it was passed a command value in the query string.
++ Fixed an issue with pages added using the new Pages editor not defaulting the Show Child Pages property to 'true'. This fixes an issue where the Page Menu block appeared not to be working.
++ Fixed Dynamic Report not showing Labels.
++ Fixed Giving Type Context Picker not setting the current person context correctly in some instances.  This fixes an issue of the contribution statement list lava sometimes not displaying any available statements.
++ Fixed issue where a person could be removed from a synced group (or security role).
++ Fixed issue where Communication Admins and Communication Approvers were not able to see pending communications.
++ Fixed issue where 'Not in Existing Dataview' returned incorrect results.
++ Fixed issue where Scheduled Transactions couldn't be added using the Schedule Transaction List block.
++ Fixed issue with Phone Number field on Reports showing the phone number for mobile regardless of the phone type selected.
++ Fixed matrix attributes being hidden in view mode when used as person attributes.
++ Fixed Merge Template Entry only working if Unsecured file type had a storage type of 'Database'.
++ Fixed Merge Templates not showing Lava Help correctly for GroupMember, etc., when exporting from a Group Member list.
++ Fixed Person Duplicate job taking a long time on some databases.
++ Fixed Person Has Note data filter so that leaving the note type blank will return records that have any type of note.
++ Fixed public calendar showing inactive campuses when the Campus Filter option is enabled.
++ Fixed Send SMS workflow action throwing an exception when the recipient was a group with multiple people in it.
++ Fixed styling of the icons for External Applications to make it more friendly to raster images.
++ Fixed the Attendance Analytics block so that the columns displayed include the same dates as the attendance being calculated. For example, if using a date range of 01/01/18 through 01/31/18, a column will no longer be displayed for 02/04/18 and a date of 02/04/18 will not affect the calculated attendance rate.
++ Updated Copy Communication so that it only requires VIEW security instead of EDIT. This fixes an issue where the Copy Communication button in communication history was not visible to some people.
+
+
+Rock McKinley 7.2
+
++ Fixed communications so that a person's email preference does not affect sending of SMS messages.
++ Updated Bio block on Person Profile page to have a 'Communication Page' block option that defaults to the simple communication page.
++ Fixed Registration Instance List Block by removing unused field from the grid.
++ Fixed issue where the Active Registration Instance List block did not show instances when blank dates were present.
+
+
 Rock McKinley 7.1
 
 + Added a delete confirmation when deleting members from the Leader Toolbox.

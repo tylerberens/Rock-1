@@ -24,6 +24,7 @@ using System.Runtime.Serialization;
 
 using Rock.Security;
 using Rock.Data;
+using Rock.Cache;
 
 namespace Rock.Model
 {
@@ -39,7 +40,8 @@ namespace Rock.Model
     [RockDomain( "Workflow" )]
     [Table( "WorkflowType" )]
     [DataContract]
-    public partial class WorkflowType : Model<WorkflowType>, IOrdered, ICategorized
+    public partial class WorkflowType : Model<WorkflowType>, IOrdered, ICategorized, IHasActiveFlag, ICacheable
+
     {
 
         #region Entity Properties
@@ -60,7 +62,12 @@ namespace Rock.Model
         /// A <see cref="System.Boolean"/> that is <c>true</c> if the WorkflowType is active; otherwise <c>false</c>.
         /// </value>
         [DataMember]
-        public bool? IsActive { get; set; }
+        public bool IsActive
+        {
+            get { return _isActive; }
+            set { _isActive = value; }
+        }
+        private bool _isActive = true;
 
         /// <summary>
         /// Gets or sets the workflow identifier prefix.
@@ -317,6 +324,28 @@ namespace Rock.Model
 
         #endregion
 
+        #region ICacheable
+
+        /// <summary>
+        /// Gets the cache object associated with this Entity
+        /// </summary>
+        /// <returns></returns>
+        public IEntityCache GetCacheObject()
+        {
+            return CacheWorkflowType.Get( this.Id );
+        }
+
+        /// <summary>
+        /// Updates any Cache Objects that are associated with this entity
+        /// </summary>
+        /// <param name="entityState">State of the entity.</param>
+        /// <param name="dbContext">The database context.</param>
+        public void UpdateCache( System.Data.Entity.EntityState entityState, Rock.Data.DbContext dbContext )
+        {
+            CacheWorkflowType.UpdateCachedEntity( this.Id, entityState );
+        }
+
+        #endregion
     }
 
     #region Entity Configuration

@@ -21,6 +21,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
+using Rock;
+
 /// <summary>
 /// MEF Directory Catalog that will handle outdated MEF Components
 /// </summary>
@@ -35,23 +37,27 @@ public class SafeDirectoryCatalog : ComposablePartCatalog
     /// <param name="baseType">Type of the base.</param>
     public SafeDirectoryCatalog( string directory, Type baseType )
     {
+        // blacklist of files that would never have Rock MEF components
+        string[] ignoredFileStart = { "Lucene.", "Microsoft.", "msvcr100.", "System." };
+
         // get all *.dll in the current and subdirectories, except for *.resources.dll and the sql server type library files 
         var files = Directory.EnumerateFiles( directory, "*.dll", SearchOption.AllDirectories )
                         .Where( a => !a.EndsWith( ".resources.dll", StringComparison.OrdinalIgnoreCase )
-                                    && !a.EndsWith( "msvcr100.dll", StringComparison.OrdinalIgnoreCase )
-                                    && !a.EndsWith( "SqlServerSpatial110.dll", StringComparison.OrdinalIgnoreCase ) );
+                                    &&  !ignoredFileStart.Any( i => Path.GetFileName(a).StartsWith(i, StringComparison.OrdinalIgnoreCase) ));
 
         _catalog = new AggregateCatalog();
         string baseTypeAssemblyName = baseType.Assembly.GetName().Name;
 
         var loadedAssembliesDictionary = AppDomain.CurrentDomain.GetAssemblies().Where( a => !a.IsDynamic && !a.GlobalAssemblyCache && !string.IsNullOrWhiteSpace( a.Location ) )
-            .ToDictionary( k => new Uri( k.CodeBase ).LocalPath, v => v );
+            .DistinctBy(k => new Uri( k.CodeBase ).LocalPath )
+            .ToDictionary( k => new Uri( k.CodeBase ).LocalPath, v => v, StringComparer.OrdinalIgnoreCase );
 
         foreach ( var file in files )
         {
             try
             {
-                Assembly loadedAssembly = loadedAssembliesDictionary.Where( a => a.Key.Equals( file, StringComparison.OrdinalIgnoreCase ) ).Select( a => a.Value ).FirstOrDefault();
+                Assembly loadedAssembly = loadedAssembliesDictionary.GetValueOrNull( file );
+
                 AssemblyCatalog assemblyCatalog = null;
 
                 if ( loadedAssembly != null )
@@ -78,7 +84,11 @@ public class SafeDirectoryCatalog : ComposablePartCatalog
             }
             catch ( ReflectionTypeLoadException e )
             {
-                // TODO: Add error logging
+                foreach ( var loaderException in e.LoaderExceptions )
+                {
+                    Rock.Model.ExceptionLogService.LogException( new Exception( "Unable to load MEF from " + file, loaderException ) );
+                }
+
                 string msg = e.Message;
             }
         }

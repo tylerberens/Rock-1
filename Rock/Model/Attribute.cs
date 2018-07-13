@@ -22,8 +22,10 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity.ModelConfiguration;
 using System.Runtime.Serialization;
 using Rock.Data;
+using Rock.Cache;
 using Rock.Security;
-using Rock.Web.Cache;
+using System.Linq;
+using System.Data.Entity.Infrastructure;
 
 namespace Rock.Model
 {
@@ -33,7 +35,7 @@ namespace Rock.Model
     [RockDomain( "Core" )]
     [Table( "Attribute" )]
     [DataContract]
-    public partial class Attribute : Model<Attribute>, IOrdered
+    public partial class Attribute : Model<Attribute>, IOrdered, ICacheable
     {
 
         /// <summary>
@@ -227,6 +229,24 @@ namespace Rock.Model
         [DataMember]
         public bool IsAnalyticHistory { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether this attribute is active.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this instance is active; otherwise, <c>false</c>.
+        /// </value>
+        [DataMember]
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether changes to this attribute's attribute values should be logged in AttributeValueHistorical
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [enable history]; otherwise, <c>false</c>.
+        /// </value>
+        [DataMember]
+        public bool EnableHistory { get; set; } = false;
+
         #endregion
 
         #region Virtual Properties
@@ -295,7 +315,7 @@ namespace Rock.Model
 
                 if ( entityTypeId.HasValue )
                 {
-                    var entityType = EntityTypeCache.Read( entityTypeId.Value );
+                    var entityType = CacheEntityType.Get( entityTypeId.Value );
                     var type = entityType.GetEntityType();
                     if ( type != null && 
                         ( typeof( ISecured ).IsAssignableFrom( type ) )  &&
@@ -324,7 +344,7 @@ namespace Rock.Model
             if ( state != System.Data.Entity.EntityState.Deleted )
             {
                 // ensure that the BinaryFile.IsTemporary flag is set to false for any BinaryFiles that are associated with this record
-                var fieldTypeCache = FieldTypeCache.Read( this.FieldTypeId );
+                var fieldTypeCache = CacheFieldType.Get( this.FieldTypeId );
                 if ( fieldTypeCache.Field is Rock.Field.Types.BinaryFileFieldType )
                 {
                     Guid? binaryFileGuid = DefaultValue.AsGuidOrNull();
@@ -352,6 +372,134 @@ namespace Rock.Model
         public override string ToString()
         {
             return this.Key;
+        }
+
+        #endregion
+
+        #region ICacheable
+
+        private int? originalEntityTypeId;
+        private string originalEntityTypeQualifierColumn;
+        private string originalEntityTypeQualifierValue;
+
+        /// <summary>
+        /// Method that will be called on an entity immediately after the item is saved by context
+        /// </summary>
+        /// <param name="dbContext">The database context.</param>
+        /// <param name="entry">The entry.</param>
+        /// <param name="state">The state.</param>
+        public override void PreSaveChanges( Data.DbContext dbContext, DbEntityEntry entry, System.Data.Entity.EntityState state )
+        {
+            if ( state == System.Data.Entity.EntityState.Modified || state == System.Data.Entity.EntityState.Deleted )
+            {
+                originalEntityTypeId = entry.OriginalValues["EntityTypeId"]?.ToString().AsIntegerOrNull();
+                originalEntityTypeQualifierColumn = entry.OriginalValues["EntityTypeQualifierColumn"]?.ToString();
+                originalEntityTypeQualifierValue = entry.OriginalValues["EntityTypeQualifierValue"]?.ToString();
+            }
+
+            base.PreSaveChanges( dbContext, entry, state );
+        }
+
+        /// <summary>
+        /// Gets the cache object associated with this Entity
+        /// </summary>
+        /// <returns></returns>
+        public IEntityCache GetCacheObject()
+        {
+            return CacheAttribute.Get( this.Id );
+        }
+
+        /// <summary>
+        /// Updates any Cache Objects that are associated with this entity
+        /// </summary>
+        /// <param name="entityState">State of the entity.</param>
+        /// <param name="dbContext">The database context.</param>
+        public void UpdateCache( System.Data.Entity.EntityState entityState, Rock.Data.DbContext dbContext )
+        {
+            CacheAttribute.UpdateCachedEntity( this.Id, entityState );
+            CacheAttribute.UpdateCacheEntityAttributes( this, entityState );
+
+            int? entityTypeId;
+            string entityTypeQualifierColumn;
+            string entityTypeQualifierValue;
+
+            if ( entityState == System.Data.Entity.EntityState.Deleted )
+            {
+                entityTypeId = originalEntityTypeId;
+                entityTypeQualifierColumn = originalEntityTypeQualifierColumn;
+                entityTypeQualifierValue = originalEntityTypeQualifierValue;
+            }
+            else
+            {
+                entityTypeId = this.EntityTypeId;
+                entityTypeQualifierColumn = this.EntityTypeQualifierColumn;
+                entityTypeQualifierValue = this.EntityTypeQualifierValue;
+            }
+
+            if ( ( !entityTypeId.HasValue || entityTypeId.Value == 0 ) && string.IsNullOrEmpty( entityTypeQualifierColumn ) && string.IsNullOrEmpty( entityTypeQualifierValue ) )
+            {
+                CacheGlobalAttributes.Remove();
+            }
+
+            if ( entityTypeId.HasValue )
+            {
+                if ( entityTypeId == CacheEntityType.GetId<Block>() )
+                {
+                    // Update BlockTypes/Blocks that reference this attribute
+                    if ( entityTypeQualifierColumn.Equals( "BlockTypeId", StringComparison.OrdinalIgnoreCase ) )
+                    {
+                        int? blockTypeId = entityTypeQualifierValue.AsIntegerOrNull();
+                        if ( blockTypeId.HasValue )
+                        {
+                            CacheBlockType.FlushItem( blockTypeId.Value );
+
+                            foreach ( var blockId in new BlockService( dbContext as RockContext ).GetByBlockTypeId( blockTypeId.Value ).Select( a => a.Id ).ToList() )
+                            {
+                                CacheBlock.FlushItem( blockId );
+                            }
+                        }
+                    }
+                }
+                else if ( entityTypeId == CacheEntityType.GetId<DefinedValue>() )
+                {
+                    // Update DefinedTypes/DefinedValues that reference this attribute
+                    if ( entityTypeQualifierColumn.Equals( "DefinedTypeId", StringComparison.OrdinalIgnoreCase ) )
+                    {
+                        int? definedTypeId = entityTypeQualifierValue.AsIntegerOrNull();
+                        if ( definedTypeId.HasValue )
+                        {
+                            CacheDefinedType.FlushItem( definedTypeId.Value );
+
+                            foreach ( var definedValueId in new DefinedValueService( dbContext as RockContext ).GetByDefinedTypeId( definedTypeId.Value ).Select( a => a.Id ).ToList() )
+                            {
+                                CacheDefinedValue.FlushItem( definedValueId );
+                            }
+                        }
+                    }
+                }
+                else if ( entityTypeId == CacheEntityType.GetId<WorkflowActivityType>() )
+                {
+                    if ( entityTypeQualifierColumn.Equals( "ActivityTypeId", StringComparison.OrdinalIgnoreCase ) )
+                    {
+                        int? activityTypeId = entityTypeQualifierValue.AsIntegerOrNull();
+                        if ( activityTypeId.HasValue )
+                        {
+                            CacheWorkflowActivityType.FlushItem( activityTypeId.Value );
+                        }
+                    }
+                }
+                else if ( entityTypeId == CacheEntityType.GetId<GroupType>() )
+                {
+                    if ( entityTypeQualifierColumn.Equals( "Id", StringComparison.OrdinalIgnoreCase ) )
+                    {
+                        int? groupTypeId = entityTypeQualifierValue.AsIntegerOrNull();
+                        if ( groupTypeId.HasValue )
+                        {
+                            CacheGroupType.FlushItem( groupTypeId.Value );
+                        }
+                    }
+                }
+            }
         }
 
         #endregion

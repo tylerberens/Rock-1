@@ -139,7 +139,7 @@ namespace Rock
 
                 sbDebug.AppendLine( "\n" );
 
-                StackTrace st = new StackTrace( 1, true );
+                StackTrace st = new StackTrace( 2, true );
                 var frames = st.GetFrames().Where( a => a.GetFileName() != null );
 
                 sbDebug.AppendLine( string.Format( "/* Call# {0}*/", DebugHelper._callCounts ) );
@@ -178,12 +178,17 @@ namespace Rock
 
                 sbDebug.AppendLine( "\nEND\nGO\n\n" );
 
+                System.Diagnostics.Debug.Write( sbDebug.ToString() );
+
+                var sqlConnection = command.Connection as System.Data.SqlClient.SqlConnection;
+
+                sqlConnection.StatisticsEnabled = true;
+                sqlConnection.ResetStatistics();
+
                 if ( userState == null )
                 {
                     userState = new DebugHelperUserState { CallNumber = DebugHelper._callCounts, Stopwatch = Stopwatch.StartNew() };
                 }
-
-                System.Diagnostics.Debug.Write( sbDebug.ToString() );
             }
 
             /// <summary>
@@ -198,7 +203,14 @@ namespace Rock
                 if ( debugHelperUserState != null )
                 {
                     debugHelperUserState.Stopwatch.Stop();
-                    System.Diagnostics.Debug.Write( string.Format( "\n/* Call# {0}: ElapsedTime [{1}ms]*/\n", debugHelperUserState.CallNumber, debugHelperUserState.Stopwatch.Elapsed.TotalMilliseconds ) );
+
+                    var sqlConnection = command.Connection as System.Data.SqlClient.SqlConnection;
+
+                    var stats = sqlConnection.RetrieveStatistics();
+                    sqlConnection.StatisticsEnabled = false;
+                    var commandExecutionTimeInMs = ( long ) stats["ExecutionTime"];
+
+                    System.Diagnostics.Debug.Write( $"\n/* Call# {debugHelperUserState.CallNumber}: ElapsedTime [{debugHelperUserState.Stopwatch.Elapsed.TotalMilliseconds}ms], SQLConnection.Statistics['ExecutionTime'] = [{commandExecutionTimeInMs}ms] */\n" );
                 }
             }
         }
@@ -209,10 +221,27 @@ namespace Rock
         private static DebugLoggingDbCommandInterceptor _debugLoggingDbCommandInterceptor = new DebugLoggingDbCommandInterceptor();
 
         /// <summary>
+        /// SQLs the logging start.
+        /// </summary>
+        public static void SQLLoggingStart()
+        {
+            SQLLoggingStart( null );
+        }
+
+        /// <summary>
+        /// Starts logging all EF SQL Calls to the Debug Output Window as T-SQL Blocks
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        public static void SQLLoggingStart( RockContext rockContext )
+        {
+            SQLLoggingStart( ( DbContext ) rockContext );
+        }
+
+        /// <summary>
         /// Starts logging all EF SQL Calls to the Debug Output Window as T-SQL Blocks
         /// </summary>
         /// <param name="dbContext">The database context.</param>
-        public static void SQLLoggingStart( System.Data.Entity.DbContext dbContext = null )
+        public static void SQLLoggingStart( System.Data.Entity.DbContext dbContext )
         {
             _callCounts = 0;
             SQLLoggingStop();
@@ -229,20 +258,21 @@ namespace Rock
         }
 
         /// <summary>
-        /// Starts logging all EF SQL Calls to the Debug Output Window as T-SQL Blocks
+        /// Enables or Disables SqlLogging
         /// </summary>
-        /// <param name="dbContext">The database context.</param>
-        public static void SqlLoggingStart( this System.Data.Entity.DbContext dbContext )
+        /// <param name="dbContext">The database context to filter logs to.</param>
+        /// <param name="enable">if set to <c>true</c> [enable].</param>
+        public static void SqlLogging( this System.Data.Entity.DbContext dbContext, bool enable )
         {
-            DebugHelper.SQLLoggingStart( dbContext );
-        }
+            if ( enable )
+            {
+                DebugHelper.SQLLoggingStart( dbContext );
+            }
+            else
+            {
+                DebugHelper.SQLLoggingStop();
+            }
 
-        /// <summary>
-        /// Stops logging all EF SQL Calls to the Debug Output Window
-        /// </summary>
-        public static void SQLLoggingStop( this System.Data.Entity.DbContext dbContext )
-        {
-            DebugHelper.SQLLoggingStop();
         }
     }
 }

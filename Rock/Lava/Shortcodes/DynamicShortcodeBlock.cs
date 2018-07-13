@@ -24,7 +24,7 @@ using DotLiquid;
 using DotLiquid.Exceptions;
 using DotLiquid.Util;
 using Rock.Data;
-using Rock.Web.Cache;
+using Rock.Cache;
 using Rock.Model;
 using System;
 using Rock.Lava.Blocks;
@@ -33,7 +33,7 @@ using System.Dynamic;
 namespace Rock.Lava.Shortcodes
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public class DynamicShortcodeBlock : RockLavaShortcodeBlockBase
     {
@@ -41,7 +41,7 @@ namespace Rock.Lava.Shortcodes
 
         string _markup = string.Empty;
         string _tagName = string.Empty;
-        LavaShortcodeCache _shortcode;
+        CacheLavaShortcode _shortcode;
         Dictionary<string,object> _internalMergeFields;
         string _enabledSecurityCommands = "";
 
@@ -55,7 +55,7 @@ namespace Rock.Lava.Shortcodes
         public override void OnStartup()
         {
             // get all the block dynamic shortcodes and register them
-            var blockShortCodes = LavaShortcodeCache.All( false ).Where( s => s.TagType == TagType.Block );
+            var blockShortCodes = CacheLavaShortcode.All().Where( s => s.TagType == TagType.Block );
 
             foreach(var shortcode in blockShortCodes )
             {
@@ -75,7 +75,7 @@ namespace Rock.Lava.Shortcodes
         {
             _markup = markup;
             _tagName = tagName;
-            _shortcode = LavaShortcodeCache.Read( _tagName );
+            _shortcode = CacheLavaShortcode.All().Where( c => c.TagName == tagName ).FirstOrDefault();
 
             base.Initialize( tagName, markup, tokens );
         }
@@ -157,7 +157,7 @@ namespace Rock.Lava.Shortcodes
                 _enabledSecurityCommands = context.Registers["EnabledCommands"].ToString();
             }
 
-            var shortcode = LavaShortcodeCache.Read( _tagName );
+            var shortcode = CacheLavaShortcode.Get( _shortcode.Id );
 
             if ( shortcode != null )
             {
@@ -202,8 +202,8 @@ namespace Rock.Lava.Shortcodes
                 else
                 {
                     parms.AddOrReplace( "blockContentExists", false );
-                }  
-                
+                }
+
                 // next ensure they did not use any entity commands in the block that are not allowed
                 // this is needed as the shortcode it configured to allow entities for processing that
                 // might allow more entities than the source block, template, action, etc allows
@@ -284,7 +284,7 @@ namespace Rock.Lava.Shortcodes
                             var dynamicParm = new Dictionary<string, Object>();
                             dynamicParm.Add( "content", parmContent );
 
-                            var parmItems = Regex.Matches( tagParms, "(.*?:'[^']+')" )
+                            var parmItems = Regex.Matches( tagParms, "(.*?:'[^']*')" )
                                 .Cast<Match>()
                                 .Select( m => m.Value )
                                 .ToList();
@@ -332,7 +332,7 @@ namespace Rock.Lava.Shortcodes
                         matchExists = false;
                         blockContent = blockContent + "Warning: invalid child parameter definition.";
                     }
-                    
+
                 }
                 else
                 {
@@ -349,7 +349,6 @@ namespace Rock.Lava.Shortcodes
         /// <param name="markup">The markup.</param>
         /// <param name="context">The context.</param>
         /// <returns></returns>
-        /// <exception cref="System.Exception">No parameters were found in your command. The syntax for a parameter is parmName:'' (note that you must use single quotes).</exception>
         private Dictionary<string, object> ParseMarkup( string markup, Context context )
         {
             var parms = new Dictionary<string, object>();
@@ -370,7 +369,7 @@ namespace Rock.Lava.Shortcodes
             // first run lava across the inputted markup
             var resolvedMarkup = markup.ResolveMergeFields( _internalMergeFields );
 
-            var markupItems = Regex.Matches( resolvedMarkup, "(.*?:'[^']+')" )
+            var markupItems = Regex.Matches( resolvedMarkup, "(.*?:'[^']*')" )
                 .Cast<Match>()
                 .Select( m => m.Value )
                 .ToList();

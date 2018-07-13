@@ -25,7 +25,7 @@ using System.Web.UI.WebControls;
 
 using Rock.Data;
 using Rock.Model;
-using Rock.Web.Cache;
+using Rock.Cache;
 using Rock.Web.UI.Controls;
 
 namespace Rock.Reporting.DataFilter.Person
@@ -92,7 +92,7 @@ namespace Rock.Reporting.DataFilter.Person
             ddlHasPhoneOfType.CssClass = "js-hasphoneoftype";
             ddlHasPhoneOfType.ID = $"{filterControl.ID}_ddlHasPhoneOfType";
             ddlHasPhoneOfType.Items.Add( new ListItem( "Has Phone Type", "True" ) );
-            ddlHasPhoneOfType.Items.Add( new ListItem( "Does't Have Phone Type", "False" ) );
+            ddlHasPhoneOfType.Items.Add( new ListItem( "Doesn't Have Phone Type", "False" ) );
             ddlHasPhoneOfType.SelectedValue = "True";
             filterControl.Controls.Add( ddlHasPhoneOfType );
 
@@ -101,7 +101,7 @@ namespace Rock.Reporting.DataFilter.Person
             ddlPhoneNumberType.CssClass = "js-phonetype";
             ddlPhoneNumberType.ID = $"{filterControl.ID}_ddlPhoneNumberType";
             ddlPhoneNumberType.Items.Add( new ListItem("Any Phone", string.Empty) );
-            foreach ( var value in DefinedTypeCache.Read( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE.AsGuid() ).DefinedValues.OrderBy( a => a.Order ).ThenBy( a => a.Value ) )
+            foreach ( var value in CacheDefinedType.Get( Rock.SystemGuid.DefinedType.PERSON_PHONE_TYPE.AsGuid() ).DefinedValues.OrderBy( a => a.Order ).ThenBy( a => a.Value ) )
             {
                 ddlPhoneNumberType.Items.Add( new ListItem( value.Value.EndsWith( "Phone" ) ? value.Value : value.Value + " Phone", value.Guid.ToString() ) );
             }
@@ -219,18 +219,7 @@ namespace Rock.Reporting.DataFilter.Person
         /// </value>
         public override string GetClientFormatSelection( Type entityType )
         {
-            return @" 
-function() {
-  var has = $('.js-hasphoneoftype', $content)find(':selected').text();
-  var phoneType = $('.js-phonetype', $content).find(':selected').text();
-  var sms = $('.js-hassms', $content).find(':selected').text();
-
-  if(sms == 'True') { sms = 'and Has SMS Enabled'; }
-  else if(sms == 'False' { sms = 'and Doesn\\'t have SMS Enabled'; }
-
-  var result = has + phoneType + ' Phone ' + sms;
-
-  return result; }";
+            return string.Format( @"Rock.reporting.formatFilterForHasPhoneFilter($content)" );
         }
 
         /// <summary>
@@ -245,10 +234,10 @@ function() {
             string[] selections = selection.Split( '|' );
             if ( selections.Length >= 3 )
             {
-                string hasPhoneOfType = selections[0].AsBoolean() ? "Has " : "Does't Have ";
+                string hasPhoneOfType = selections[0].AsBoolean() ? "Has " : "Doesn't Have ";
                 Guid? phoneType = selections[1].AsGuidOrNull();
 
-                string phoneTypeName = phoneType == null ? "Any Phone" : DefinedValueCache.Read( phoneType.Value ).Value + " Phone";
+                string phoneTypeName = phoneType == null ? "Any Phone" : CacheDefinedValue.Get( phoneType.Value ).Value + " Phone";
                 string hasSMS = string.Empty;
 
                 if ( !string.IsNullOrEmpty( selections[2] ) )
@@ -284,7 +273,7 @@ function() {
             string[] selections = selection.Split( '|' );
             bool hasPhoneOfType = selections[0].AsBoolean();
             Guid? phoneTypeGuid = selections[1].AsGuidOrNull();
-            int? phoneNumberTypeValueId = phoneTypeGuid.HasValue ? DefinedValueCache.Read( phoneTypeGuid.Value ).Id : ( int? ) null;
+            int? phoneNumberTypeValueId = phoneTypeGuid.HasValue ? CacheDefinedValue.Get( phoneTypeGuid.Value ).Id : ( int? ) null;
             bool? hasSMS = selections[2].AsBooleanOrNull();
             var qry = new PersonService( ( RockContext ) serviceInstance.Context ).Queryable();
 

@@ -26,7 +26,7 @@ using Rock;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
-using Rock.Web.Cache;
+using Rock.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 using Rock.Security;
@@ -50,8 +50,8 @@ namespace RockWeb.Blocks.WorkFlow
         private RockContext _rockContext = null;
         private WorkflowService _workflowService = null;
 
-        private WorkflowTypeCache _workflowType = null;
-        private WorkflowActionTypeCache _actionType = null;
+        private CacheWorkflowType _workflowType = null;
+        private CacheWorkflowActionType _actionType = null;
         private Workflow _workflow = null;
         private WorkflowActivity _activity = null;
         private WorkflowAction _action = null;
@@ -246,9 +246,9 @@ namespace RockWeb.Blocks.WorkFlow
             // Set the note type if this is first request
             if ( !Page.IsPostBack )
             {
-                var entityType = EntityTypeCache.Read( typeof( Rock.Model.Workflow ) );
-                var noteTypes = NoteTypeCache.GetByEntity( entityType.Id, string.Empty, string.Empty );
-                ncWorkflowNotes.NoteTypes = noteTypes;
+                var entityType = CacheEntityType.Get( typeof( Rock.Model.Workflow ) );
+                var noteTypes = CacheNoteType.GetByEntity( entityType.Id, string.Empty, string.Empty );
+                ncWorkflowNotes.NoteOptions.SetNoteTypes( noteTypes );
             }
 
             if ( _workflowType == null )
@@ -487,7 +487,7 @@ namespace RockWeb.Blocks.WorkFlow
                 Guid workflowTypeguid = GetAttributeValue( "WorkflowType" ).AsGuid();
                 if ( !workflowTypeguid.IsEmpty() )
                 {
-                    _workflowType = WorkflowTypeCache.Read( workflowTypeguid );
+                    _workflowType = CacheWorkflowType.Get( workflowTypeguid );
                 }
 
                 // If an attribute value was not provided, check for query/route value
@@ -506,7 +506,7 @@ namespace RockWeb.Blocks.WorkFlow
             // Get the workflow type 
             if ( _workflowType == null && WorkflowTypeId.HasValue )
             {
-                _workflowType = WorkflowTypeCache.Read( WorkflowTypeId.Value );
+                _workflowType = CacheWorkflowType.Get( WorkflowTypeId.Value );
             }
         }
 
@@ -549,7 +549,7 @@ namespace RockWeb.Blocks.WorkFlow
             {
                 if ( formAttribute.IsVisible )
                 {
-                    var attribute = AttributeCache.Read( formAttribute.AttributeId );
+                    var attribute = CacheAttribute.Get( formAttribute.AttributeId );
 
                     string value = attribute.DefaultValue;
                     if ( _workflow != null && _workflow.AttributeValues.ContainsKey( attribute.Key ) && _workflow.AttributeValues[attribute.Key] != null )
@@ -623,8 +623,7 @@ namespace RockWeb.Blocks.WorkFlow
 
             if ( form.AllowNotes.HasValue && form.AllowNotes.Value && _workflow != null && _workflow.Id != 0 )
             {
-                ncWorkflowNotes.EntityId = _workflow.Id;
-                ncWorkflowNotes.RebuildNotes( setValues );
+                ncWorkflowNotes.NoteOptions.EntityId = _workflow.Id;
                 ShowNotes( true );
             }
             else
@@ -642,7 +641,7 @@ namespace RockWeb.Blocks.WorkFlow
                     string buttonHtml = string.Empty;
                     if ( details.Length > 1 )
                     {
-                        var definedValue = DefinedValueCache.Read( details[1].AsGuid() );
+                        var definedValue = CacheDefinedValue.Get( details[1].AsGuid() );
                         if ( definedValue != null )
                         {
                             buttonHtml = definedValue.GetAttributeValue( "ButtonHTML" );
@@ -655,7 +654,7 @@ namespace RockWeb.Blocks.WorkFlow
                     }
 
                     var buttonMergeFields = new Dictionary<string, object>();
-                    buttonMergeFields.Add( "ButtonText", details[0].EscapeQuotes() );
+                    buttonMergeFields.Add( "ButtonText", details[0].EncodeHtml() );
                     buttonMergeFields.Add( "ButtonClick",
                             string.Format( "if ( Page_ClientValidate('{0}') ) {{ $(this).button('loading'); return true; }} else {{ return false; }}",
                             BlockValidationGroup ) );
@@ -697,12 +696,12 @@ namespace RockWeb.Blocks.WorkFlow
                 {
                     if ( formAttribute.IsVisible && !formAttribute.IsReadOnly )
                     {
-                        var attribute = AttributeCache.Read( formAttribute.AttributeId );
+                        var attribute = CacheAttribute.Get( formAttribute.AttributeId );
                         var control = phAttributes.FindControl( string.Format( "attribute_field_{0}", formAttribute.AttributeId ) );
 
                         if ( attribute != null && control != null)
                         {
-                            IHasAttributes item = null;
+                            Rock.Data.IHasAttributes item = null;
                             if ( attribute.EntityTypeId == _workflow.TypeId )
                             {
                                 item = _workflow;
@@ -768,10 +767,10 @@ namespace RockWeb.Blocks.WorkFlow
 
                 if ( _actionType.WorkflowForm.ActionAttributeGuid.HasValue )
                 {
-                    var attribute = AttributeCache.Read( _actionType.WorkflowForm.ActionAttributeGuid.Value );
+                    var attribute = CacheAttribute.Get( _actionType.WorkflowForm.ActionAttributeGuid.Value );
                     if ( attribute != null )
                     {
-                        IHasAttributes item = null;
+                        Rock.Data.IHasAttributes item = null;
                         if ( attribute.EntityTypeId == _workflow.TypeId )
                         {
                             item = _workflow;
@@ -819,6 +818,11 @@ namespace RockWeb.Blocks.WorkFlow
                         {
                             var cb = CurrentPageReference;
                             cb.Parameters.AddOrReplace( "WorkflowId", _workflow.Id.ToString() );
+                            foreach ( var key in cb.QueryString.AllKeys.Where( k => !k.Equals( "Command", StringComparison.OrdinalIgnoreCase ) ) )
+                            {
+                                cb.Parameters.AddOrIgnore( key, cb.QueryString[key] );
+                            }
+                            cb.QueryString = new System.Collections.Specialized.NameValueCollection();
                             Response.Redirect( cb.BuildUrl(), false );
                             Context.ApplicationInstance.CompleteRequest();
                         }

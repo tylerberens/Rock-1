@@ -23,7 +23,7 @@ using System.Runtime.Serialization;
 
 using Rock.Data;
 using Rock.UniversalSearch;
-using Rock.Web.Cache;
+using Rock.Cache;
 
 namespace Rock.Model
 {
@@ -34,7 +34,7 @@ namespace Rock.Model
     [NotAudited]
     [Table( "EntityType" )]
     [DataContract]
-    public partial class EntityType : Entity<EntityType>
+    public partial class EntityType : Entity<EntityType>, ICacheable
     {
 
         #region Entity Properties
@@ -158,7 +158,7 @@ namespace Rock.Model
         /// <value>
         /// <c>true</c> if this instance is analytic supported; otherwise, <c>false</c>.
         /// </value>
-        [Obsolete( "Use EntityTypeCache.IsAnalyticsSupported(..) instead") ]
+        [Obsolete( "Use CacheEntityType.IsAnalyticsSupported(..) instead") ]
         public bool IsAnalyticSupported
         {
             get
@@ -184,7 +184,7 @@ namespace Rock.Model
         /// <value>
         /// <c>true</c> if this instance is analytic historical supported; otherwise, <c>false</c>.
         /// </value>
-        [Obsolete( "Use EntityTypeCache.IsAnalyticHistoricalSupported(..) instead" )]
+        [Obsolete( "Use CacheEntityType.IsAnalyticHistoricalSupported(..) instead" )]
         public bool IsAnalyticHistoricalSupported
         {
             get
@@ -326,7 +326,7 @@ namespace Rock.Model
                 object entity = null;
                 try
                 {
-                    var type = EntityTypeCache.Read( this ).GetEntityType();
+                    var type = CacheEntityType.Get( this ).GetEntityType();
                     entity = System.Activator.CreateInstance( type );
                 }
                 catch
@@ -344,6 +344,29 @@ namespace Rock.Model
 
             return true;
         }
+        #endregion
+
+        #region ICacheable
+
+        /// <summary>
+        /// Gets the cache object associated with this Entity
+        /// </summary>
+        /// <returns></returns>
+        public IEntityCache GetCacheObject()
+        {
+            return CacheEntityType.Get( this.Id );
+        }
+
+        /// <summary>
+        /// Updates any Cache Objects that are associated with this entity
+        /// </summary>
+        /// <param name="entityState">State of the entity.</param>
+        /// <param name="dbContext">The database context.</param>
+        public void UpdateCache( System.Data.Entity.EntityState entityState, Rock.Data.DbContext dbContext )
+        {
+            CacheEntityType.UpdateCachedEntity( this.Id, entityState );
+        }
+
         #endregion
 
     }

@@ -1,4 +1,4 @@
-﻿// <copyright>uns   
+﻿// <copyright>
 // Copyright by the Spark Development Network
 //
 // Licensed under the Rock Community License (the "License");
@@ -27,6 +27,7 @@ using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web;
+using Rock.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 
@@ -113,6 +114,7 @@ namespace RockWeb.Blocks.Crm
             gfNcoaFilter.SaveUserPreference( "Address Invalid Reason", ddlInvalidReason.SelectedValue );
             gfNcoaFilter.SaveUserPreference( "Last Name", tbLastName.Text );
             gfNcoaFilter.SaveUserPreference( "Move Distance", nbMoveDistance.Text );
+            gfNcoaFilter.SaveUserPreference( "Campus", cpCampus.SelectedValue );
 
             ShowView();
         }
@@ -190,6 +192,19 @@ namespace RockWeb.Blocks.Crm
                             e.Value = string.Empty;
                         }
 
+                        break;
+                    }
+                case "Campus":
+                    {
+                        var campus = CacheCampus.Get( e.Value.AsInteger() );
+                        if ( campus != null )
+                        {
+                            e.Value = campus.Name;
+                        }
+                        else
+                        {
+                            e.Value = string.Empty;
+                        }
                         break;
                     }
             }
@@ -292,6 +307,8 @@ namespace RockWeb.Blocks.Crm
             string moveDistanceFilter = gfNcoaFilter.GetUserPreference( "Move Distance" );
             nbMoveDistance.Text = moveDistanceFilter.ToString();
 
+            cpCampus.SetValue( gfNcoaFilter.GetUserPreference( "Campus" ) );
+
         }
 
         /// <summary>
@@ -377,6 +394,23 @@ namespace RockWeb.Blocks.Crm
                         p.Person.LastName.Contains( lastName ) )
                     .Select( p => p.Id );
                 query = query.Where( i => personAliasQuery.Contains( i.PersonAliasId ) );
+            }
+
+            var campusId = gfNcoaFilter.GetUserPreference( "Campus" ).AsIntegerOrNull();
+            if ( campusId.HasValue )
+            {
+                var familyGroupType = CacheGroupType.Get( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY.AsGuid() );
+                var personAliasQuery = new PersonAliasService( rockContext ).Queryable().AsNoTracking();
+                var campusQuery = new GroupMemberService( rockContext )
+                    .Queryable().AsNoTracking()
+                    .Where( m =>
+                        m.Group.GroupTypeId == familyGroupType.Id &&
+                        m.Group.CampusId.HasValue &&
+                        m.Group.CampusId.Value == campusId.Value )
+                    .Select( m => m.PersonId )
+                    .Join( personAliasQuery, m => m, p => p.PersonId, ( m, p ) => p.Id );
+
+                query = query.Where( i => campusQuery.Contains( i.PersonAliasId ) );
             }
 
             var filteredRecords = query.ToList();
