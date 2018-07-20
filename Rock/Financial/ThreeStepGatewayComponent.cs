@@ -117,5 +117,37 @@ namespace Rock.Financial
             return AddScheduledPaymentStep3( financialGateway, resultQueryString, out errorMessage );
         }
 
+        /// <summary>
+        /// Performs the first step of updating an existing schedule
+        /// </summary>
+        /// <param name="transaction">The scheduled transaction.</param>
+        /// <param name="schedule">The schedule.</param>
+        /// <param name="paymentInfo">The payment information.</param>
+        /// <param name="errorMessage">The error message.</param>
+        /// <returns></returns>
+        public abstract string UpdateScheduledPaymentStep1( FinancialScheduledTransaction transaction, PaymentSchedule schedule, PaymentInfo paymentInfo, out string errorMessage );
+
+        /// <summary>
+        /// Performs the third step of updating an existing payment schedule
+        /// </summary>
+        /// <param name="transaction">The scheduled transaction.</param>
+        /// <param name="resultQueryString">The result query string from step 2.</param>
+        /// <param name="errorMessage">The error message.</param>
+        /// <returns></returns>
+        public abstract bool UpdateScheduledPaymentStep3( FinancialScheduledTransaction transaction, string resultQueryString, out string errorMessage );
+
+        /// <summary>
+        /// Performs the third step of updating an existing payment schedule. This method includes a PaymentSchedule and PaymentInfo object that can be used if needed to finalize any transaction.
+        /// </summary>
+        /// <param name="transaction">The scheduled transaction.</param>
+        /// <param name="schedule">The schedule.</param>
+        /// <param name="paymentInfo">The payment information.</param>
+        /// <param name="resultQueryString">The result query string.</param>
+        /// <param name="errorMessage">The error message.</param>
+        /// <returns></returns>
+        public virtual bool UpdateScheduledPaymentStep3( FinancialScheduledTransaction transaction, PaymentSchedule schedule, PaymentInfo paymentInfo, string resultQueryString, out string errorMessage )
+        {
+            return UpdateScheduledPaymentStep3( transaction, resultQueryString, out errorMessage );
+        }
     }
 }

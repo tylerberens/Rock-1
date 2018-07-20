@@ -221,6 +221,7 @@
                                     <div class="actions">
                                         <asp:LinkButton ID="lbSubmitPayment" runat="server" Text="Submit" CssClass="btn btn-primary" OnClick="lbSubmitPayment_Click" CausesValidation="true" ValidationGroup="Payment" />
                                         <asp:Label ID="aStep2Submit" runat="server" ClientIDMode="Static" CssClass="btn btn-primary" Text="Submit" />
+
                                         <asp:LinkButton ID="lbCancelPayment" runat="server" Text="Cancel" CssClass="btn btn-link" OnClick="lbCancelPayment_Click" CausesValidation="false" />
                                     </div>
 

@@ -274,8 +274,6 @@
                 </div>
             </div>
 
-            
-
         </asp:Panel>
 
         <asp:Panel ID="pnlSuccess" runat="server" Visible="false">
@@ -303,7 +301,6 @@
                     <Rock:TermDescription ID="tdAccountNumberReceipt" runat="server" Term="Account Number" />
                     <Rock:TermDescription ID="tdWhenReceipt" runat="server" Term="When" />
                 </dl>
-
 
                 <dl class="dl-horizontal gift-confirmation margin-b-md">
                             

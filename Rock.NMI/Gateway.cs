@@ -661,6 +661,203 @@ namespace Rock.NMI
         }
 
         /// <summary>
+        /// Performs the first step of adding a new payment schedule
+        /// </summary>
+        /// <param name="transaction">The scheduled transaction.</param>
+        /// <param name="schedule">The schedule.</param>
+        /// <param name="paymentInfo">The payment information.</param>
+        /// <param name="errorMessage">The error message.</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentNullException">paymentInfo</exception>
+        public override string UpdateScheduledPaymentStep1( FinancialScheduledTransaction transaction, PaymentSchedule schedule, PaymentInfo paymentInfo, out string errorMessage )
+        {
+            // The Scheduled Payment Step 1 is exactly same as Charge Step 1 (Validate if not using saved account, otherwise return empty string and skip to step 3)
+            return ChargeStep1( transaction.FinancialGateway, paymentInfo, out errorMessage );
+        }
+
+        /// <summary>
+        /// Performs the third step of adding a new payment schedule
+        /// </summary>
+        /// <param name="transaction">The scheduled transaction.</param>
+        /// <param name="resultQueryString">The result query string from step 2.</param>
+        /// <param name="errorMessage">The error message.</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentNullException">tokenId</exception>
+        public override bool UpdateScheduledPaymentStep3( FinancialScheduledTransaction transaction, string resultQueryString, out string errorMessage )
+        {
+            return UpdateScheduledPaymentStep3( transaction, null, null, resultQueryString, out errorMessage );
+        }
+
+        /// <summary>
+        /// Performs the third step of adding a new payment schedule. This method includes a PaymentSchedule and PaymentInfo object that can be used if needed to finalize any transaction.
+        /// </summary>
+        /// <param name="transaction">The scheduled transaction.</param>
+        /// <param name="schedule">The schedule.</param>
+        /// <param name="paymentInfo">The payment information.</param>
+        /// <param name="resultQueryString">The result query string.</param>
+        /// <param name="errorMessage">The error message.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException">paymentInfo</exception>
+        public override bool UpdateScheduledPaymentStep3( FinancialScheduledTransaction transaction, PaymentSchedule schedule, PaymentInfo paymentInfo, string resultQueryString, out string errorMessage )
+        {
+            errorMessage = string.Empty;
+
+            string vaultId = transaction.ForeignKey;
+            if ( vaultId.IsNullOrWhiteSpace() )
+            {
+                errorMessage = "The selected scheduled transaction does not have a valid customer vault id, and can not be updated.";
+                return null;
+            }
+
+            // First try to delete the previous subscription
+            if ( !CancelScheduledPayment( transaction, out errorMessage ) )
+            {
+                // If an error occurred while trying to delete the previous subscription, but it was due to 
+                // subscription not existing, that's ok, so don't stop.
+                if ( !errorMessage.StartsWith( "No recurring subscriptions found" ) )
+                {
+                    errorMessage = $"An error occurred trying to delete the original schedule details: {errorMessage}";
+                    return null;
+                }
+            }
+
+            // If this is an update to existing transaction and payment info did not change, just add a new subscription (we did not use a 3step process)
+            if ( paymentInfo is ReferencePaymentInfo )
+            { 
+            // Start to create the XML for an Add Subscription txn
+            var rootElement = GetRoot( transaction.FinancialGateway, "add-subscription", paymentInfo );
+            rootElement.Add(
+                new XElement( "customer-vault-id", vaultId ),
+                new XElement( "start-date", transaction.StartDate.ToString( "yyyyMMdd" ) ),
+                new XElement( "order-description", paymentInfo.Description ),
+                new XElement( "currency", "USD" ),
+                new XElement( "tax-amount", "0.00" ) );
+
+            // Add the plan details
+            rootElement.Add( GetPlan( transaction, paymentInfo ) );
+
+            // Post the Add Subscription transaction
+            XDocument xdoc = new XDocument( new XDeclaration( "1.0", "UTF-8", "yes" ), rootElement );
+            var result = PostToGateway( transaction.FinancialGateway, xdoc, out errorMessage );
+
+            // If not valid, return null
+            if ( result == null )
+            {
+                return false;
+            }
+
+            // Otherwise update the current scheduled transaction with the new information
+            transaction.IsActive = true;
+            transaction.GatewayScheduleId = result.GetValueOrNull( "subscription-id" );
+
+            return true;
+
+
+
+
+
+
+
+
+
+
+
+            try
+            {
+                // Make sure valid parameters were passed
+                if ( financialGateway == null )
+                {
+                    throw new ArgumentNullException( "finacialGateway" );
+                }
+                if ( schedule == null )
+                {
+                    throw new ArgumentNullException( "schedule" );
+                }
+                if ( paymentInfo == null )
+                {
+                    throw new ArgumentNullException( "paymentInfo" );
+                }
+
+                // Check to see if third step is not needed or succesfully completed
+                if ( !CompleteThirdStep( financialGateway, paymentInfo, resultQueryString, out errorMessage ) )
+                {
+                    return null;
+                }
+
+                // Start to create the XML for an Add Subscription txn
+                var rootElement = GetRoot( financialGateway, "add-subscription", paymentInfo );
+                rootElement.Add(
+                    new XElement( "start-date", schedule.StartDate.ToString( "yyyyMMdd" ) ),
+                    new XElement( "order-description", paymentInfo.Description ),
+                    new XElement( "currency", "USD" ),
+                    new XElement( "tax-amount", "0.00" ) );
+
+                // Add the plan details
+                rootElement.Add( GetPlan( schedule, paymentInfo ) );
+
+                // Post the Add Subscription transaction
+                XDocument xdoc = new XDocument( new XDeclaration( "1.0", "UTF-8", "yes" ), rootElement );
+                var result = PostToGateway( financialGateway, xdoc, out errorMessage );
+
+                // If not valid, return null
+                if ( result == null )
+                {
+                    return null;
+                }
+
+                // Otherwise create a scheduled transaction record
+                var scheduledTransaction = new FinancialScheduledTransaction();
+                scheduledTransaction.IsActive = true;
+                scheduledTransaction.GatewayScheduleId = result.GetValueOrNull( "subscription-id" );
+                scheduledTransaction.FinancialGatewayId = financialGateway.Id;
+                scheduledTransaction.ForeignKey = paymentInfo.AdditionalParameters.GetValueOrNull( "customer-vault-id" );
+                scheduledTransaction.FinancialPaymentDetail = new FinancialPaymentDetail();
+                string ccNumber = result.GetValueOrNull( "billing_cc-number" );
+                if ( !string.IsNullOrWhiteSpace( ccNumber ) )
+                {
+                    // cc payment
+                    var curType = CacheDefinedValue.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD );
+                    scheduledTransaction.FinancialPaymentDetail.CurrencyTypeValueId = curType != null ? curType.Id : (int?)null;
+                    scheduledTransaction.FinancialPaymentDetail.CreditCardTypeValueId = CreditCardPaymentInfo.GetCreditCardType( ccNumber.Replace( '*', '1' ).AsNumeric() )?.Id;
+                    scheduledTransaction.FinancialPaymentDetail.AccountNumberMasked = ccNumber.Masked( true );
+
+                    string mmyy = result.GetValueOrNull( "billing_cc-exp" );
+                    if ( !string.IsNullOrWhiteSpace( mmyy ) && mmyy.Length == 4 )
+                    {
+                        scheduledTransaction.FinancialPaymentDetail.ExpirationMonthEncrypted = Encryption.EncryptString( mmyy.Substring( 0, 2 ) );
+                        scheduledTransaction.FinancialPaymentDetail.ExpirationYearEncrypted = Encryption.EncryptString( mmyy.Substring( 2, 2 ) );
+                    }
+                }
+                else
+                {
+                    // ach payment
+                    var curType = CacheDefinedValue.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH );
+                    scheduledTransaction.FinancialPaymentDetail.CurrencyTypeValueId = curType != null ? curType.Id : (int?)null;
+                    scheduledTransaction.FinancialPaymentDetail.AccountNumberMasked = result.GetValueOrNull( "billing_account_number" ).Masked( true );
+                }
+
+                GetScheduledPaymentStatus( scheduledTransaction, out errorMessage );
+
+                return scheduledTransaction;
+            }
+
+            catch ( WebException webException )
+            {
+                string message = GetResponseMessage( webException.Response.GetResponseStream() );
+                errorMessage = webException.Message + " - " + message;
+                return null;
+            }
+
+            catch ( Exception ex )
+            {
+                errorMessage = ex.Message;
+                return null;
+            }
+
+
+        }
+
+        /// <summary>
         /// Cancels the scheduled payment.
         /// </summary>
         /// <param name="transaction">The transaction.</param>
