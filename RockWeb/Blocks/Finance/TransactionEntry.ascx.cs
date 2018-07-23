@@ -82,7 +82,7 @@ namespace RockWeb.Blocks.Finance
     [CodeEditorField( "Confirmation Footer", "The text (HTML) to display at the bottom of the confirmation section. <span class='tip tip-lava'></span> <span class='tip tip-html'></span>",
         CodeEditorMode.Html, CodeEditorTheme.Rock, 200, true, @"
 <div class='alert alert-info'>
-    By clicking the 'finish' button below I agree to allow {{ OrganizationName }}
+    By clicking the 'finish' button below I agree to allow {{ 'Global' | Attribute:'OrganizationName' }}
     to transfer the amount above from my account. I acknowledge that I may
     update the transaction information at any time by returning to this website. Please
     call the Finance Office if you have any additional questions.

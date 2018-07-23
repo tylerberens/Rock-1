@@ -28,6 +28,7 @@
                                         <Rock:CurrencyBox ID="txtAccountAmount" runat="server" Label='<%# Eval("PublicName") %>' Text='<%# Eval("AmountFormatted") %>' Placeholder="0.00" CssClass="account-amount" />
                                     </ItemTemplate>
                                 </asp:Repeater>
+
                                 <Rock:ButtonDropDownList ID="btnAddAccount" runat="server" Visible="false" Label=" "
                                     DataTextField="PublicName" DataValueField="Id" OnSelectionChanged="btnAddAccount_SelectionChanged" />
 
@@ -48,83 +49,75 @@
 
                 </asp:Panel>
 
-                <asp:Panel ID="pnlContributionPayment" runat="server">
+                <asp:Panel ID="pnlPaymentMethod" runat="server" CssClass="panel panel-default contribution-payment">
 
-                    <asp:Panel ID="pnlPaymentMethod" runat="server" CssClass="panel panel-default contribution-payment">
+                    <div class="panel-heading">
+                        <h3 class="panel-title"><asp:Literal ID="lPaymentInfoTitle" runat="server" /></h3>
+                    </div>
 
-                        <div class="panel-heading">
-                            <h3 class="panel-title"><asp:Literal ID="lPaymentInfoTitle" runat="server" /></h3>
-                        </div>
+                    <div class="panel-body">
 
-                        <div class="panel-body">
+                        <Rock:RockCheckBox ID="cbChangePaymentMethod" runat="server" Label="Change Payment Method" Text="Yes" AutoPostBack="true" OnCheckedChanged="cbChangePaymentMethod_CheckedChanged" />
 
-                            <div id="divNewPayment" runat="server" class="radio-content">
+                        <Rock:RockRadioButtonList ID="rblSavedAccount" runat="server" CssClass="radio-list margin-b-lg" RepeatDirection="Vertical" DataValueField="Id" DataTextField="Name" />
 
-                                <asp:HiddenField ID="hfPaymentTab" runat="server" />
-                                <asp:PlaceHolder ID="phPills" runat="server">
-                                    <ul class="nav nav-pills">
-                                        <li id="liNone" runat="server"><a href='#<%=divNonePaymentInfo.ClientID%>' data-toggle="pill">No Change</a></li>
-                                        <li id="liCreditCard" runat="server"><a href='#<%=divCCPaymentInfo.ClientID%>' data-toggle="pill">New Card</a></li>
-                                        <li id="liACH" runat="server"><a href='#<%=divACHPaymentInfo.ClientID%>' data-toggle="pill">New Bank Account</a></li>
+                        <div id="divNewPayment" runat="server" class="radio-content">
+
+                            <asp:HiddenField ID="hfPaymentTab" runat="server" />
+                            <asp:PlaceHolder ID="phPills" runat="server">
+                                <ul class="nav nav-pills">
+                                    <li id="liCreditCard" runat="server"><a href='#<%=divCCPaymentInfo.ClientID%>' data-toggle="pill">New Card</a></li>
+                                    <li id="liACH" runat="server"><a href='#<%=divACHPaymentInfo.ClientID%>' data-toggle="pill">New Bank Account</a></li>
+                                </ul>
+                            </asp:PlaceHolder>
+
+                            <div class="tab-content">
+
+                                <div id="divCCPaymentInfo" runat="server" visible="false" class="tab-pane">
+                                    <Rock:RockTextBox ID="txtCardFirstName" runat="server" Label="First Name on Card" Visible="false"></Rock:RockTextBox>
+                                    <Rock:RockTextBox ID="txtCardLastName" runat="server" Label="Last Name on Card" Visible="false"></Rock:RockTextBox>
+                                    <Rock:RockTextBox ID="txtCardName" runat="server" Label="Name on Card" Visible="false"></Rock:RockTextBox>
+                                    <Rock:RockTextBox ID="txtCreditCard" runat="server" Label="Card Number" MaxLength="19" CssClass="credit-card" />
+                                    <ul class="card-logos list-unstyled">
+                                        <li class="card-visa"></li>
+                                        <li class="card-mastercard"></li>
+                                        <li class="card-amex"></li>
+                                        <li class="card-discover"></li>
                                     </ul>
-                                </asp:PlaceHolder>
-
-                                <div class="tab-content">
-
-                                    <div id="divNonePaymentInfo" runat="server" class="tab-pane">
-                                        Keep the same payment info
-                                    </div>
-
-                                    <div id="divCCPaymentInfo" runat="server" visible="false" class="tab-pane">
-                                        <Rock:RockRadioButtonList ID="rblSavedCC" runat="server" Label=" " CssClass="radio-list" RepeatDirection="Vertical" DataValueField="Id" DataTextField="Name" />
-                                        <div id="divNewCard" runat="server" class="radio-content">
-                                            <Rock:RockTextBox ID="txtCardFirstName" runat="server" Label="First Name on Card" Visible="false"></Rock:RockTextBox>
-                                            <Rock:RockTextBox ID="txtCardLastName" runat="server" Label="Last Name on Card" Visible="false"></Rock:RockTextBox>
-                                            <Rock:RockTextBox ID="txtCardName" runat="server" Label="Name on Card" Visible="false"></Rock:RockTextBox>
-                                            <Rock:RockTextBox ID="txtCreditCard" runat="server" Label="Card Number" MaxLength="19" CssClass="credit-card" />
-                                            <ul class="card-logos">
-                                                <li class="card-visa"></li>
-                                                <li class="card-mastercard"></li>
-                                                <li class="card-amex"></li>
-                                                <li class="card-discover"></li>
-                                            </ul>
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <Rock:MonthYearPicker ID="mypExpiration" runat="server" Label="Expiration Date" />
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <Rock:NumberBox ID="txtCVV" Label="Card Security Code" runat="server" MaxLength="4" />
-                                                </div>
-                                            </div>
-                                            <div id="divBillingAddress" runat="server">
-                                                <Rock:AddressControl ID="acBillingAddress" runat="server" Label="Billing Address" UseStateAbbreviation="true" UseCountryAbbreviation="false" />
-                                            </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <Rock:MonthYearPicker ID="mypExpiration" runat="server" Label="Expiration Date" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <Rock:NumberBox ID="txtCVV" Label="Card Security Code" runat="server" MaxLength="4" />
                                         </div>
                                     </div>
-
-                                    <div id="divACHPaymentInfo" runat="server" visible="false" class="tab-pane">
-                                        <Rock:RockRadioButtonList ID="rblSavedAch" runat="server" Label=" " CssClass="radio-list" RepeatDirection="Vertical" DataValueField="Id" DataTextField="Name" />
-                                        <div id="divNewBank" runat="server" class="radio-content">
-                                            <Rock:RockTextBox ID="txtAccountName" runat="server" Label="Name on Account" />
-                                            <Rock:RockTextBox ID="txtRoutingNumber" runat="server" Label="Routing Number" />
-                                            <Rock:RockTextBox ID="txtAccountNumber" runat="server" Label="Account Number" />
-                                            <Rock:RockRadioButtonList ID="rblAccountType" runat="server" RepeatDirection="Horizontal" Label="Account Type">
-                                                <asp:ListItem Text="Checking" Selected="true" />
-                                                <asp:ListItem Text="Savings" />
-                                            </Rock:RockRadioButtonList>
-                                            <asp:Image ID="imgCheck" runat="server" ImageUrl="<%$ Fingerprint:~/Assets/Images/check-image.png %>" />
-                                        </div>
+                                    <div id="divBillingAddress" runat="server">
+                                        <Rock:AddressControl ID="acBillingAddress" runat="server" Label="Billing Address" UseStateAbbreviation="true" UseCountryAbbreviation="false" />
                                     </div>
-
                                 </div>
+
+                                <div id="divACHPaymentInfo" runat="server" visible="false" class="tab-pane">
+                                    <Rock:RockTextBox ID="txtAccountName" runat="server" Label="Name on Account" />
+                                    <Rock:RockTextBox ID="txtRoutingNumber" runat="server" Label="Routing Number" />
+                                    <Rock:RockTextBox ID="txtAccountNumber" runat="server" Label="Account Number" />
+                                    <Rock:RockRadioButtonList ID="rblAccountType" runat="server" RepeatDirection="Horizontal" Label="Account Type">
+                                        <asp:ListItem Text="Checking" Selected="true" />
+                                        <asp:ListItem Text="Savings" />
+                                    </Rock:RockRadioButtonList>
+                                    <asp:Image ID="imgCheck" runat="server" ImageUrl="<%$ Fingerprint:~/Assets/Images/check-image.png %>" />
+                                </div>
+
                             </div>
                         </div>
-                    </asp:Panel>
-
+                    </div>
                 </asp:Panel>
+    
+            </div>
 
             <div class="panel panel-default no-border">
                 <div class="panel-body">
+
                     <Rock:NotificationBox ID="nbSelectionMessage" runat="server" Visible="false"></Rock:NotificationBox>
 
                     <div class="actions clearfix">
@@ -136,7 +129,7 @@
                 </div>
             </div>
             
-            <iframe id="iframeStep2" src="<%=this.Step2IFrameUrl%>" style="display:none"></iframe>
+            <iframe id="iframeStep2" src="<%=this.Step2IFrameUrl%>" style="display:block"></iframe>
 
             <asp:HiddenField ID="hfStep2AutoSubmit" runat="server" Value="false" />
             <asp:HiddenField ID="hfStep2Url" runat="server" />
@@ -212,6 +205,12 @@
             <Rock:NotificationBox ID="nbSuccessMessage" runat="server" Visible="false"></Rock:NotificationBox>
 
         </asp:Panel>
+
+        <script type="text/javascript">
+            Sys.Application.add_load(function () {
+                window.scrollTo = function (x, y) { return true; }
+            });
+        </script>
 
     </ContentTemplate>
 </asp:UpdatePanel>
