@@ -678,7 +678,7 @@ TransactionAccountDetails: [
                             hfStep2AutoSubmit.Value = "true";
                         }
 
-                        if ( hfStep2Url.Value.IsNotNullOrWhitespace() )
+                        if ( hfStep2Url.Value.IsNotNullOrWhiteSpace() )
                         {
                             SetPage( 2 );
                         }
@@ -3169,16 +3169,16 @@ TransactionAccountDetails: [
 
         if ( typeof {21} != 'undefined' ) {{
             //// Toggle credit card display if saved card option is available
-            $({21}).unbind('click').on('click', function () {{
+            $('#{21}').unbind('click').on('click', function () {{
 
-                var radioDisplay = $({22}).css('display');
-                var selectedVal = $({21}).val();
+                var radioDisplay = $('#{22}').css('display');
+                var selectedVal = $('#{21}').find('input:checked').first().val();
 
                 if ( selectedVal == 0 && radioDisplay == 'none') {{
-                    $({22}).slideToggle();
+                    $('#{22}').slideToggle();
                 }}
                 else if (selectedVal != 0 && radioDisplay != 'none') {{
-                    $({22}).slideToggle();
+                    $('#{22}').slideToggle();
                 }}
             }});
         }}

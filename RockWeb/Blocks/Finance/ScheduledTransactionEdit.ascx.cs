@@ -255,7 +255,7 @@ achieve our mission.  We are so grateful for your commitment.
             }
 
             // Update the total amount
-            lblTotalAmount.Text = CacheGlobalAttributes.Value( "CurrencySymbol" ) + SelectedAccounts.Sum( f => f.Amount ).ToString( "F2" );
+            lblTotalAmount.Text = GlobalAttributesCache.Value( "CurrencySymbol" ) + SelectedAccounts.Sum( f => f.Amount ).ToString( "F2" );
 
             // Show or Hide the Credit card entry panel based on if a saved account exists and it's selected or not.
             divNewPayment.Style[HtmlTextWriterStyle.Display] = ( rblSavedAccount.Items.Count == 0 || rblSavedAccount.Items[rblSavedAccount.Items.Count - 1].Selected ) ? "block" : "none";
@@ -399,7 +399,7 @@ achieve our mission.  We are so grateful for your commitment.
                             hfStep2AutoSubmit.Value = "true";
                         }
 
-                        if ( hfStep2Url.Value.IsNotNullOrWhitespace() )
+                        if ( hfStep2Url.Value.IsNotNullOrWhiteSpace() )
                         {
                             SetPage( 2 );
                         }
@@ -712,6 +712,8 @@ achieve our mission.  We are so grateful for your commitment.
                 liACH.Visible = achEnabled;
                 divACHPaymentInfo.Visible = achEnabled;
 
+                hfPaymentTab.Value = achEnabled ? "ACH" : "CreditCard";
+
                 if ( ccEnabled )
                 {
                     divCCPaymentInfo.AddCssClass( "tab-pane" );
@@ -745,7 +747,7 @@ achieve our mission.  We are so grateful for your commitment.
                 {
                     // Find the saved accounts that are valid for the selected CC gateway
                     var ccSavedAccountIds = new List<int>();
-                    var ccCurrencyType = CacheDefinedValue.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ) );
+                    var ccCurrencyType = DefinedValueCache.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD ) );
                     if ( _gateway.SupportsSavedAccount( ccCurrencyType ) )
                     {
                         ccSavedAccountIds = savedAccounts
@@ -759,7 +761,7 @@ achieve our mission.  We are so grateful for your commitment.
 
                     // Find the saved accounts that are valid for the selected ACH gateway
                     var achSavedAccountIds = new List<int>();
-                    var achCurrencyType = CacheDefinedValue.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH ) );
+                    var achCurrencyType = DefinedValueCache.Get( new Guid( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH ) );
                     if ( _gateway.SupportsSavedAccount( achCurrencyType ) )
                     {
                         achSavedAccountIds = savedAccounts
@@ -943,7 +945,7 @@ achieve our mission.  We are so grateful for your commitment.
 
             string result = string.Empty;
 
-            var howOften = CacheDefinedValue.Get( btnFrequency.SelectedValueAsId().Value );
+            var howOften = DefinedValueCache.Get( btnFrequency.SelectedValueAsId().Value );
             DateTime when = DateTime.MinValue;
 
             var schedule = new PaymentSchedule();
@@ -989,7 +991,7 @@ achieve our mission.  We are so grateful for your commitment.
                 }
 
                 string nextDate = dtpStartDate.SelectedDate.HasValue ? dtpStartDate.SelectedDate.Value.ToShortDateString() : "?";
-                string frequency = CacheDefinedValue.Get( btnFrequency.SelectedValueAsInt() ?? 0 ).Description;
+                string frequency = DefinedValueCache.Get( btnFrequency.SelectedValueAsInt() ?? 0 ).Description;
                 tdWhen.Description = frequency + " starting on " + nextDate;
             }
         }
@@ -1203,7 +1205,7 @@ achieve our mission.  We are so grateful for your commitment.
 
             // Get the payment schedule
             scheduledTransaction.TransactionFrequencyValueId = btnFrequency.SelectedValueAsId().Value;
-            changeSummary.Append( CacheDefinedValue.Get( scheduledTransaction.TransactionFrequencyValueId, rockContext ) );
+            changeSummary.Append( DefinedValueCache.Get( scheduledTransaction.TransactionFrequencyValueId, rockContext ) );
 
             if ( dtpStartDate.SelectedDate.HasValue && dtpStartDate.SelectedDate > RockDateTime.Today )
             {
@@ -1272,7 +1274,7 @@ achieve our mission.  We are so grateful for your commitment.
             rockContext.SaveChanges();
 
             // Add a note about the change
-            var noteType = CacheNoteType.Get( Rock.SystemGuid.NoteType.SCHEDULED_TRANSACTION_NOTE.AsGuid() );
+            var noteType = NoteTypeCache.Get( Rock.SystemGuid.NoteType.SCHEDULED_TRANSACTION_NOTE.AsGuid() );
             if ( noteType != null )
             {
                 var noteService = new NoteService( rockContext );
@@ -1583,7 +1585,7 @@ achieve our mission.  We are so grateful for your commitment.
             $('#{21}').unbind('click').on('click', function () {{
 
                 var radioDisplay = $('#{22}').css('display');
-                var selectedVal = $('#{21}').val();
+                var selectedVal = $('#{21}').find('input:checked').first().val();
 
                 if ( selectedVal == 0 && radioDisplay == 'none') {{
                     $('#{22}').slideToggle();
@@ -1687,7 +1689,7 @@ achieve our mission.  We are so grateful for your commitment.
                 divCCPaymentInfo.ClientID,      // {0}
                 hfPaymentTab.ClientID,          // {1}
                 oneTimeFrequencyId,             // {2}
-                CacheGlobalAttributes.Value( "CurrencySymbol" ), // {3)
+                GlobalAttributesCache.Value( "CurrencySymbol" ), // {3)
                 hfStep2Url.ClientID,            // {4}
                 hfStep2ReturnQueryString.ClientID,   // {5}
                 this.Page.ClientScript.GetPostBackEventReference( lbStep2Return, "" ), // {6}

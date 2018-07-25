@@ -754,7 +754,7 @@ namespace Rock.NMI
                 if ( !string.IsNullOrWhiteSpace( ccNumber ) )
                 {
                     // cc payment
-                    var curType = CacheDefinedValue.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD );
+                    var curType = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD );
                     transaction.FinancialPaymentDetail.CurrencyTypeValueId = curType != null ? curType.Id : (int?)null;
                     transaction.FinancialPaymentDetail.CreditCardTypeValueId = CreditCardPaymentInfo.GetCreditCardType( ccNumber.Replace( '*', '1' ).AsNumeric() )?.Id;
                     transaction.FinancialPaymentDetail.AccountNumberMasked = ccNumber.Masked( true );
@@ -769,7 +769,7 @@ namespace Rock.NMI
                 else
                 {
                     // ach payment
-                    var curType = CacheDefinedValue.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH );
+                    var curType = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH );
                     transaction.FinancialPaymentDetail.CurrencyTypeValueId = curType != null ? curType.Id : (int?)null;
                     transaction.FinancialPaymentDetail.AccountNumberMasked = result.GetValueOrNull( "billing_account_number" ).Masked( true );
                 }
@@ -1053,7 +1053,7 @@ namespace Rock.NMI
             if ( result != null )
             {
                 string customerVaultId = result.GetValueOrNull( "customer-vault-id" );
-                if ( customerVaultId.IsNotNullOrWhitespace() )
+                if ( customerVaultId.IsNotNullOrWhiteSpace() )
                 {
                     if ( paymentInfo.AdditionalParameters == null )
                     {
@@ -1106,7 +1106,7 @@ namespace Rock.NMI
         private XElement GetPlan( FinancialScheduledTransaction scheduledTransaction, PaymentInfo paymentInfo )
         {
             var schedule = new PaymentSchedule();
-            schedule.TransactionFrequencyValue = CacheDefinedValue.Get( scheduledTransaction.TransactionFrequencyValueId );
+            schedule.TransactionFrequencyValue = DefinedValueCache.Get( scheduledTransaction.TransactionFrequencyValueId );
             schedule.NumberOfPayments = scheduledTransaction.NumberOfPayments;
             schedule.StartDate = schedule.StartDate;
 
@@ -1203,7 +1203,7 @@ namespace Rock.NMI
                         errorMessage = result.GetValueOrNull( "result-text" );
 
                         string resultCodeMessage = GetResultCodeMessage( result );
-                        if ( resultCodeMessage.IsNotNullOrWhitespace() )
+                        if ( resultCodeMessage.IsNotNullOrWhiteSpace() )
                         {
                             errorMessage += string.Format( " ({0})", resultCodeMessage );
                         }

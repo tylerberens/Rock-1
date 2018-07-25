@@ -129,7 +129,7 @@
                 </div>
             </div>
             
-            <iframe id="iframeStep2" src="<%=this.Step2IFrameUrl%>" style="display:block"></iframe>
+            <iframe id="iframeStep2" src="<%=this.Step2IFrameUrl%>" style="display:none"></iframe>
 
             <asp:HiddenField ID="hfStep2AutoSubmit" runat="server" Value="false" />
             <asp:HiddenField ID="hfStep2Url" runat="server" />
