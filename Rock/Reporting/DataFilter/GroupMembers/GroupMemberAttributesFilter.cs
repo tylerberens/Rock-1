@@ -26,7 +26,7 @@ using System.Web.UI.WebControls;
 using Rock.Data;
 using Rock.Model;
 using Rock.Utility;
-using Rock.Cache;
+using Rock.Web.Cache;
 using Rock.Web.UI.Controls;
 using Rock.Web.Utilities;
 
@@ -87,10 +87,10 @@ namespace Rock.Reporting.DataFilter.GroupMember
 
                 // Derive GroupTypeId from AttributeKey
                 var attributeGuid = AttributeKey.Split( '_' ).LastOrDefault().AsGuidOrNull();
-                CacheAttribute attribute = null;
+                AttributeCache attribute = null;
                 if ( attributeGuid.HasValue )
                 {
-                    attribute = CacheAttribute.Get( attributeGuid.Value );
+                    attribute = AttributeCache.Get( attributeGuid.Value );
                 }
 
                 this.GroupTypeId = null;
@@ -268,7 +268,6 @@ namespace Rock.Reporting.DataFilter.GroupMember
         /// Ensures that the controls that are created based on the GroupType have been created
         /// </summary>
         /// <param name="groupTypePicker">The group type picker.</param>
-        /// <param name="ddlProperty">The DDL property.</param>
         private void EnsureSelectedGroupTypeControls( GroupTypePicker groupTypePicker )
         {
             DynamicControlsPanel containerControl = groupTypePicker.Parent as DynamicControlsPanel;

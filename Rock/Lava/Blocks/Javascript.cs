@@ -26,7 +26,7 @@ using dotless.Core;
 using dotless.Core.configuration;
 using DotLiquid;
 using Rock.Utility;
-using Rock.Cache;
+using Rock.Web.Cache;
 using Rock.Web.UI;
 
 namespace Rock.Lava.Blocks
@@ -107,7 +107,7 @@ namespace Rock.Lava.Blocks
                     if ( parms.ContainsKey( "id" ) )
                     {
                         var identifier = parms["id"];
-                        if ( identifier.IsNotNullOrWhitespace() )
+                        if ( identifier.IsNotNullOrWhiteSpace() )
                         {
                             var controlId = "js-" + identifier;
 
@@ -132,7 +132,7 @@ namespace Rock.Lava.Blocks
                     if ( parms.ContainsKey( "id" ) )
                     {
                         var identifier = parms["id"];
-                        if ( identifier.IsNotNullOrWhitespace() )
+                        if ( identifier.IsNotNullOrWhiteSpace() )
                         {
                             var controlId = "js-" + identifier;
 
@@ -165,11 +165,11 @@ namespace Rock.Lava.Blocks
             if ( url.StartsWith( "~~" ) )
             {
                 string theme = "Rock";
-                if ( page.Theme.IsNotNullOrWhitespace() )
+                if ( page.Theme.IsNotNullOrWhiteSpace() )
                 {
                     theme = page.Theme;
                 }
-                else if ( page.Site != null && page.Site.Theme.IsNotNullOrWhitespace() )
+                else if ( page.Site != null && page.Site.Theme.IsNotNullOrWhiteSpace() )
                 {
                     theme = page.Site.Theme;
                 }

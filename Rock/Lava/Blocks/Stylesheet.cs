@@ -26,7 +26,7 @@ using dotless.Core;
 using dotless.Core.configuration;
 using DotLiquid;
 using Rock.Utility;
-using Rock.Cache;
+using Rock.Web.Cache;
 using Rock.Web.UI;
 
 namespace Rock.Lava.Blocks
@@ -138,7 +138,7 @@ namespace Rock.Lava.Blocks
                             var cacheKey = stylesheet.GetHashCode().ToString();
                             var cachedStylesheet = RockCache.Get( cacheKey ) as string;
 
-                            if ( cachedStylesheet.IsNotNullOrWhitespace() )
+                            if ( cachedStylesheet.IsNotNullOrWhiteSpace() )
                             {
                                 stylesheet = cachedStylesheet;
                             }
@@ -147,7 +147,7 @@ namespace Rock.Lava.Blocks
                                 stylesheet = LessWeb.Parse( stylesheet, dotLessConfiguration );
 
                                 // check if we should cache this
-                                if ( parms.ContainsKey( "cacheduration" ) && stylesheet.IsNotNullOrWhitespace() )
+                                if ( parms.ContainsKey( "cacheduration" ) && stylesheet.IsNotNullOrWhiteSpace() )
                                 {
                                     int cacheDuration = 0;
                                     Int32.TryParse( parms["cacheduration"], out cacheDuration );
@@ -183,7 +183,7 @@ namespace Rock.Lava.Blocks
                 if ( parms.ContainsKey("id") )
                 {
                     var identifier = parms["id"];
-                    if ( identifier.IsNotNullOrWhitespace() )
+                    if ( identifier.IsNotNullOrWhiteSpace() )
                     {
                         var controlId = "css-" + identifier;
 
