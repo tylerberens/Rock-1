@@ -98,6 +98,8 @@
     <Compile Include="ApiController.cs" />
     <Compile Include="ApiControllerBase.cs" />
     <Compile Include="Controllers\AssetStorageSystemsController.Partial.cs" />
+    <Compile Include="Controllers\RestBlocks\BlockBase.cs" />
+    <Compile Include="Controllers\RestBlocks\Cms\HtmlContent.cs" />
     <Compile Include="Controllers\CodeGenerated\AnalyticsDimCampusController.cs" />
     <Compile Include="Controllers\CodeGenerated\AnalyticsSourceCampusController.cs" />
     <Compile Include="Controllers\CodeGenerated\AssetStorageSystemsController.cs" />
