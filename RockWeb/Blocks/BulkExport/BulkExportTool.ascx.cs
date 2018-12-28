@@ -109,19 +109,142 @@ namespace RockWeb.Blocks.BulkExport
                 return;
             }
 
+            ExportFamilyWithPerson( dataViewPersonIds );
+            ExportGroup( dataViewPersonIds );
+
+            ImportPackage.FinalizePackage( tbFileName.Text );
+
+            string filename = Server.MapPath( "~/" + tbFileName.Text + ".slingshot" );
+            FileInfo fileInfo = new FileInfo( filename );
+
+            if ( fileInfo.Exists )
+            {
+                System.Web.HttpResponse response = System.Web.HttpContext.Current.Response;
+                response.ClearContent();
+                response.Clear();
+                Response.ContentType = "application/octet-stream";
+                response.AddHeader( "Content-Disposition",
+                                   "attachment; filename=" + tbFileName.Text + ".slingshot;" );
+                response.TransmitFile( fileInfo.FullName );
+                response.Flush();
+                fileInfo.Delete();
+                response.End();
+            }
+        }
+
+        private RockContext ExportGroup( List<int> dataViewPersonIds )
+        {
+            RockContext rockContext = new RockContext();
+            var familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
+            var groups = new GroupService( rockContext ).Queryable().Where( t => t.Members.Any( a => dataViewPersonIds.Contains( a.PersonId ) ) && t.GroupTypeId != familyGroupTypeId );
+
+            foreach ( var group in groups )
+            {
+                var importGroup = new Slingshot.Core.Model.Group()
+                {
+                    CampusId = group.CampusId,
+                    Description = group.Description,
+                    Name = group.Name,
+                    Order = group.Order,
+                    Capacity = group.GroupCapacity,
+                    IsPublic = group.IsPublic,
+                    IsActive = group.IsActive,
+                    ParentGroupId = group.ParentGroupId ?? 0,
+                    GroupTypeId = group.GroupTypeId,
+                    Id = group.Id
+                };
+
+                if ( group.Schedule != null )
+                {
+                    importGroup.MeetingDay = group.Schedule.WeeklyDayOfWeek.ToStringSafe();
+                    importGroup.MeetingTime = group.Schedule.WeeklyTimeOfDay.ToStringSafe();
+                }
+
+                group.LoadAttributes( rockContext );
+                importGroup.Attributes = group.AttributeValues.Where( a => !string.IsNullOrEmpty( a.Value.Value ) ).Select( a => new Slingshot.Core.Model.GroupAttributeValue()
+                {
+                    AttributeKey = a.Key,
+                    AttributeValue = a.Value.Value,
+                    GroupId = group.Id
+                } ).ToList();
+
+                importGroup.GroupMembers = group.Members
+                    .Where( a => dataViewPersonIds.Contains( a.PersonId ) )
+                    .Select( a => new Slingshot.Core.Model.GroupMember()
+                    {
+                        GroupId = group.Id,
+                        PersonId = a.PersonId,
+                        Role = a.GroupRole.Name
+                    } ).ToList();
+
+
+                foreach ( var groupLocation in group.GroupLocations )
+                {
+                    var address = new Slingshot.Core.Model.GroupAddress()
+                    {
+                        City = groupLocation.Location.City,
+                        Country = groupLocation.Location.Country,
+                        IsMailing = groupLocation.IsMailingLocation,
+                        PostalCode = groupLocation.Location.PostalCode,
+                        State = groupLocation.Location.State,
+                        Street1 = groupLocation.Location.Street1,
+                        Street2 = groupLocation.Location.Street2,
+                        GroupId = group.Id
+                    };
+
+                    if ( groupLocation.Location.GeoPoint != null )
+                    {
+                        address.Latitude = groupLocation.Location.GeoPoint.Latitude.ToStringSafe();
+                        address.Longitude = groupLocation.Location.GeoPoint.Longitude.ToStringSafe();
+                    }
+
+                    if ( groupLocation.GroupLocationTypeValueId.HasValue )
+                    {
+                        switch ( groupLocation.GroupLocationTypeValue.Guid.ToString() )
+                        {
+                            case Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME:
+                                address.AddressType = Slingshot.Core.Model.AddressType.Home;
+                                break;
+                            case Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_WORK:
+                                address.AddressType = Slingshot.Core.Model.AddressType.Work;
+                                break;
+                            case Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_PREVIOUS:
+                                address.AddressType = Slingshot.Core.Model.AddressType.Previous;
+                                break;
+                            case Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_MEETING_LOCATION:
+                            default:
+                                address.AddressType = Slingshot.Core.Model.AddressType.Other;
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        address.AddressType = Slingshot.Core.Model.AddressType.Other;
+                    }
+
+                }
+                ImportPackage.WriteToPackage<Slingshot.Core.Model.Group>( importGroup );
+            }
+
+            return rockContext;
+        }
+
+        private void ExportFamilyWithPerson( List<int> dataViewPersonIds )
+        {
+            RockContext rockContext = new RockContext();
             var personAttributes = new AttributeService( rockContext ).GetByEntityTypeId( new Person().TypeId );
             foreach ( var attribute in personAttributes )
             {
                 foreach ( var category in attribute.Categories )
                 {
-                    var importAttribute = new Slingshot.Core.Model.PersonAttribute()
+                    var exportAttribute = new Slingshot.Core.Model.PersonAttribute()
                     {
                         Key = attribute.Key,
                         FieldType = attribute.FieldType.Name,
                         Name = attribute.Name,
                         Category = category.Name
                     };
-                    ImportPackage.WriteToPackage<Slingshot.Core.Model.PersonAttribute>( importAttribute );
+                    ImportPackage.WriteToPackage<Slingshot.Core.Model.PersonAttribute>( exportAttribute );
                 }
             }
 
@@ -144,7 +267,7 @@ namespace RockWeb.Blocks.BulkExport
             var persons = new PersonService( rockContext ).GetByIds( dataViewPersonIds );
             foreach ( var person in persons )
             {
-                var importPerson = new Slingshot.Core.Model.Person()
+                var exportPerson = new Slingshot.Core.Model.Person()
                 {
                     Suffix = person.SuffixValueId.HasValue ? person.SuffixValue.Value : string.Empty,
                     Salutation = person.TitleValueId.HasValue ? person.TitleValue.Value : string.Empty,
@@ -173,16 +296,16 @@ namespace RockWeb.Blocks.BulkExport
                     switch ( person.MaritalStatusValue.Value )
                     {
                         case Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_SINGLE:
-                            importPerson.MaritalStatus = Slingshot.Core.Model.MaritalStatus.Single;
+                            exportPerson.MaritalStatus = Slingshot.Core.Model.MaritalStatus.Single;
                             break;
                         case Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_MARRIED:
-                            importPerson.MaritalStatus = Slingshot.Core.Model.MaritalStatus.Married;
+                            exportPerson.MaritalStatus = Slingshot.Core.Model.MaritalStatus.Married;
                             break;
                         case Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_DIVORCED:
-                            importPerson.MaritalStatus = Slingshot.Core.Model.MaritalStatus.Divorced;
+                            exportPerson.MaritalStatus = Slingshot.Core.Model.MaritalStatus.Divorced;
                             break;
                         default:
-                            importPerson.MaritalStatus = Slingshot.Core.Model.MaritalStatus.Unknown;
+                            exportPerson.MaritalStatus = Slingshot.Core.Model.MaritalStatus.Unknown;
                             break;
                     }
                 }
@@ -190,14 +313,14 @@ namespace RockWeb.Blocks.BulkExport
                 switch ( person.EmailPreference )
                 {
                     case EmailPreference.EmailAllowed:
-                        importPerson.EmailPreference = Slingshot.Core.Model.EmailPreference.EmailAllowed;
+                        exportPerson.EmailPreference = Slingshot.Core.Model.EmailPreference.EmailAllowed;
                         break;
                     case EmailPreference.NoMassEmails:
-                        importPerson.EmailPreference = Slingshot.Core.Model.EmailPreference.NoMassEmails;
+                        exportPerson.EmailPreference = Slingshot.Core.Model.EmailPreference.NoMassEmails;
                         break;
                     case EmailPreference.DoNotEmail:
                     default:
-                        importPerson.EmailPreference = Slingshot.Core.Model.EmailPreference.DoNotEmail;
+                        exportPerson.EmailPreference = Slingshot.Core.Model.EmailPreference.DoNotEmail;
                         break;
                 }
 
@@ -205,7 +328,7 @@ namespace RockWeb.Blocks.BulkExport
                 var campus = person.GetCampus();
                 if ( campus != null )
                 {
-                    importPerson.Campus = new Slingshot.Core.Model.Campus()
+                    exportPerson.Campus = new Slingshot.Core.Model.Campus()
                     {
                         CampusId = campus.Id,
                         CampusName = campus.Name
@@ -217,27 +340,27 @@ namespace RockWeb.Blocks.BulkExport
                     switch ( person.RecordStatusValue.Guid.ToString() )
                     {
                         case Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE:
-                            importPerson.RecordStatus = Slingshot.Core.Model.RecordStatus.Active;
+                            exportPerson.RecordStatus = Slingshot.Core.Model.RecordStatus.Active;
                             break;
                         case Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING:
-                            importPerson.RecordStatus = Slingshot.Core.Model.RecordStatus.Pending;
+                            exportPerson.RecordStatus = Slingshot.Core.Model.RecordStatus.Pending;
                             break;
                         case Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_INACTIVE:
                         default:
-                            importPerson.RecordStatus = Slingshot.Core.Model.RecordStatus.Inactive;
+                            exportPerson.RecordStatus = Slingshot.Core.Model.RecordStatus.Inactive;
                             break;
                     }
                 }
 
                 person.LoadAttributes( rockContext );
-                importPerson.Attributes = person.AttributeValues.Where( a => !string.IsNullOrEmpty( a.Value.Value ) ).Select( a => new Slingshot.Core.Model.PersonAttributeValue()
+                exportPerson.Attributes = person.AttributeValues.Where( a => !string.IsNullOrEmpty( a.Value.Value ) ).Select( a => new Slingshot.Core.Model.PersonAttributeValue()
                 {
                     AttributeKey = a.Key,
                     AttributeValue = a.Value.Value,
                     PersonId = person.Id
                 } ).ToList();
 
-                importPerson.PhoneNumbers = person.PhoneNumbers.Select( a => new Slingshot.Core.Model.PersonPhone()
+                exportPerson.PhoneNumbers = person.PhoneNumbers.Select( a => new Slingshot.Core.Model.PersonPhone()
                 {
                     IsMessagingEnabled = a.IsMessagingEnabled,
                     IsUnlisted = a.IsUnlisted,
@@ -249,23 +372,23 @@ namespace RockWeb.Blocks.BulkExport
 
                 foreach ( var family in person.GetFamilies( rockContext ) )
                 {
-                    importPerson.FamilyId = family.Id;
-                    importPerson.FamilyName = family.Name;
+                    exportPerson.FamilyId = family.Id;
+                    exportPerson.FamilyName = family.Name;
                     var familyRole = person.GetFamilyRole( rockContext );
                     if ( familyRole != null )
                     {
                         if ( familyRole.Guid == Rock.SystemGuid.GroupRole.GROUPROLE_FAMILY_MEMBER_CHILD.AsGuid() )
                         {
-                            importPerson.FamilyRole = Slingshot.Core.Model.FamilyRole.Child;
+                            exportPerson.FamilyRole = Slingshot.Core.Model.FamilyRole.Child;
                         }
                         else
                         {
-                            importPerson.FamilyRole = Slingshot.Core.Model.FamilyRole.Adult;
+                            exportPerson.FamilyRole = Slingshot.Core.Model.FamilyRole.Adult;
                         }
                     }
                     else
                     {
-                        importPerson.FamilyRole = Slingshot.Core.Model.FamilyRole.Adult;
+                        exportPerson.FamilyRole = Slingshot.Core.Model.FamilyRole.Adult;
                     }
 
                     foreach ( var familyLocation in family.GroupLocations )
@@ -325,27 +448,8 @@ namespace RockWeb.Blocks.BulkExport
                         }
                     }
 
-                    ImportPackage.WriteToPackage<Slingshot.Core.Model.Person>( importPerson );
+                    ImportPackage.WriteToPackage<Slingshot.Core.Model.Person>( exportPerson );
                 }
-            }
-
-            ImportPackage.FinalizePackage( tbFileName.Text );
-
-            string filename = Server.MapPath( "~/" + tbFileName.Text + ".slingshot" );
-            FileInfo fileInfo = new FileInfo( filename );
-
-            if ( fileInfo.Exists )
-            {
-                System.Web.HttpResponse response = System.Web.HttpContext.Current.Response;
-                response.ClearContent();
-                response.Clear();
-                Response.ContentType = "application/octet-stream";
-                response.AddHeader( "Content-Disposition",
-                                   "attachment; filename=" + tbFileName.Text + ".slingshot;" );
-                response.TransmitFile( fileInfo.FullName );
-                response.Flush();
-                fileInfo.Delete();
-                response.End();
             }
         }
 
