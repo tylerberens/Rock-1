@@ -13,7 +13,7 @@
                 <asp:ValidationSummary ID="vsBulkExport" runat="server" HeaderText="Please correct the following:" CssClass="alert alert-validation" />
                 <Rock:NotificationBox ID="nbPersonsAlert" runat="server" NotificationBoxType="Validation" />
                 <Rock:DataViewItemPicker ID="dpDataView" runat="server" Label="Person Dataview" Help="The dataview that will return a list of people that meet the criteria." Required="true" />
-                <Rock:RockTextBox ID="tbFileName" runat="server" Label="The filename for Slingshot file." Required="true" />
+                <Rock:RockTextBox ID="tbFileName" runat="server" Label="Filename for the *.slingshot file" Help="The tool will automatically append the .slingshot suffix." Placeholder="MySetOfPeople" Required="true" />
                 <asp:Panel ID="pnlActions" runat="server" CssClass="actions">
                     <asp:LinkButton ID="btnExport" runat="server" CssClass="btn btn-primary" Text="Export" OnClick="btnExport_Click" />
                 </asp:Panel>
