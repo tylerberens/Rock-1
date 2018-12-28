@@ -221,7 +221,6 @@ namespace RockWeb.Blocks.BulkExport
                     {
                         address.AddressType = Slingshot.Core.Model.AddressType.Other;
                     }
-
                 }
                 ImportPackage.WriteToPackage<Slingshot.Core.Model.Group>( importGroup );
             }
@@ -248,7 +247,8 @@ namespace RockWeb.Blocks.BulkExport
                 }
             }
 
-            var familyAttributes = new AttributeService( rockContext ).Get( new Group().TypeId, "GroupTypeId", GroupTypeCache.GetFamilyGroupType().Id.ToString() );
+            var familyType = GroupTypeCache.GetFamilyGroupType();
+            var familyAttributes = new AttributeService( rockContext ).Get( new Group().TypeId, "GroupTypeId", familyType.Id.ToString() );
             foreach ( var attribute in familyAttributes )
             {
                 foreach ( var category in attribute.Categories )
@@ -263,6 +263,11 @@ namespace RockWeb.Blocks.BulkExport
                     ImportPackage.WriteToPackage<Slingshot.Core.Model.FamilyAttribute>( importAttribute );
                 }
             }
+
+            var familyEntityTypeId = new Group().TypeId;
+            var personEntityTypeId = new Person().TypeId;
+            var familyNoteTypeIds = new NoteTypeService( rockContext ).Queryable().Where( a => a.EntityTypeId == familyEntityTypeId ).Select(a=>a.Id);
+            var personNoteTypeIds = new NoteTypeService( rockContext ).Queryable().Where( a => a.EntityTypeId == personEntityTypeId ).Select( a => a.Id );
 
             var persons = new PersonService( rockContext ).GetByIds( dataViewPersonIds );
             foreach ( var person in persons )
@@ -370,6 +375,24 @@ namespace RockWeb.Blocks.BulkExport
                 } ).ToList();
 
 
+                var notes = new NoteService( rockContext ).Queryable().Where( a => a.EntityId == person.Id && personNoteTypeIds.Contains( a.NoteTypeId ) );
+                foreach ( var note in notes )
+                {
+                    var personNote = new Slingshot.Core.Model.PersonNote()
+                    {
+                        Id = note.Id,
+                        Caption = note.Caption,
+                        CreatedByPersonId = note.CreatedByPersonId,
+                        DateTime = note.ApprovedDateTime,
+                        IsAlert = note.IsAlert ?? false,
+                        IsPrivateNote = note.IsPrivateNote,
+                        PersonId = person.Id,
+                        Text = note.Text,
+                        NoteType = note.NoteType.Name
+                    };
+                    ImportPackage.WriteToPackage<Slingshot.Core.Model.PersonNote>( personNote );
+                }
+
                 foreach ( var family in person.GetFamilies( rockContext ) )
                 {
                     exportPerson.FamilyId = family.Id;
@@ -446,6 +469,24 @@ namespace RockWeb.Blocks.BulkExport
                         {
                             ImportPackage.WriteToPackage<Slingshot.Core.Model.GroupAttributeValue>( familyAttributeValue );
                         }
+                    }
+
+                    var familyNotes = new NoteService( rockContext ).Queryable().Where( a => a.EntityId == family.Id && familyNoteTypeIds.Contains( a.NoteTypeId ) );
+                    foreach ( var note in familyNotes )
+                    {
+                        var familyNote = new Slingshot.Core.Model.FamilyNote()
+                        {
+                            Id = note.Id,
+                            Caption = note.Caption,
+                            CreatedByPersonId = note.CreatedByPersonId,
+                            DateTime = note.ApprovedDateTime,
+                            IsAlert = note.IsAlert ?? false,
+                            IsPrivateNote = note.IsPrivateNote,
+                            Text = note.Text,
+                            NoteType = note.NoteType.Name,
+                            FamilyId = family.Id
+                        };
+                        ImportPackage.WriteToPackage<Slingshot.Core.Model.FamilyNote>( familyNote );
                     }
 
                     ImportPackage.WriteToPackage<Slingshot.Core.Model.Person>( exportPerson );
