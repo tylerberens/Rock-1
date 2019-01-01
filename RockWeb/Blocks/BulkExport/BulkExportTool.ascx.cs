@@ -96,7 +96,7 @@ namespace RockWeb.Blocks.BulkExport
 
                 SortProperty sort = null;
                 var dataViewPersonIdQry = dvPersonService
-                    .Queryable().AsNoTracking()
+                    .Queryable( true ).AsNoTracking()
                     .Where( paramExpression, whereExpression, sort )
                     .Select( p => p.Id );
                 dataViewPersonIds = dataViewPersonIdQry.ToList();
@@ -111,10 +111,13 @@ namespace RockWeb.Blocks.BulkExport
 
             ExportFamilyWithPerson( dataViewPersonIds );
             ExportGroup( dataViewPersonIds );
+            ExportFinance( dataViewPersonIds );
 
-            ImportPackage.FinalizePackage( tbFileName.Text );
+            string relativeFilename = "App_Data/" + tbFileName.Text + ".slingshot";
 
-            string filename = Server.MapPath( "~/" + tbFileName.Text + ".slingshot" );
+            ImportPackage.FinalizePackage( relativeFilename );
+
+            string filename = Server.MapPath( "~/" + relativeFilename );
             FileInfo fileInfo = new FileInfo( filename );
 
             if ( fileInfo.Exists )
@@ -132,15 +135,25 @@ namespace RockWeb.Blocks.BulkExport
             }
         }
 
-        private RockContext ExportGroup( List<int> dataViewPersonIds )
+        private void ExportGroup( List<int> dataViewPersonIds )
         {
             RockContext rockContext = new RockContext();
             var familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
             var groups = new GroupService( rockContext ).Queryable().Where( t => t.Members.Any( a => dataViewPersonIds.Contains( a.PersonId ) ) && t.GroupTypeId != familyGroupTypeId );
 
+            foreach ( var groupType in groups.Select( a => a.GroupType ).Distinct() )
+            {
+                var exportGroupType = new Slingshot.Core.Model.GroupType()
+                {
+                    Id = groupType.Id,
+                    Name = groupType.Name
+                };
+                ImportPackage.WriteToPackage<Slingshot.Core.Model.GroupType>( exportGroupType );
+            }
+
             foreach ( var group in groups )
             {
-                var importGroup = new Slingshot.Core.Model.Group()
+                var exportGroup = new Slingshot.Core.Model.Group()
                 {
                     CampusId = group.CampusId,
                     Description = group.Description,
@@ -156,19 +169,19 @@ namespace RockWeb.Blocks.BulkExport
 
                 if ( group.Schedule != null )
                 {
-                    importGroup.MeetingDay = group.Schedule.WeeklyDayOfWeek.ToStringSafe();
-                    importGroup.MeetingTime = group.Schedule.WeeklyTimeOfDay.ToStringSafe();
+                    exportGroup.MeetingDay = group.Schedule.WeeklyDayOfWeek.ToStringSafe();
+                    exportGroup.MeetingTime = group.Schedule.WeeklyTimeOfDay.ToStringSafe();
                 }
 
                 group.LoadAttributes( rockContext );
-                importGroup.Attributes = group.AttributeValues.Where( a => !string.IsNullOrEmpty( a.Value.Value ) ).Select( a => new Slingshot.Core.Model.GroupAttributeValue()
+                exportGroup.Attributes = group.AttributeValues.Where( a => !string.IsNullOrEmpty( a.Value.Value ) ).Select( a => new Slingshot.Core.Model.GroupAttributeValue()
                 {
                     AttributeKey = a.Key,
                     AttributeValue = a.Value.Value,
                     GroupId = group.Id
                 } ).ToList();
 
-                importGroup.GroupMembers = group.Members
+                exportGroup.GroupMembers = group.Members
                     .Where( a => dataViewPersonIds.Contains( a.PersonId ) )
                     .Select( a => new Slingshot.Core.Model.GroupMember()
                     {
@@ -222,10 +235,8 @@ namespace RockWeb.Blocks.BulkExport
                         address.AddressType = Slingshot.Core.Model.AddressType.Other;
                     }
                 }
-                ImportPackage.WriteToPackage<Slingshot.Core.Model.Group>( importGroup );
+                ImportPackage.WriteToPackage<Slingshot.Core.Model.Group>( exportGroup );
             }
-
-            return rockContext;
         }
 
         private void ExportFamilyWithPerson( List<int> dataViewPersonIds )
@@ -266,7 +277,7 @@ namespace RockWeb.Blocks.BulkExport
 
             var familyEntityTypeId = new Group().TypeId;
             var personEntityTypeId = new Person().TypeId;
-            var familyNoteTypeIds = new NoteTypeService( rockContext ).Queryable().Where( a => a.EntityTypeId == familyEntityTypeId ).Select(a=>a.Id);
+            var familyNoteTypeIds = new NoteTypeService( rockContext ).Queryable().Where( a => a.EntityTypeId == familyEntityTypeId ).Select( a => a.Id );
             var personNoteTypeIds = new NoteTypeService( rockContext ).Queryable().Where( a => a.EntityTypeId == personEntityTypeId ).Select( a => a.Id );
 
             var persons = new PersonService( rockContext ).GetByIds( dataViewPersonIds );
@@ -298,20 +309,22 @@ namespace RockWeb.Blocks.BulkExport
 
                 if ( person.MaritalStatusValueId.HasValue )
                 {
-                    switch ( person.MaritalStatusValue.Value )
+                    var maritalStatusValue = person.MaritalStatusValue.Guid;
+                    if ( maritalStatusValue == Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_SINGLE.AsGuid() )
                     {
-                        case Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_SINGLE:
-                            exportPerson.MaritalStatus = Slingshot.Core.Model.MaritalStatus.Single;
-                            break;
-                        case Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_MARRIED:
-                            exportPerson.MaritalStatus = Slingshot.Core.Model.MaritalStatus.Married;
-                            break;
-                        case Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_DIVORCED:
-                            exportPerson.MaritalStatus = Slingshot.Core.Model.MaritalStatus.Divorced;
-                            break;
-                        default:
-                            exportPerson.MaritalStatus = Slingshot.Core.Model.MaritalStatus.Unknown;
-                            break;
+                        exportPerson.MaritalStatus = Slingshot.Core.Model.MaritalStatus.Single;
+                    }
+                    else if ( maritalStatusValue == Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_MARRIED.AsGuid() )
+                    {
+                        exportPerson.MaritalStatus = Slingshot.Core.Model.MaritalStatus.Married;
+                    }
+                    else if ( maritalStatusValue == Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_DIVORCED.AsGuid() )
+                    {
+                        exportPerson.MaritalStatus = Slingshot.Core.Model.MaritalStatus.Divorced;
+                    }
+                    else
+                    {
+                        exportPerson.MaritalStatus = Slingshot.Core.Model.MaritalStatus.Unknown;
                     }
                 }
 
@@ -342,20 +355,23 @@ namespace RockWeb.Blocks.BulkExport
 
                 if ( person.RecordStatusValueId.HasValue )
                 {
-                    switch ( person.RecordStatusValue.Guid.ToString() )
+                    var recordStatusValue = person.RecordStatusValue.Guid;
+                    if ( recordStatusValue == Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE.AsGuid() )
                     {
-                        case Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE:
-                            exportPerson.RecordStatus = Slingshot.Core.Model.RecordStatus.Active;
-                            break;
-                        case Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING:
-                            exportPerson.RecordStatus = Slingshot.Core.Model.RecordStatus.Pending;
-                            break;
-                        case Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_INACTIVE:
-                        default:
-                            exportPerson.RecordStatus = Slingshot.Core.Model.RecordStatus.Inactive;
-                            break;
+                        exportPerson.RecordStatus = Slingshot.Core.Model.RecordStatus.Active;
+                    }
+                    else if ( recordStatusValue == Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_PENDING.AsGuid() )
+                    {
+                        exportPerson.RecordStatus = Slingshot.Core.Model.RecordStatus.Pending;
+
+                    }
+                    else
+                    {
+                        exportPerson.RecordStatus = Slingshot.Core.Model.RecordStatus.Inactive;
                     }
                 }
+
+                exportPerson.PersonPhotoUrl = Person.GetPersonPhotoUrl( person );
 
                 person.LoadAttributes( rockContext );
                 exportPerson.Attributes = person.AttributeValues.Where( a => !string.IsNullOrEmpty( a.Value.Value ) ).Select( a => new Slingshot.Core.Model.PersonAttributeValue()
@@ -414,6 +430,7 @@ namespace RockWeb.Blocks.BulkExport
                         exportPerson.FamilyRole = Slingshot.Core.Model.FamilyRole.Adult;
                     }
 
+                    exportPerson.Addresses = new List<Slingshot.Core.Model.PersonAddress>();
                     foreach ( var familyLocation in family.GroupLocations )
                     {
                         var address = new Slingshot.Core.Model.PersonAddress()
@@ -458,8 +475,10 @@ namespace RockWeb.Blocks.BulkExport
                             address.AddressType = Slingshot.Core.Model.AddressType.Other;
                         }
 
+                        exportPerson.Addresses.Add( address );
+
                         family.LoadAttributes( rockContext );
-                        var familyAttributeValues = person.AttributeValues.Where( a => !string.IsNullOrEmpty( a.Value.Value ) ).Select( a => new Slingshot.Core.Model.GroupAttributeValue()
+                        var familyAttributeValues = family.AttributeValues.Where( a => !string.IsNullOrEmpty( a.Value.Value ) ).Select( a => new Slingshot.Core.Model.GroupAttributeValue()
                         {
                             AttributeKey = a.Key,
                             AttributeValue = a.Value.Value,
@@ -494,6 +513,183 @@ namespace RockWeb.Blocks.BulkExport
             }
         }
 
+        private void ExportFinance( List<int> dataViewPersonIds )
+        {
+            RockContext rockContext = new RockContext();
+
+            var financialTransactions = new FinancialTransactionService( rockContext ).Queryable().Where( a => a.AuthorizedPersonAliasId.HasValue && dataViewPersonIds.Contains( a.AuthorizedPersonAlias.PersonId ) );
+            var batchIds = financialTransactions.Where( a => a.BatchId.HasValue ).Select( a => a.BatchId.Value ).Distinct().ToList();
+
+            var batches = new FinancialBatchService( rockContext ).GetByIds( batchIds );
+            var distinctAccountIds = new List<int>();
+            foreach ( var batch in batches )
+            {
+                var exportBatch = new Slingshot.Core.Model.FinancialBatch()
+                {
+                    CampusId = batch.CampusId,
+                    CreatedByPersonId = batch.CreatedByPersonId,
+                    CreatedDateTime = batch.CreatedDateTime,
+                    EndDate = batch.BatchEndDateTime,
+                    ModifiedDateTime = batch.ModifiedDateTime,
+                    StartDate = batch.BatchStartDateTime,
+                    Id = batch.Id,
+                    ModifiedByPersonId = batch.ModifiedByPersonId,
+                    Name = batch.Name
+                };
+
+                switch ( batch.Status )
+                {
+                    case BatchStatus.Pending:
+                        exportBatch.Status = Slingshot.Core.Model.BatchStatus.Pending;
+                        break;
+                    case BatchStatus.Closed:
+                        exportBatch.Status = Slingshot.Core.Model.BatchStatus.Closed;
+                        break;
+                    case BatchStatus.Open:
+                    default:
+                        exportBatch.Status = Slingshot.Core.Model.BatchStatus.Open;
+                        break;
+                }
+
+                exportBatch.FinancialTransactions = new List<Slingshot.Core.Model.FinancialTransaction>();
+
+                foreach ( var transaction in financialTransactions.Where( a => a.BatchId.HasValue && a.BatchId == batch.Id ) )
+                {
+                    var exportTransaction = new Slingshot.Core.Model.FinancialTransaction()
+                    {
+                        AuthorizedPersonId = transaction.AuthorizedPersonAlias.PersonId,
+                        BatchId = transaction.BatchId ?? 0,
+                        CreatedByPersonId = transaction.CreatedByPersonId,
+                        CreatedDateTime = transaction.CreatedDateTime,
+                        Id = transaction.Id,
+                        ModifiedByPersonId = transaction.ModifiedByPersonId,
+                        ModifiedDateTime = transaction.ModifiedDateTime,
+                        Summary = transaction.Summary,
+                        TransactionCode = transaction.TransactionCode,
+                        TransactionDate = transaction.TransactionDateTime
+                    };
+
+                    if ( transaction.SourceTypeValueId.HasValue )
+                    {
+                        var sourceValue = transaction.SourceTypeValue.Guid;
+                        if ( sourceValue == Rock.SystemGuid.DefinedValue.FINANCIAL_SOURCE_TYPE_BANK_CHECK.AsGuid() )
+                        {
+                            exportTransaction.TransactionSource = Slingshot.Core.Model.TransactionSource.BankChecks;
+                        }
+                        else if ( sourceValue == Rock.SystemGuid.DefinedValue.FINANCIAL_SOURCE_TYPE_KIOSK.AsGuid() )
+                        {
+                            exportTransaction.TransactionSource = Slingshot.Core.Model.TransactionSource.Kiosk;
+                        }
+                        else if ( sourceValue == Rock.SystemGuid.DefinedValue.FINANCIAL_SOURCE_TYPE_MOBILE_APPLICATION.AsGuid() )
+                        {
+                            exportTransaction.TransactionSource = Slingshot.Core.Model.TransactionSource.MobileApplication;
+                        }
+                        else if ( sourceValue == Rock.SystemGuid.DefinedValue.FINANCIAL_SOURCE_TYPE_ONSITE_COLLECTION.AsGuid() )
+                        {
+                            exportTransaction.TransactionSource = Slingshot.Core.Model.TransactionSource.OnsiteCollection;
+                        }
+                        else
+                        {
+                            exportTransaction.TransactionSource = Slingshot.Core.Model.TransactionSource.Website;
+                        }
+                    }
+                    else
+                    {
+                        exportTransaction.TransactionSource = Slingshot.Core.Model.TransactionSource.BankChecks;
+                    }
+
+                    var transactionType = transaction.TransactionTypeValue.Guid;
+                    if ( transactionType == Rock.SystemGuid.DefinedValue.TRANSACTION_TYPE_CONTRIBUTION.AsGuid() )
+                    {
+                        exportTransaction.TransactionType = Slingshot.Core.Model.TransactionType.Contribution;
+                    }
+                    else
+                    {
+                        exportTransaction.TransactionType = Slingshot.Core.Model.TransactionType.EventRegistration;
+                    }
+
+                    if ( transaction.FinancialPaymentDetailId.HasValue && transaction.FinancialPaymentDetail.CurrencyTypeValueId.HasValue )
+                    {
+                        var currencyType = transaction.FinancialPaymentDetail.CurrencyTypeValue.Guid;
+
+                        if ( currencyType == Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH.AsGuid() )
+                        {
+                            exportTransaction.CurrencyType = Slingshot.Core.Model.CurrencyType.ACH;
+                        }
+                        else if ( currencyType == Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CASH.AsGuid() )
+                        {
+                            exportTransaction.CurrencyType = Slingshot.Core.Model.CurrencyType.Cash;
+                        }
+                        else if ( currencyType == Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK.AsGuid() )
+                        {
+                            exportTransaction.CurrencyType = Slingshot.Core.Model.CurrencyType.Check;
+                        }
+                        else if ( currencyType == Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD.AsGuid() )
+                        {
+                            exportTransaction.CurrencyType = Slingshot.Core.Model.CurrencyType.CreditCard;
+                        }
+                        else if ( currencyType == Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_NONCASH.AsGuid() )
+                        {
+                            exportTransaction.CurrencyType = Slingshot.Core.Model.CurrencyType.NonCash;
+                        }
+                        else if ( currencyType == Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_OTHER.AsGuid() )
+                        {
+                            exportTransaction.CurrencyType = Slingshot.Core.Model.CurrencyType.Other;
+                        }
+                        else
+                        {
+                            exportTransaction.CurrencyType = Slingshot.Core.Model.CurrencyType.Unknown;
+                        }
+                    }
+                    else
+                    {
+                        exportTransaction.CurrencyType = Slingshot.Core.Model.CurrencyType.Unknown;
+                    }
+
+                    exportTransaction.FinancialTransactionDetails = new List<Slingshot.Core.Model.FinancialTransactionDetail>();
+                    foreach ( var detail in transaction.TransactionDetails )
+                    {
+                        var exportDetail = new Slingshot.Core.Model.FinancialTransactionDetail()
+                        {
+                            AccountId = detail.AccountId,
+                            Amount = detail.Amount,
+                            CreatedByPersonId = detail.CreatedByPersonId,
+                            CreatedDateTime = detail.CreatedDateTime,
+                            Id = detail.Id,
+                            ModifiedByPersonId = detail.ModifiedByPersonId,
+                            ModifiedDateTime = detail.ModifiedDateTime,
+                            Summary = detail.Summary,
+                            TransactionId = detail.TransactionId
+                        };
+                        exportTransaction.FinancialTransactionDetails.Add( exportDetail );
+
+                        if ( !distinctAccountIds.Contains( detail.AccountId ) )
+                        {
+                            distinctAccountIds.Add( detail.AccountId );
+                        }
+                    }
+                    exportBatch.FinancialTransactions.Add( exportTransaction );
+                }
+
+                ImportPackage.WriteToPackage<Slingshot.Core.Model.FinancialBatch>( exportBatch );
+            }
+
+            var accounts = new FinancialAccountService( rockContext ).GetByIds( distinctAccountIds );
+            foreach ( var account in accounts )
+            {
+                Slingshot.Core.Model.FinancialAccount exportAccount = new Slingshot.Core.Model.FinancialAccount()
+                {
+                    CampusId = account.CampusId,
+                    Id = account.Id,
+                    Name = account.Name,
+                    ParentAccountId = account.ParentAccountId,
+                    IsTaxDeductible = account.IsTaxDeductible
+                };
+
+                ImportPackage.WriteToPackage<Slingshot.Core.Model.FinancialAccount>( exportAccount );
+            }
+            
+        }
         #endregion
     }
 }
