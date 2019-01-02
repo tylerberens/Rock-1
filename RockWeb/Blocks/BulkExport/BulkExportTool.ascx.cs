@@ -280,7 +280,8 @@ namespace RockWeb.Blocks.BulkExport
             var familyNoteTypeIds = new NoteTypeService( rockContext ).Queryable().Where( a => a.EntityTypeId == familyEntityTypeId ).Select( a => a.Id );
             var personNoteTypeIds = new NoteTypeService( rockContext ).Queryable().Where( a => a.EntityTypeId == personEntityTypeId ).Select( a => a.Id );
 
-            var persons = new PersonService( rockContext ).GetByIds( dataViewPersonIds );
+            var persons = new PersonService( rockContext ).Queryable( includeDeceased: true ).Where( t => dataViewPersonIds.Contains( t.Id ) );
+
             foreach ( var person in persons )
             {
                 var exportPerson = new Slingshot.Core.Model.Person()
@@ -292,7 +293,7 @@ namespace RockWeb.Blocks.BulkExport
                     ConnectionStatus = person.ConnectionStatusValueId.HasValue ? person.ConnectionStatusValue.Value : string.Empty,
                     CreatedDateTime = person.CreatedDateTime,
                     Id = person.Id,
-                    InactiveReason = person.InactiveReasonNote,
+                    InactiveReason = string.IsNullOrWhiteSpace( person.InactiveReasonNote ) ? ( person.RecordStatusReasonValue != null ? person.RecordStatusReasonValue.Value : string.Empty ) : person.InactiveReasonNote,
                     IsDeceased = person.IsDeceased,
                     Email = person.Email,
                     NickName = person.NickName,
