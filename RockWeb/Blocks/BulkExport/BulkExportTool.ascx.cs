@@ -139,7 +139,7 @@ namespace RockWeb.Blocks.BulkExport
         {
             RockContext rockContext = new RockContext();
             var familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
-            var groups = new GroupService( rockContext ).Queryable().Where( t => t.Members.Any( a => dataViewPersonIds.Contains( a.PersonId ) ) && t.GroupTypeId != familyGroupTypeId );
+            var groups = new GroupService( rockContext ).Queryable().AsNoTracking().Where( t => t.Members.Any( a => dataViewPersonIds.Contains( a.PersonId ) ) && t.GroupTypeId != familyGroupTypeId );
 
             foreach ( var groupType in groups.Select( a => a.GroupType ).Distinct() )
             {
@@ -242,7 +242,7 @@ namespace RockWeb.Blocks.BulkExport
         private void ExportFamilyWithPerson( List<int> dataViewPersonIds )
         {
             RockContext rockContext = new RockContext();
-            var personAttributes = new AttributeService( rockContext ).GetByEntityTypeId( new Person().TypeId );
+            var personAttributes = new AttributeService( rockContext ).GetByEntityTypeId( new Person().TypeId ).AsNoTracking();
             foreach ( var attribute in personAttributes )
             {
                 foreach ( var category in attribute.Categories )
@@ -259,7 +259,7 @@ namespace RockWeb.Blocks.BulkExport
             }
 
             var familyType = GroupTypeCache.GetFamilyGroupType();
-            var familyAttributes = new AttributeService( rockContext ).Get( new Group().TypeId, "GroupTypeId", familyType.Id.ToString() );
+            var familyAttributes = new AttributeService( rockContext ).Get( new Group().TypeId, "GroupTypeId", familyType.Id.ToString() ).AsNoTracking();
             foreach ( var attribute in familyAttributes )
             {
                 foreach ( var category in attribute.Categories )
@@ -277,10 +277,10 @@ namespace RockWeb.Blocks.BulkExport
 
             var familyEntityTypeId = new Group().TypeId;
             var personEntityTypeId = new Person().TypeId;
-            var familyNoteTypeIds = new NoteTypeService( rockContext ).Queryable().Where( a => a.EntityTypeId == familyEntityTypeId ).Select( a => a.Id );
-            var personNoteTypeIds = new NoteTypeService( rockContext ).Queryable().Where( a => a.EntityTypeId == personEntityTypeId ).Select( a => a.Id );
+            var familyNoteTypeIds = NoteTypeCache.GetByEntity( familyEntityTypeId, string.Empty, string.Empty, true ).Select( a => a.Id );
+            var personNoteTypeIds = NoteTypeCache.GetByEntity( personEntityTypeId, string.Empty, string.Empty, true ).Select( a => a.Id );
 
-            var persons = new PersonService( rockContext ).Queryable( includeDeceased: true ).Where( t => dataViewPersonIds.Contains( t.Id ) );
+            var persons = new PersonService( rockContext ).Queryable( includeDeceased: true ).AsNoTracking().Where( t => dataViewPersonIds.Contains( t.Id ) );
 
             foreach ( var person in persons )
             {
@@ -392,7 +392,7 @@ namespace RockWeb.Blocks.BulkExport
                 } ).ToList();
 
 
-                var notes = new NoteService( rockContext ).Queryable().Where( a => a.EntityId == person.Id && personNoteTypeIds.Contains( a.NoteTypeId ) );
+                var notes = new NoteService( rockContext ).Queryable().AsNoTracking().Where( a => a.EntityId == person.Id && personNoteTypeIds.Contains( a.NoteTypeId ) );
                 foreach ( var note in notes )
                 {
                     var personNote = new Slingshot.Core.Model.PersonNote()
@@ -410,7 +410,7 @@ namespace RockWeb.Blocks.BulkExport
                     ImportPackage.WriteToPackage<Slingshot.Core.Model.PersonNote>( personNote );
                 }
 
-                foreach ( var family in person.GetFamilies( rockContext ) )
+                foreach ( var family in person.GetFamilies( rockContext ).AsNoTracking() )
                 {
                     exportPerson.FamilyId = family.Id;
                     exportPerson.FamilyName = family.Name;
@@ -491,7 +491,7 @@ namespace RockWeb.Blocks.BulkExport
                         }
                     }
 
-                    var familyNotes = new NoteService( rockContext ).Queryable().Where( a => a.EntityId == family.Id && familyNoteTypeIds.Contains( a.NoteTypeId ) );
+                    var familyNotes = new NoteService( rockContext ).Queryable().AsNoTracking().Where( a => a.EntityId == family.Id && familyNoteTypeIds.Contains( a.NoteTypeId ) );
                     foreach ( var note in familyNotes )
                     {
                         var familyNote = new Slingshot.Core.Model.FamilyNote()
@@ -518,10 +518,10 @@ namespace RockWeb.Blocks.BulkExport
         {
             RockContext rockContext = new RockContext();
 
-            var financialTransactions = new FinancialTransactionService( rockContext ).Queryable().Where( a => a.AuthorizedPersonAliasId.HasValue && dataViewPersonIds.Contains( a.AuthorizedPersonAlias.PersonId ) );
+            var financialTransactions = new FinancialTransactionService( rockContext ).Queryable().AsNoTracking().Where( a => a.AuthorizedPersonAliasId.HasValue && dataViewPersonIds.Contains( a.AuthorizedPersonAlias.PersonId ) );
             var batchIds = financialTransactions.Where( a => a.BatchId.HasValue ).Select( a => a.BatchId.Value ).Distinct().ToList();
 
-            var batches = new FinancialBatchService( rockContext ).GetByIds( batchIds );
+            var batches = new FinancialBatchService( rockContext ).GetByIds( batchIds ).AsNoTracking();
             var distinctAccountIds = new List<int>();
             foreach ( var batch in batches )
             {
@@ -675,7 +675,7 @@ namespace RockWeb.Blocks.BulkExport
                 ImportPackage.WriteToPackage<Slingshot.Core.Model.FinancialBatch>( exportBatch );
             }
 
-            var accounts = new FinancialAccountService( rockContext ).GetByIds( distinctAccountIds );
+            var accounts = new FinancialAccountService( rockContext ).GetByIds( distinctAccountIds ).AsNoTracking();
             foreach ( var account in accounts )
             {
                 Slingshot.Core.Model.FinancialAccount exportAccount = new Slingshot.Core.Model.FinancialAccount()
