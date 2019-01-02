@@ -45,6 +45,28 @@ namespace RockWeb.Blocks.BulkExport
     [Description( "Block to export the data to Slingshot files" )]
     public partial class BulkExportTool : RockBlock
     {
+        #region Fields
+        /// <summary>
+        /// This holds the reference to the RockMessageHub SignalR Hub context.
+        /// </summary>
+        private IHubContext _hubContext = GlobalHost.ConnectionManager.GetHubContext<RockMessageHub>();
+
+        /// <summary>
+        /// Gets the signal r notification key.
+        /// </summary>
+        /// <value>
+        /// The signal r notification key.
+        /// </value>
+        public string SignalRNotificationKey
+        {
+            get
+            {
+                return string.Format( "BulkExport_BlockId:{0}_SessionId:{1}", this.BlockId, Session.SessionID );
+            }
+        }
+
+        #endregion
+
         #region Base Control Methods
 
         /// <summary>
@@ -54,6 +76,7 @@ namespace RockWeb.Blocks.BulkExport
         protected override void OnInit( EventArgs e )
         {
             base.OnInit( e );
+            RockPage.AddScriptLink( "~/Scripts/jquery.signalR-2.2.0.min.js", false );
 
             dpDataView.EntityTypeId = EntityTypeCache.Get<Person>().Id;
         }
@@ -281,9 +304,14 @@ namespace RockWeb.Blocks.BulkExport
             var personNoteTypeIds = NoteTypeCache.GetByEntity( personEntityTypeId, string.Empty, string.Empty, true ).Select( a => a.Id );
 
             var persons = new PersonService( rockContext ).Queryable( includeDeceased: true ).AsNoTracking().Where( t => dataViewPersonIds.Contains( t.Id ) );
+            int total = persons.Count();
+            int completed = 0;
+            WriteProgressMessage( "Exporting", "", completed, total );
 
             foreach ( var person in persons )
             {
+                WriteProgressMessage( "Exporting...", person.FullNameFormalReversed, completed, total );
+
                 var exportPerson = new Slingshot.Core.Model.Person()
                 {
                     Suffix = person.SuffixValueId.HasValue ? person.SuffixValue.Value : string.Empty,
@@ -511,7 +539,12 @@ namespace RockWeb.Blocks.BulkExport
 
                     ImportPackage.WriteToPackage<Slingshot.Core.Model.Person>( exportPerson );
                 }
+
+                completed++;
             }
+
+            WriteProgressMessage( "Export Complete", string.Empty, completed, total );
+            ProcessingCompleted();
         }
 
         private void ExportFinance( List<int> dataViewPersonIds )
@@ -690,6 +723,23 @@ namespace RockWeb.Blocks.BulkExport
                 ImportPackage.WriteToPackage<Slingshot.Core.Model.FinancialAccount>( exportAccount );
             }
             
+        }
+
+        /// <summary>
+        /// Writes the progress message.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        private void WriteProgressMessage( string message, string results, int completed, int total )
+        {
+            _hubContext.Clients.All.receiveNotification( this.SignalRNotificationKey, message, results.ConvertCrLfToHtmlBr(), completed.ToString(), total.ToString() );
+        }
+
+        /// <summary>
+        /// Tells the client that the processing is completed.
+        /// </summary>
+        private void ProcessingCompleted()
+        {
+            _hubContext.Clients.All.showDetails( this.SignalRNotificationKey, false );
         }
         #endregion
     }
