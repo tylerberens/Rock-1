@@ -161,8 +161,7 @@ namespace RockWeb.Blocks.BulkExport
         private void ExportGroup( List<int> dataViewPersonIds )
         {
             RockContext rockContext = new RockContext();
-            var familyGroupTypeId = GroupTypeCache.GetFamilyGroupType().Id;
-            var groups = new GroupService( rockContext ).Queryable().AsNoTracking().Where( t => t.Members.Any( a => dataViewPersonIds.Contains( a.PersonId ) ) && t.GroupTypeId != familyGroupTypeId );
+            var groups = new GroupService( rockContext ).Queryable().AsNoTracking().Where( t => t.Members.Any( a => dataViewPersonIds.Contains( a.PersonId ) ) );
 
             foreach ( var groupType in groups.Select( a => a.GroupType ).Distinct() )
             {
@@ -438,7 +437,8 @@ namespace RockWeb.Blocks.BulkExport
                     ImportPackage.WriteToPackage<Slingshot.Core.Model.PersonNote>( personNote );
                 }
 
-                foreach ( var family in person.GetFamilies( rockContext ).AsNoTracking() )
+                var family = person.GetFamily( rockContext );
+                if ( family != null )
                 {
                     exportPerson.FamilyId = family.Id;
                     exportPerson.FamilyName = family.Name;
