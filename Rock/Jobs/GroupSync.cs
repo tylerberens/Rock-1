@@ -38,7 +38,8 @@ namespace Rock.Jobs
     /// sending any ExitSystemEmail or WelcomeSystemEmail as well as possibly creating any 
     /// user login for the person.
     /// 
-    /// It should adhere to the following truth table:
+    /// It should adhere to the following truth table for a person in a particular role
+    /// (A Person can be in the same group with a different role):
     /// 
     ///     In         In Group   In Group
     ///     DataView   Archived   !Archived   Result

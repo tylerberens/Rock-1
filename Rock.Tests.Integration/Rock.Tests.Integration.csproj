@@ -78,6 +78,7 @@
     <Compile Include="Rock\DatabaseTests.cs" />
     <Compile Include="Rock\Model\AttendanceCodeTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Rock\Model\GropSyncTests.cs" />
     <Compile Include="Rock\Model\GroupTests.cs" />
     <Compile Include="Rock\Model\PersonTests.cs" />
     <Compile Include="Rock\TestInitializer.cs" />
@@ -96,6 +97,7 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>test.Designer.cs</LastGenOutput>
     </None>
+    <None Include="web.ConnectionStrings.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotLiquid\DotLiquid.csproj">
