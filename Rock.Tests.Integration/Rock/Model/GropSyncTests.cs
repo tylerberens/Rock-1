@@ -41,7 +41,7 @@ namespace Rock.Tests.Integration.Model
     ///     DataView   Archived   !Archived   Result
     ///     --------   --------   ---------   ----------------------------
     ///            0          0           0   do nothing
-    ///            0          0           1   remove from group
+    ///            0          0           1   remove from group (ExpectedAlishaTobeRemoved)
     ///            0          1           0   do nothing (ExpectedCindyToRemainInGroup)
     ///            1          0           0   add to group (ExpectedAddedNoahDeckerToGroup)
     ///            1          0           1   do nothing (ExpectedBillMarbleToRemainInGroup)
@@ -65,16 +65,16 @@ namespace Rock.Tests.Integration.Model
 
             #region Set up of Group Sync (Decker Group with Male Dataview)
 
-            ///Rock Context
+            // Rock Context
             RockContext rc = new RockContext();
 
-            ///Sets Group to insert its Id by GUID
+            // Sets Group to insert its Id by GUID
             var deckerGroupGuid = "62DC3753-01D5-48B5-B22D-D2825D92900B".AsGuid();
             Group deckerGroup = new GroupService( rc ).Queryable()
                 .Where( x => x.Guid == deckerGroupGuid )
                 .FirstOrDefault();
 
-            ///Gets Small Group Type to change AllowGroupSync to TRUE
+            // Gets Small Group Type to change AllowGroupSync to TRUE
             var smallgroupTypeGUID = "50FCFB30-F51A-49DF-86F4-2B176EA1820B".AsGuid();
             GroupType smallGroup = new GroupTypeService( rc ).Queryable()
                 .Where( x => x.Guid == smallgroupTypeGUID )
@@ -83,14 +83,14 @@ namespace Rock.Tests.Integration.Model
             smallGroup.AllowGroupSync = true;
             rc.SaveChanges();
 
-            ///Sets Group Type role to insert it's Id by GUID
+            // Sets Group Type role to insert it's Id by GUID
             var groupTypeRoleGUID = "F0806058-7E5D-4CA9-9C04-3BDF92739462".AsGuid();
             GroupTypeRole smallGroupTypeRoleForID = new GroupTypeRoleService( rc ).Queryable()
                 .AsNoTracking()
                 .Where( x => x.Guid == groupTypeRoleGUID )
                 .First();
 
-            ///Sets Group Type role to insert it's Id by GUID
+            // Sets Group Type role to insert it's Id by GUID
             var dataViewGUID = "C43983D7-1F22-4E94-9F5C-342DA3A0E168".AsGuid();
             DataView dataViewForID = new DataViewService( rc ).Queryable().AsNoTracking()
                 .Where( x => x.Guid == dataViewGUID ).First();
@@ -105,13 +105,13 @@ namespace Rock.Tests.Integration.Model
             rc.GroupSyncs.Add( syncWithMalesDV );
             rc.SaveChanges();
 
-            ///Set a Decker Group Member(Ted) as Archived
+            // Set a Decker Group Member(Ted) as Archived
             var deckerMemberToBeArchived = "F0AD1122-6F82-48FA-AFF3-A9C372AA54F4".AsGuid();
             GroupMember deckerMemberToSwitch = new GroupMemberService( rc ).Queryable()
                .AsNoTracking()
                .Where( x => x.Guid == deckerMemberToBeArchived )
                .First();
-
+            
             // Gets Cindy Decker 
             var cindydeckerMemberToBeArchived = "024FE57F-5DCF-483E-A663-DE45A2083AA2".AsGuid();
             GroupMember cindydeckerMemberToSwitch = new GroupMemberService( rc ).Queryable()
@@ -257,7 +257,7 @@ namespace Rock.Tests.Integration.Model
         }
 
         /// <summary>
-        /// Checks to see if Bill remains in group
+        /// Checks to see if Cindy remains in group
         /// </summary>
         [TestMethod]
         public void ExpectedCindyToRemainInGroup()
@@ -280,6 +280,25 @@ namespace Rock.Tests.Integration.Model
                .First();
 
             Assert.IsFalse( cindydeckerMemberToRemain == null );
+        }
+        
+        /// <summary>
+        /// Checks to see if Alisha is still in the group(Group Sync Should have removed her from Decker Group)
+        /// </summary>
+        [TestMethod]
+        public void ExpectedAlishaTobeRemoved()
+        {
+            // Rock Context
+            RockContext rc = new RockContext();
+
+            // Ensure Alisha is removed from the Decker Group
+            var alishaToBeArchivedFalse = "D389DC8B-6EB4-40FE-9ABB-BCE72F789D62".AsGuid();
+            GroupMember deckergroupMember = new GroupMemberService( rc ).Queryable()
+               .AsNoTracking()
+               .Where( x => x.Guid == alishaToBeArchivedFalse )
+               .FirstOrDefault();
+
+            Assert.IsTrue( deckergroupMember == null );
         }
 
         #endregion
