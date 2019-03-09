@@ -270,6 +270,7 @@ namespace Rock.Tests.Integration.Model
 
             // Sets Group to insert its Id by GUID
             Group deckerGroup = new GroupService( rc ).Queryable()
+                .AsNoTracking()
                 .Where( x => x.Guid == deckerGroupGuid )
                 .FirstOrDefault();
 
@@ -290,13 +291,61 @@ namespace Rock.Tests.Integration.Model
         {
             // Rock Context
             RockContext rc = new RockContext();
+            var deckerGroupGuid = "62DC3753-01D5-48B5-B22D-D2825D92900B".AsGuid();
+
+            // Sets Group to insert its Id by GUID
+            Group deckerGroup = new GroupService( rc ).Queryable()
+                .AsNoTracking()
+                .Where( x => x.Guid == deckerGroupGuid )
+                .FirstOrDefault();
 
             // Ensure Alisha is removed from the Decker Group
             var alishaToBeArchivedFalse = "D389DC8B-6EB4-40FE-9ABB-BCE72F789D62".AsGuid();
             GroupMember deckergroupMember = new GroupMemberService( rc ).Queryable()
                .AsNoTracking()
-               .Where( x => x.Guid == alishaToBeArchivedFalse )
+               .Where( x => x.Guid == alishaToBeArchivedFalse && x.GroupId ==deckerGroup.Id )
                .FirstOrDefault();
+
+            Assert.IsTrue( deckergroupMember == null );
+        }
+
+        /// <summary>
+        /// CChecks to see if same people are in the group that correspond to the dataview.
+        /// </summary>
+        [TestMethod]
+        public void AreGroupMembersInDataView()
+        {
+            // Rock Context
+            RockContext rc = new RockContext();
+
+            var personService = new PersonService( rc );
+
+            var deckerGroupGuid = "62DC3753-01D5-48B5-B22D-D2825D92900B".AsGuid();
+
+            // Sets Group to insert its Id by GUID
+            Group deckerGroup = new GroupService( rc ).Queryable()
+                .AsNoTracking()
+                .Where( x => x.Guid == deckerGroupGuid )
+                .FirstOrDefault();
+
+            // Gets DataView (Men)
+            var dataViewGUID = "C43983D7-1F22-4E94-9F5C-342DA3A0E168".AsGuid();
+            DataView dataViewForID = new DataViewService( rc ).Queryable().AsNoTracking()
+                .Where( x => x.Guid == dataViewGUID ).First();
+
+            // Filter people by dataview
+            var errorMessages = new List<string>();
+            var paramExpression = personService.ParameterExpression;
+            var whereExpression = dataViewForID.GetExpression( personService, paramExpression, out errorMessages );
+            var personQry = personService
+                .Queryable( false, false ).AsNoTracking()
+                .Where( paramExpression, whereExpression, null );
+
+            // Gets Decker Group Member list
+            List<GroupMember> deckergroupMember = new GroupMemberService( rc ).Queryable(false,true)
+               .AsNoTracking()
+               .Where( x => x.GroupId == deckerGroup.Id )
+               .ToList();
 
             Assert.IsTrue( deckergroupMember == null );
         }
