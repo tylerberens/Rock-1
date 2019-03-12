@@ -46,6 +46,7 @@ namespace Rock.Tests.Integration.Model
     ///            1          0           0   add to group (ExpectedAddedNoahDeckerToGroup)
     ///            1          0           1   do nothing (ExpectedBillMarbleToRemainInGroup)
     ///            1          1           0   change IsArchived to false (TedDeckerSwitchedFromArchiveTrue)
+    ///                                    Checks DataView Person list against Group Members (AreGroupMembersInDataView)
     ///
     /// NOTE: It should do this regardless of the person's IsDeceased flag.
     /// NOTE: The job can sync new people at about 45/sec or 2650/minute.
@@ -310,7 +311,7 @@ namespace Rock.Tests.Integration.Model
         }
 
         /// <summary>
-        /// CChecks to see if same people are in the group that correspond to the dataview.
+        /// Checks to see if same people are in the group that correspond to the dataview.
         /// </summary>
         [TestMethod]
         public void AreGroupMembersInDataView()
@@ -337,17 +338,30 @@ namespace Rock.Tests.Integration.Model
             var errorMessages = new List<string>();
             var paramExpression = personService.ParameterExpression;
             var whereExpression = dataViewForID.GetExpression( personService, paramExpression, out errorMessages );
-            var personQry = personService
-                .Queryable( false, false ).AsNoTracking()
-                .Where( paramExpression, whereExpression, null );
+            List<Person> personQry = personService
+                .Queryable().AsNoTracking()
+                .Where( paramExpression, whereExpression, null ).ToList();
 
             // Gets Decker Group Member list
-            List<GroupMember> deckergroupMember = new GroupMemberService( rc ).Queryable(false,true)
+            List<GroupMember> deckergroupMember = new GroupMemberService( rc ).Queryable()
                .AsNoTracking()
                .Where( x => x.GroupId == deckerGroup.Id )
                .ToList();
 
-            Assert.IsTrue( deckergroupMember == null );
+            foreach ( GroupMember person in deckergroupMember )
+            {
+                var fullName = person.Person.FullName;
+                if ( personQry.Any( x => x.FullName == fullName ))
+                {
+                    continue;
+                }
+                else
+                {
+                    Assert.Fail();
+                }
+            }
+
+            Assert.IsTrue( 1 == 1 );
         }
 
         #endregion
