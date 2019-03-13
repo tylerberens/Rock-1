@@ -53,7 +53,7 @@ namespace Rock.Workflow.Action.CheckIn
         public override bool Execute( RockContext rockContext, Model.WorkflowAction action, Object entity, out List<string> errorMessages )
         {
             var checkInState = GetCheckInState( entity, out errorMessages );
-            if ( checkInState != null )
+            if (checkInState != null)
             {
                 AttendanceCode attendanceCode = null;
 
@@ -69,14 +69,15 @@ namespace Rock.Workflow.Action.CheckIn
                 var groupMemberService = new GroupMemberService( rockContext );
                 var personAliasService = new PersonAliasService( rockContext );
 
+                checkInState.Messages.Clear();
 
                 var family = checkInState.CheckIn.CurrentFamily;
-                if ( family != null )
+                if (family != null)
                 {
                     var currentOccurences = new List<OccurenceRecord>();
-                    foreach ( var person in family.GetPeople( true ) )
+                    foreach (var person in family.GetPeople( true ))
                     {
-                        if ( reuseCodeForFamily && attendanceCode != null )
+                        if (reuseCodeForFamily && attendanceCode != null)
                         {
                             person.SecurityCode = attendanceCode.Code;
                         }
@@ -86,13 +87,13 @@ namespace Rock.Workflow.Action.CheckIn
                             person.SecurityCode = attendanceCode.Code;
                         }
 
-                        foreach ( var groupType in person.GetGroupTypes( true ) )
+                        foreach (var groupType in person.GetGroupTypes( true ))
                         {
-                            foreach ( var group in groupType.GetGroups( true ) )
+                            foreach (var group in groupType.GetGroups( true ))
                             {
-                                if ( groupType.GroupType.AttendanceRule == AttendanceRule.AddOnCheckIn &&
+                                if (groupType.GroupType.AttendanceRule == AttendanceRule.AddOnCheckIn &&
                                     groupType.GroupType.DefaultGroupRoleId.HasValue &&
-                                    !groupMemberService.GetByGroupIdAndPersonId( group.Group.Id, person.Person.Id, true ).Any() )
+                                    !groupMemberService.GetByGroupIdAndPersonId( group.Group.Id, person.Person.Id, true ).Any())
                                 {
                                     var groupMember = new GroupMember();
                                     groupMember.GroupId = group.Group.Id;
@@ -101,19 +102,19 @@ namespace Rock.Workflow.Action.CheckIn
                                     groupMemberService.Add( groupMember );
                                 }
 
-                                foreach ( var location in group.GetLocations( true ) )
+                                foreach (var location in group.GetLocations( true ))
                                 {
                                     bool isCheckedIntoLocation = false;
-                                    foreach ( var schedule in location.GetSchedules( true ) )
+                                    foreach (var schedule in location.GetSchedules( true ))
                                     {
                                         var startDateTime = schedule.CampusCurrentDateTime;
 
                                         // If we're enforcing strict location thresholds, then before we create an attendance record
                                         // we need to check the location-schedule's current count.
-                                        if ( GetAttributeValue( action, "EnforceStrictLocationThreshold" ).AsBoolean() && location.Location.SoftRoomThreshold.HasValue )
+                                        if (GetAttributeValue( action, "EnforceStrictLocationThreshold" ).AsBoolean() && location.Location.SoftRoomThreshold.HasValue)
                                         {
                                             var thresHold = location.Location.SoftRoomThreshold.Value;
-                                            if ( checkInState.ManagerLoggedIn && location.Location.FirmRoomThreshold.HasValue && location.Location.FirmRoomThreshold.Value > location.Location.SoftRoomThreshold.Value )
+                                            if (checkInState.ManagerLoggedIn && location.Location.FirmRoomThreshold.HasValue && location.Location.FirmRoomThreshold.Value > location.Location.SoftRoomThreshold.Value)
                                             {
                                                 thresHold = location.Location.FirmRoomThreshold.Value;
                                             }
@@ -127,15 +128,15 @@ namespace Rock.Workflow.Action.CheckIn
                                                 .AsNoTracking()
                                                 .Where( a => a.EndDateTime == null );
 
-                                            // only process if the current person is NOT already checked-in to this location and schedule
-                                            if ( !attendanceQry.Where( a => a.PersonAlias.PersonId == person.Person.Id ).Any() )
+                                            // Only process if the current person is NOT already checked-in to this location and schedule
+                                            if (!attendanceQry.Where( a => a.PersonAlias.PersonId == person.Person.Id ).Any())
                                             {
-                                                var totalAttended = attendanceQry.Count() + ( currentOccurence == null ? 0 : currentOccurence.Count );
+                                                var totalAttended = attendanceQry.Count() + (currentOccurence == null ? 0 : currentOccurence.Count);
 
                                                 // If over capacity, remove the schedule and add a warning message.
-                                                if ( totalAttended >= thresHold )
+                                                if (totalAttended >= thresHold)
                                                 {
-                                                    // Unselect the schedule since the location was full for this schedule.  
+                                                    // Remove the schedule since the location was full for this schedule.  
                                                     location.Schedules.Remove( schedule );
 
                                                     var message = new CheckInMessage()
@@ -157,7 +158,7 @@ namespace Rock.Workflow.Action.CheckIn
                                                 else
                                                 {
                                                     // Keep track of anyone who was checked in so far.
-                                                    if ( currentOccurence == null )
+                                                    if (currentOccurence == null)
                                                     {
                                                         currentOccurence = new OccurenceRecord()
                                                         {
@@ -175,10 +176,10 @@ namespace Rock.Workflow.Action.CheckIn
 
                                         // Only create one attendance record per day for each person/schedule/group/location
                                         var attendance = attendanceService.Get( startDateTime, location.Location.Id, schedule.Schedule.Id, group.Group.Id, person.Person.Id );
-                                        if ( attendance == null )
+                                        if (attendance == null)
                                         {
                                             var primaryAlias = personAliasService.GetPrimaryAlias( person.Person.Id );
-                                            if ( primaryAlias != null )
+                                            if (primaryAlias != null)
                                             {
                                                 attendance = attendanceService.AddOrUpdate( primaryAlias.Id, startDateTime.Date, group.Group.Id,
                                                     location.Location.Id, schedule.Schedule.Id, location.CampusId,
@@ -204,8 +205,8 @@ namespace Rock.Workflow.Action.CheckIn
                                         isCheckedIntoLocation = true;
                                     }
 
-                                    // If the person was NOT checked into the location for any schedule then unselect the location
-                                    if ( ! isCheckedIntoLocation )
+                                    // If the person was NOT checked into the location for any schedule then remove the location
+                                    if (!isCheckedIntoLocation)
                                     {
                                         group.Locations.Remove( location );
                                     }
@@ -223,9 +224,9 @@ namespace Rock.Workflow.Action.CheckIn
         }
 
         /// <summary>
-        /// Gets the current occurence from the given list for the matching location, schedule and startDateTime.
+        /// Gets the current occurrence from the given list for the matching location, schedule and startDateTime.
         /// </summary>
-        /// <param name="currentOccurences">The current occurences.</param>
+        /// <param name="currentOccurences">The current occurrences.</param>
         /// <param name="location">The location.</param>
         /// <param name="schedule">The schedule.</param>
         /// <param name="startDateTime">The start date time.</param>
