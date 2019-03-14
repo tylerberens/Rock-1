@@ -141,7 +141,7 @@ namespace Rock.Tests.Integration.Model
                 transaction.Execute();
             }
 
-            // run process group history
+            // run process group sync
             var groupSyncGUID = "57B539BC-7C4D-25BB-4EEB-39DF0EF62EBC".AsGuid();
             var job = new ServiceJobService( rc ).Queryable().AsNoTracking()
                 .Where( x => x.Guid == groupSyncGUID )
