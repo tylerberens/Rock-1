@@ -208,7 +208,7 @@ namespace Rock.Tests.Integration.Model
             
             IQueryable<GroupMember> archivedList = new GroupMemberService( rc ).GetArchived();
 
-            Assert.IsFalse( ted == null );
+            Assert.IsFalse( archivedList == null );
         }
 
         /// <summary>
