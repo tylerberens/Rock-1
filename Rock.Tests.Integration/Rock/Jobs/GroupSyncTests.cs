@@ -24,7 +24,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Rock.Data;
 
 
-namespace Rock.Tests.Integration.Model
+namespace Rock.Tests.Integration.Jobs
 {
     /// <summary>
     /// This job synchronizes the members of a group with the people in a Rock data view based on
@@ -32,7 +32,7 @@ namespace Rock.Tests.Integration.Model
     /// sending any ExitSystemEmail or WelcomeSystemEmail as well as possibly creating any 
     /// user login for the person.
     ///
-    ///Before the Group Sync job is ran, the Group History Job needs to be ran. 
+    /// Before the Group Sync job is ran, the Group History Job needs to be ran. 
     /// 
     /// It should adhere to the following truth table for a person in a particular role
     /// (A Person can be in the same group with a different role):
