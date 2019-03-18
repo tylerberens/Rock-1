@@ -78,7 +78,7 @@
     <Compile Include="Rock\DatabaseTests.cs" />
     <Compile Include="Rock\Model\AttendanceCodeTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Rock\Model\GropSyncTests.cs" />
+    <Compile Include="Rock\Jobs\GroupSyncTests.cs" />
     <Compile Include="Rock\Model\GroupMemberTests.cs" />
     <Compile Include="Rock\Model\PersonTests.cs" />
     <Compile Include="Rock\TestInitializer.cs" />
