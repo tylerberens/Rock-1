@@ -64,6 +64,12 @@ namespace Rock.Tests.Integration.Model
                 .Where( x => x.Guid == noahsGUID )
                 .First();
 
+            // Gets Benjamin's Id
+            var benjaminsGUID = "3C402382-3BD2-4337-A996-9E62F1BAB09D".AsGuid();
+            Person benjaminJones = new PersonService( rc ).Queryable().AsNoTracking()
+                .Where( x => x.Guid == benjaminsGUID )
+                .First();
+
             // Sets Group Type role to insert it's Id by GUID
             var groupTypeRoleGUID = "8F63AB81-A2F7-4D69-82E9-158FDD92DB3D".AsGuid();
             GroupTypeRole groupRoleForID = new GroupTypeRoleService( rc ).Queryable()
@@ -78,9 +84,18 @@ namespace Rock.Tests.Integration.Model
                 GroupRoleId = groupRoleForID.Id,
             };
 
-            rc.GroupMembers.Add( noahAsNewGroupMember );
+            GroupMember benjaminJonesAsNewGroupMemberArchived = new GroupMember
+            {
+                GroupId = deckerGroup.Id,
+                PersonId = benjaminJones.Id,
+                GroupRoleId = groupRoleForID.Id,
+                IsArchived = true
+            };
 
-           
+            rc.GroupMembers.Add( noahAsNewGroupMember );
+            rc.GroupMembers.Add( benjaminJonesAsNewGroupMemberArchived );
+
+
             rc.SaveChanges();
 
             // run Group History Job
@@ -201,14 +216,14 @@ namespace Rock.Tests.Integration.Model
         /// Checks 'Get Archived Group Members' method
         /// </summary>
         [TestMethod]
-        public void ChecksGetArchivedGroupMembers()
+        public void ChecksBenjaminJonesasBeingArchivedThroughGetArchivedGroupMembers()
         {
             // Rock Context
             RockContext rc = new RockContext();
             
             IQueryable<GroupMember> archivedList = new GroupMemberService( rc ).GetArchived();
-
-            Assert.IsFalse( archivedList == null );
+            
+            Assert.IsTrue( archivedList.Any( x => x.Guid == "6d6122ca-c5a1-46fd-839c-de9534bd0519".AsGuid() ) );
         }
 
         /// <summary>
