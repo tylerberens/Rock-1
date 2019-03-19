@@ -227,6 +227,19 @@ namespace Rock.Tests.Integration.Model
         }
 
         /// <summary>
+        /// Queryable
+        /// </summary>
+        [TestMethod]
+        public void Queryable()
+        {
+            // Rock Context
+            RockContext rc = new RockContext();
+
+            var archivedList = new GroupMemberService( rc ).Queryable();
+            
+        }
+
+        /// <summary>
         /// Ensure the Deceased Group Member is included
         /// Depends on at least one Group Member being in a group that is deceased
         /// </summary>
