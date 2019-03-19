@@ -230,13 +230,14 @@ namespace Rock.Tests.Integration.Model
         /// Queryable
         /// </summary>
         [TestMethod]
-        public void Queryable()
+        public void ChecksTheQueryableMethodReturnType()
         {
             // Rock Context
             RockContext rc = new RockContext();
 
-            var archivedList = new GroupMemberService( rc ).Queryable();
+            var queryable = new GroupMemberService( rc ).Queryable();
             
+            Assert.IsTrue( queryable is IQueryable );
         }
 
         /// <summary>
