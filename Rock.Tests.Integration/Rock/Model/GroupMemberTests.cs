@@ -241,7 +241,7 @@ namespace Rock.Tests.Integration.Model
         }
 
         /// <summary>
-        /// Queryable
+        /// Queryable with deceased included
         /// </summary>
         [TestMethod]
         public void ChecksTheQueryableMethodReturnTypeIncludingDeceased()
@@ -252,6 +252,20 @@ namespace Rock.Tests.Integration.Model
             var queryable = new GroupMemberService( rc ).Queryable( true );
             
             Assert.IsTrue( queryable is IQueryable && queryable.Any( x => x.Person.IsDeceased == true ) );
+        }
+
+        /// <summary>
+        /// Queryable with deceased included and including archived
+        /// </summary>
+        [TestMethod]
+        public void ChecksTheQueryableMethodReturnTypeIncludingDeceasedIncludeArchived()
+        {
+            // Rock Context
+            RockContext rc = new RockContext();
+
+            var queryable = new GroupMemberService( rc ).Queryable( true , true );
+
+            Assert.IsTrue( queryable is IQueryable && queryable.Any( x => x.Person.IsDeceased == true ) && queryable.Any( x => x.IsArchived == true ) );
         }
 
         /// <summary>
