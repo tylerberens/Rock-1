@@ -258,7 +258,7 @@ namespace Rock.Tests.Integration.Model
         /// Queryable with deceased included and including archived
         /// </summary>
         [TestMethod]
-        public void ChecksTheQueryableMethodReturnTypeIncludingDeceasedIncludeArchived()
+        public void ChecksTheQueryableMethodReturnTypeIncludingDeceasedToIncludeArchived()
         {
             // Rock Context
             RockContext rc = new RockContext();
