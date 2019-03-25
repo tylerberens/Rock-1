@@ -18,7 +18,6 @@ namespace Rock.Migrations
 {
     using System;
     using System.Data.Entity.Migrations;
-    using Rock.Plugin.HotFixes;
 
     /// <summary>
     ///
@@ -30,22 +29,13 @@ namespace Rock.Migrations
         /// </summary>
         public override void Up()
         {
-            // 60 
-
-            // 61 
+            // 61_MigrationRollups 
             UpdateStatementGeneratorInstallerLocation();
             ReAddMissingVisitorConnectionStatus();
-
-            // 062_MigrationRollupsForV8_7
-            FixWordCloudShortCodeUp();
-            FixParallaxShortCodeUp();
-
+            
             // 064_MigrationRollupsForV8_7_2
-            UpdateCommunicationSettings();
-            UpdatedCheckInSuccessTemplate();
-            UpdatedAttendanceSummaryEmail();
-            UpdateContentChannelView();
             RemoveDuplicateIndexes();
+            UpdatedAttendanceSummaryEmail();
 
             // 066_MigrationRollupsForV8_7_3
             UpdateStatementGenerator();
@@ -53,13 +43,13 @@ namespace Rock.Migrations
             UpdatePersonTokenCreate();
             UpdatePersonTokenCreateAttribute();
 
-            // 67
+            // 67_MigrationRollups
             CreatePersonBirthdatePersistedIndexed();
 
             // 068_MigrationRollupsForV8_7_5
             UpdatedGoogleMapsShortCode();
 
-            // 69
+            // 69_MigrationRollups
             EFCleanUpForFile69_MigrationRollupsForV8_7_6();
 
             // 70_MigrationRollupsForV8_7_7
@@ -75,56 +65,10 @@ namespace Rock.Migrations
         /// </summary>
         public override void Down()
         {
-          
+            
         }
-        #region 58
-
-
-
-        #endregion
-
-        #region 59 Review With Mike
-
-        /// <summary>
-        /// MP: Fix Invalid Column error in spCheckin_AttendanceAnalyticsQuery_NonAttendees
-        /// </summary>
-        private void FixspCheckin_AttendanceAnalyticsQuery_NonAttendees()
-        {
-            Sql( HotFixMigrationResource._059_MigrationRollupsForV8_5_2_spCheckin_AttendanceAnalyticsQuery_NonAttendees );
-        }
-
-        #endregion
-
-        #region 60 Review with DEVS
-
-        /// <summary>
-        /// ED: Date filtering is missing while calculating Gifts in spFinance_PledgeAnalyticsQuery
-        /// </summary>
-        private void FixPledgeAnalyticsGiftDateFilteringUp()
-        {
-            Sql( HotFixMigrationResource._060_MigrationRollupsForV8_6_spFinance_PledgeAnalyticsQuery_Up );
-        }
-
-        /// <summary>
-        /// Reverts Change:
-        /// ED: Date filtering is missing while calculating Gifts in spFinance_PledgeAnalyticsQuery
-        /// </summary>
-        private void FixPledgeAnalyticsGiftDateFilteringDown()
-        {
-            Sql( HotFixMigrationResource._060_MigrationRollupsForV8_6_spFinance_PledgeAnalyticsQuery_Down );
-        }
-
-        /// <summary>
-        /// GJ: Fix Chart Shortcode
-        /// </summary>
-        private void FixChartShortcode()
-        {
-            Sql( HotFixMigrationResource._060_MigrationRollupsForV8_6_FixChartShortcode );
-        }
-
-        #endregion
-
-        #region 61 Review with Devs (ReAddMissingVisitorConnectionStatus)
+        
+        #region 61 
 
         /// <summary>
         /// MP: Update StatementGenerator.exe to 1.8.0
@@ -155,205 +99,9 @@ END" );
         }
 
         #endregion
-
-        #region 62
-
-        /// <summary>
-        /// Fixes the word cloud short code CA9B54BF-EF0A-4B08-884F-7042A6B3EAF4
-        /// </summary>
-        private void FixWordCloudShortCodeUp()
-        {
-            Sql( @"UPDATE [LavaShortCode] 
-SET [Markup] = '{% javascript id:''d3-layout-cloud'' url:''~/Scripts/d3-cloud/d3.layout.cloud.js'' %}{% endjavascript %}
-{% javascript id:''d3-min'' url:''~/Scripts/d3-cloud/d3.min.js'' %}{% endjavascript %}
-
-<div id=""{{ uniqueid }}"" style=""width: {{ width }}; height: {{ height }};""></div>
-
-{%- assign anglecount = anglecount | Trim -%}
-{%- assign anglemin = anglemin | Trim -%}
-{%- assign anglemax = anglemax | Trim -%}
-
-{% javascript disableanonymousfunction:''true'' %}
-    $( document ).ready(function() {
-        Rock.controls.wordcloud.initialize({
-            inputTextId: ''hf-{{ uniqueid }}'',
-            visId: ''{{ uniqueid }}'',
-            width: ''{{ width }}'',
-            height: ''{{ height }}'',
-            fontName: ''{{ fontname }}'',
-            maxWords: {{ maxwords }},
-            scaleName: ''{{ scalename }}'',
-            spiralName: ''{{ spiralname}}'',
-            colors: [ ''{{ colors | Replace:'','',""'',''"" }}''],
-            {%- if anglecount != '''' %}
-            anglecount: {{ anglecount }}{%- if anglemin != '''' or anglemax != '''' -%},{%- endif -%}
-            {%- endif -%}
-            {%- if anglemin != '''' %}
-            anglemin: {{ anglemin }}{%- if anglemax != '''' -%},{%- endif -%}
-            {%- endif -%}
-            {%- if anglemax != '''' %}
-            anglemax: {{ anglemax }}
-            {%- endif -%}
-        });
-    });
-{% endjavascript %}
-
-<input type=""hidden"" id=""hf-{{ uniqueid }}"" value=""{{ blockContent }}"" />' WHERE [Guid] = 'CA9B54BF-EF0A-4B08-884F-7042A6B3EAF4'" );
-        }
-
-        /// <summary>
-        /// Fixes the parallax short code 4B6452EF-6FEA-4A66-9FB9-1A7CCE82E7A4
-        /// </summary>
-        private void FixParallaxShortCodeUp()
-        {
-            Sql( @"UPDATE [LavaShortCode]
-SET [Markup] = '{{ ''https://cdnjs.cloudflare.com/ajax/libs/jarallax/1.9.2/jarallax.min.js'' | AddScriptLink }}
-{% if videourl != '''' -%}
-    {{ ''https://cdnjs.cloudflare.com/ajax/libs/jarallax/1.9.2/jarallax-video.min.js'' | AddScriptLink }}
-{% endif -%}
-
-{% assign id = uniqueid -%} 
-{% assign bodyZindex = zindex | Plus:1 -%}
-
-{% assign speed = speed | AsInteger %}
-
-{% if speed > 0 -%}
-    {% assign speed = speed | Times:''.01'' -%}
-    {% assign speed = speed | Plus:''1'' -%}
-{% elseif speed == 0 -%}
-    {% assign speed = 1 -%}
-{% else -%}
-    {% assign speed = speed | Times:''.02'' -%}
-    {% assign speed = speed | Plus:''1'' -%}
-{% endif -%}
-
-
- 
-{% if videourl != ''''- %}
-    <div id=""{{ id }}"" class=""jarallax"" data-jarallax-video=""{{ videourl }}"" data-type=""{{ type }}"" data-speed=""{{ speed }}"" data-img-position=""{{ position }}"" data-object-position=""{{ position }}"" data-background-position=""{{ position }}"" data-zindex=""{{ bodyZindex }}"" data-no-android=""{{ noandroid }}"" data-no-ios=""{{ noios }}"">
-{% else- %} 
-    <div id=""{{ id }}"" data-jarallax class=""jarallax"" data-type=""{{ type }}"" data-speed=""{{ speed }}"" data-img-position=""{{ position }}"" data-object-position=""{{ position }}"" data-background-position=""{{ position }}"" data-zindex=""{{ bodyZindex }}"" data-no-android=""{{ noandroid }}"" data-no-ios=""{{ noios }}"">
-        <img class=""jarallax-img"" src=""{{ image }}"" alt="""">
-{% endif -%}
-
-        {% if blockContent != '''' -%}
-            <div class=""parallax-content"">
-                {{ blockContent }}
-            </div>
-        {% else- %}
-            {{ blockContent }}
-        {% endif -%}
-    </div>
-
-{% stylesheet %}
-#{{ id }} {
-    /* eventually going to change the height using media queries with mixins using sass, and then include only the classes I want for certain parallaxes */
-    min-height: {{ height }};
-    background: transparent;
-    position: relative;
-    z-index: 0;
-}
-
-#{{ id }} .jarallax-img {
-    position: absolute;
-    object-fit: cover;
-    /* support for plugin https://github.com/bfred-it/object-fit-images */
-    font-family: ''object-fit: cover;'';
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-}
-
-#{{ id }} .parallax-content{
-    display: inline-block;
-    margin: {{ contentpadding }};
-    color: {{ contentcolor }};
-    text-align: {{ contentalign }};
-	width: 100%;
-}
-{% endstylesheet %}'
-WHERE [Guid] = '4B6452EF-6FEA-4A66-9FB9-1A7CCE82E7A4'" );
-        }
-
-        #endregion
-
+        
         #region 64
-
-        /// <summary>Updates the communication settings.
-        ///SK: Updated Communication Settings Name and description
-        /// </summary>
-        private void UpdateCommunicationSettings()
-        {
-            Sql( @"
-UPDATE 
-	[Attribute]
-SET
-	[Name]='Enable Do Not Disturb'
-	, [Description] = 'When enabled, communications will not be sent between the starting and ending ''Do Not Disturb'' hours.'
-WHERE
-	[Guid]='1BE30413-5C90-4B78-B324-BD31AA83C002'
-
-UPDATE 
-	[Attribute]
-SET
-	[Name]='Do Not Disturb Start'
-	, [Description] = 'The hour that starts the Do Not Disturb window.'
-WHERE
-	[Guid]='4A558666-32C7-4490-B860-0F41358E14CA'
-
-UPDATE 
-	[Attribute]
-SET
-	[Name]='Do Not Disturb End'
-	, [Description] = 'The hour that ends the Do Not Disturb window.'
-WHERE
-	[Guid]='661802FC-E636-4CE2-B75A-4AC05595A347'
-" );
-        }
-
-        /// <summary>Updateds the check in success template.
-        ///SK: Updated Check-in Success Template to include error messages when capacity increases threshold value
-        /// </summary>
-        private void UpdatedCheckInSuccessTemplate()
-        {
-            Sql( @"
-DECLARE @CheckInSuccessTemplateId INT = (
-        SELECT TOP 1 Id
-        FROM Attribute
-        WHERE [Guid] = 'F5BA6DCC-0A4D-4616-871D-ECBA7082C45F'
-        )
-
-UPDATE Attribute
-SET [DefaultValue] = '<ol class=''checkin-messages checkin-body-container''>
-{% for checkinMessage in Messages %}
-    <li><div class=''alert alert-{{ checkinMessage.MessageType }}''>
-        {{ checkinMessage.MessageText }}
-        </div>
-    </li>
-    {% endfor %}
-</ol>
-' + [DefaultValue]
-WHERE [Id] = @CheckInSuccessTemplateId AND [DefaultValue] NOT LIKE '%checkinMessage in Messages%'
-
-UPDATE
-	[AttributeValue]
-SET [Value] = '<ol class=''checkin-messages checkin-body-container''>
-{% for checkinMessage in Messages %}
-    <li><div class=''alert alert-{{ checkinMessage.MessageType }}''>
-        {{ checkinMessage.MessageText }}
-        </div>
-    </li>
-    {% endfor %}
-</ol>
-' + [Value]
-WHERE
-[AttributeId] =@CheckInSuccessTemplateId AND [Value] NOT LIKE '%checkinMessage in Messages%'
-" );
-
-        }
-
+        
         /// <summary>Updateds the attendance summary email.
         ///SK: Updated Attendance Summary Email to always include the notes if exists.
         /// </summary>
@@ -386,26 +134,7 @@ The {{ Group.Name }} group did not meet.
 {%- endif -%}%'
 " );
         }
-
-        /// <summary>Updates the content channel view.
-        ///SK: Updated Content Channel view detail to use Page picker for detail page setting instead of directly providing Id
-        /// </summary>
-        private void UpdateContentChannelView()
-        {
-            Sql( @"
-DECLARE @BlockTypeId int, @AttributeId int
-
-SET @BlockTypeId = (SELECT [Id] FROM [BlockType] WHERE [Guid] = '63659EBE-C5AF-4157-804A-55C7D565110E')
-SET @AttributeId = (SELECT [Id] FROM [Attribute] WHERE [Key]='DetailPage' AND [EntityTypeQualifierColumn]='BlockTypeId' AND [EntityTypeQualifierValue]=@BlockTypeId)
-
-UPDATE [AttributeValue]
-SET [AttributeValue].[Value] = [Page].[Guid]
-FROM [AttributeValue]
-INNER JOIN [Page] ON [AttributeValue].[Value] = CONVERT(nvarchar(10), [Page].[Id])
-WHERE [AttributeValue].[AttributeId] = @AttributeId
-" );
-        }
-
+        
         /// <summary>Removes the duplicate indexes.
         ///SK:  Remove duplicate indexes from BinaryFileData and FinancialTransactionRefund
         /// </summary>
