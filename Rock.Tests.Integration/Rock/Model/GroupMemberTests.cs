@@ -241,6 +241,20 @@ namespace Rock.Tests.Integration.Model
         }
 
         /// <summary>
+        /// Queryable
+        /// </summary>
+        [TestMethod]
+        public void ChecksTheQueryableMethodReturnTypeIncludingDeceased()
+        {
+            // Rock Context
+            RockContext rc = new RockContext();
+
+            var queryable = new GroupMemberService( rc ).Queryable( true );
+            
+            Assert.IsTrue( queryable is IQueryable && queryable.Any( x => x.Person.IsDeceased == true ) );
+        }
+
+        /// <summary>
         /// Ensure the Deceased Group Member is included
         /// Depends on at least one Group Member being in a group that is deceased
         /// </summary>
