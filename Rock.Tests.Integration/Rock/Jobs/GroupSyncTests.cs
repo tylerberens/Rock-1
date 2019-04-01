@@ -41,12 +41,12 @@ namespace Rock.Tests.Integration.Jobs
     ///     DataView   Archived   !Archived   Result
     ///     --------   --------   ---------   ----------------------------
     ///            0          0           0   do nothing
-    ///            0          0           1   remove from group (ExpectedAlishaTobeRemoved)
-    ///            0          1           0   do nothing (ExpectedCindyToRemainInGroup)
-    ///            1          0           0   add to group (ExpectedAddedNoahDeckerToGroup)
-    ///            1          0           1   do nothing (ExpectedBillMarbleToRemainInGroup)
-    ///            1          1           0   change IsArchived to false (TedDeckerSwitchedFromArchiveTrue)
-    ///                                    Checks DataView Person list against Group Members (AreGroupMembersInDataView)
+    ///            0          0           1   remove from group ( IsAlishaRemovedFromTheGroupAfterTheSync )
+    ///            0          1           0   do nothing ( IsCindyStillInTheGroupAfterSync )
+    ///            1          0           0   add to group ( WasNoahDeckerAddedToTheGroupByTheSync )
+    ///            1          0           1   do nothing ( DoesBillMarbleRemainInGroupAfterSync )
+    ///            1          1           0   change IsArchived to false ( EnsureTedSwitchedBackToNotArchivedAfterSync )
+    ///                                    Checks DataView Person list against Group Members ( AreGroupMembersTheSameAsDataViewAssociatedWithTheSync )
     ///
     /// NOTE: It should do this regardless of the person's IsDeceased flag.
     /// NOTE: The job can sync new people at about 45/sec or 2650/minute.
@@ -71,30 +71,22 @@ namespace Rock.Tests.Integration.Jobs
 
             // Sets Group to insert its Id by GUID
             var deckerGroupGuid = "62DC3753-01D5-48B5-B22D-D2825D92900B".AsGuid();
-            Group deckerGroup = new GroupService( rc ).Queryable()
-                .Where( x => x.Guid == deckerGroupGuid )
-                .FirstOrDefault();
+            Group deckerGroup = new GroupService( rc ).Get( deckerGroupGuid );
 
             // Gets Small Group Type to change AllowGroupSync to TRUE
             var smallgroupTypeGUID = "50FCFB30-F51A-49DF-86F4-2B176EA1820B".AsGuid();
-            GroupType smallGroup = new GroupTypeService( rc ).Queryable()
-                .Where( x => x.Guid == smallgroupTypeGUID )
-                .First();
+            GroupType smallGroup = new GroupTypeService( rc ).Get( smallgroupTypeGUID );
 
             smallGroup.AllowGroupSync = true;
             rc.SaveChanges();
 
             // Sets Group Type role to insert it's Id by GUID
             var groupTypeRoleGUID = "F0806058-7E5D-4CA9-9C04-3BDF92739462".AsGuid();
-            GroupTypeRole smallGroupTypeRoleForID = new GroupTypeRoleService( rc ).Queryable()
-                .AsNoTracking()
-                .Where( x => x.Guid == groupTypeRoleGUID )
-                .First();
+            GroupTypeRole smallGroupTypeRoleForID = new GroupTypeRoleService( rc ).Get( groupTypeRoleGUID );
 
             // Sets Group Type role to insert it's Id by GUID
             var dataViewGUID = "C43983D7-1F22-4E94-9F5C-342DA3A0E168".AsGuid();
-            DataView dataViewForID = new DataViewService( rc ).Queryable().AsNoTracking()
-                .Where( x => x.Guid == dataViewGUID ).First();
+            DataView dataViewForID = new DataViewService( rc ).Get( dataViewGUID );
 
             GroupSync syncWithMalesDV = new GroupSync
             {
@@ -130,10 +122,8 @@ namespace Rock.Tests.Integration.Jobs
 
             // run Group History Job
             var gHistoryJobGUID = "D81E577D-2D87-4CEB-9585-7BA8DBA0F556".AsGuid();
-           
-            var gHistoryjob = new ServiceJobService( rc ).Queryable().AsNoTracking()
-                .Where( x => x.Guid == gHistoryJobGUID )
-                .First();
+
+            var gHistoryjob = new ServiceJobService( rc ).Get( gHistoryJobGUID );
 
             if ( gHistoryjob != null )
             {
@@ -143,9 +133,7 @@ namespace Rock.Tests.Integration.Jobs
 
             // run process group sync
             var groupSyncGUID = "57B539BC-7C4D-25BB-4EEB-39DF0EF62EBC".AsGuid();
-            var job = new ServiceJobService( rc ).Queryable().AsNoTracking()
-                .Where( x => x.Guid == groupSyncGUID )
-                .First();
+            var job = new ServiceJobService( rc ).Get( groupSyncGUID );
 
             if ( job != null )
             {
@@ -185,17 +173,14 @@ namespace Rock.Tests.Integration.Jobs
         /// Ensures Ted is switched back to not being Archived
         /// </summary>
         [TestMethod]
-        public void TedDeckerSwitchedFromArchiveTrue()
+        public void EnsureTedSwitchedBackToNotArchivedAfterSync()
         {
             // Rock Context
             RockContext rc = new RockContext();
 
             // Gets Ted 
             var tedPostGroupSync = "F0AD1122-6F82-48FA-AFF3-A9C372AA54F4".AsGuid();
-            GroupMember tedAsUnArchived = new GroupMemberService( rc ).Queryable()
-               .AsNoTracking()
-               .Where( x => x.Guid == tedPostGroupSync )
-               .First();
+            GroupMember tedAsUnArchived = new GroupMemberService( rc ).Get( tedPostGroupSync );
 
             Assert.IsFalse( tedAsUnArchived.IsArchived );
         }
@@ -204,7 +189,7 @@ namespace Rock.Tests.Integration.Jobs
         /// Checks to see if Noah was added to the group.
         /// </summary>
         [TestMethod]
-        public void ExpectedAddedNoahDeckerToGroup()
+        public void WasNoahDeckerAddedToTheGroupByTheSync()
         {
             // Rock Context
             RockContext rc = new RockContext();
@@ -213,14 +198,10 @@ namespace Rock.Tests.Integration.Jobs
             var deckerGroupGuid = "62DC3753-01D5-48B5-B22D-D2825D92900B".AsGuid();
 
             // Gets Noah's Id
-            Person noah = new PersonService( rc ).Queryable().AsNoTracking()
-                .Where( x => x.Guid == noahsGUID )
-                .First();
+            Person noah = new PersonService( rc ).Get( noahsGUID );
 
             // Sets Group to insert its Id by GUID
-            Group deckerGroup = new GroupService( rc ).Queryable()
-                .Where( x => x.Guid == deckerGroupGuid )
-                .FirstOrDefault();
+            Group deckerGroup = new GroupService( rc ).Get( deckerGroupGuid );
 
             // Gets Noah
             GroupMember noahStatusAfterGroupSync = new GroupMemberService( rc ).Queryable()
@@ -235,7 +216,7 @@ namespace Rock.Tests.Integration.Jobs
         /// Checks to see if Bill remains in group
         /// </summary>
         [TestMethod]
-        public void ExpectedBillMarbleToRemainInGroup()
+        public void DoesBillMarbleRemainInGroupAfterSync()
         {
             // Rock Context
             RockContext rc = new RockContext();
@@ -244,9 +225,7 @@ namespace Rock.Tests.Integration.Jobs
             var deckerGroupGuid = "62DC3753-01D5-48B5-B22D-D2825D92900B".AsGuid();
 
             // Sets Group to insert its Id by GUID
-            Group deckerGroup = new GroupService( rc ).Queryable()
-                .Where( x => x.Guid == deckerGroupGuid )
-                .FirstOrDefault();
+            Group deckerGroup = new GroupService( rc ).Get( deckerGroupGuid );
 
             // Gets Bill
             GroupMember billStatusAfterGroupSync = new GroupMemberService( rc ).Queryable()
@@ -261,7 +240,7 @@ namespace Rock.Tests.Integration.Jobs
         /// Checks to see if Cindy remains in group
         /// </summary>
         [TestMethod]
-        public void ExpectedCindyToRemainInGroup()
+        public void IsCindyStillInTheGroupAfterSync()
         {
             // Rock Context
             RockContext rc = new RockContext();
@@ -270,10 +249,7 @@ namespace Rock.Tests.Integration.Jobs
             var cindydeckerMemberToBeArchived = "024FE57F-5DCF-483E-A663-DE45A2083AA2".AsGuid();
 
             // Sets Group to insert its Id by GUID
-            Group deckerGroup = new GroupService( rc ).Queryable()
-                .AsNoTracking()
-                .Where( x => x.Guid == deckerGroupGuid )
-                .FirstOrDefault();
+            Group deckerGroup = new GroupService( rc ).Get( deckerGroupGuid );
 
             // Gets Cindy Decker 
             GroupMember cindydeckerMemberToRemain = new GroupMemberService( rc ).Queryable(false, true)
@@ -288,23 +264,20 @@ namespace Rock.Tests.Integration.Jobs
         /// Checks to see if Alisha is still in the group(Group Sync Should have removed her from Decker Group)
         /// </summary>
         [TestMethod]
-        public void ExpectedAlishaTobeRemoved()
+        public void IsAlishaRemovedFromTheGroupAfterTheSync()
         {
             // Rock Context
             RockContext rc = new RockContext();
             var deckerGroupGuid = "62DC3753-01D5-48B5-B22D-D2825D92900B".AsGuid();
 
             // Sets Group to insert its Id by GUID
-            Group deckerGroup = new GroupService( rc ).Queryable()
-                .AsNoTracking()
-                .Where( x => x.Guid == deckerGroupGuid )
-                .FirstOrDefault();
+            Group deckerGroup = new GroupService( rc ).Get( deckerGroupGuid );
 
             // Ensure Alisha is removed from the Decker Group
             var alishaToBeArchivedFalse = "D389DC8B-6EB4-40FE-9ABB-BCE72F789D62".AsGuid();
             GroupMember deckergroupMember = new GroupMemberService( rc ).Queryable()
                .AsNoTracking()
-               .Where( x => x.Guid == alishaToBeArchivedFalse && x.GroupId ==deckerGroup.Id )
+               .Where( x => x.Guid == alishaToBeArchivedFalse && x.GroupId == deckerGroup.Id )
                .FirstOrDefault();
 
             Assert.IsTrue( deckergroupMember == null );
@@ -314,7 +287,7 @@ namespace Rock.Tests.Integration.Jobs
         /// Checks to see if same people are in the group that correspond to the dataview.
         /// </summary>
         [TestMethod]
-        public void AreGroupMembersInDataView()
+        public void AreGroupMembersTheSameAsDataViewAssociatedWithTheSync()
         {
             // Rock Context
             RockContext rc = new RockContext();
@@ -324,15 +297,11 @@ namespace Rock.Tests.Integration.Jobs
             var deckerGroupGuid = "62DC3753-01D5-48B5-B22D-D2825D92900B".AsGuid();
 
             // Sets Group to insert its Id by GUID
-            Group deckerGroup = new GroupService( rc ).Queryable()
-                .AsNoTracking()
-                .Where( x => x.Guid == deckerGroupGuid )
-                .FirstOrDefault();
+            Group deckerGroup = new GroupService( rc ).Get( deckerGroupGuid );
 
             // Gets DataView (Men)
             var dataViewGUID = "C43983D7-1F22-4E94-9F5C-342DA3A0E168".AsGuid();
-            DataView dataViewForID = new DataViewService( rc ).Queryable().AsNoTracking()
-                .Where( x => x.Guid == dataViewGUID ).First();
+            DataView dataViewForID = new DataViewService( rc ).Get( dataViewGUID );
 
             // Filter people by dataview
             var errorMessages = new List<string>();
