@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
+using System.Text;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using Newtonsoft.Json;
@@ -2187,9 +2188,14 @@ namespace RockWeb.Blocks.Groups
             }
         }
 
+        /// <summary>
+        /// Displays the exisiting tags.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="group">The group.</param>
         private void DisplayExisitingTags( RockContext rockContext, Group group )
         {
-            string sTags = string.Empty;
+            StringBuilder sbTags = new StringBuilder();
             var entityTypeId = group.TypeId;
 
             foreach ( var taggedItem in new TaggedItemService( rockContext )
@@ -2198,11 +2204,11 @@ namespace RockWeb.Blocks.Groups
             {
                 if ( taggedItem.Tag.IsAuthorized( Authorization.VIEW, CurrentPerson ) )
                 {
-                    sTags += string.Format( "<span class='tag'>{0}</span>", taggedItem.EntityStringValue);
+                    sbTags.Append(string.Format( "<span class='tag'>{0}</span>", taggedItem.EntityStringValue));
                 }
             }
 
-            lTags.Text = sTags;
+            lTags.Text = sbTags.ToString();
         }
 
         #endregion
