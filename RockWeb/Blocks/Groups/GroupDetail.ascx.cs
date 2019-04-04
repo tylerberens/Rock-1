@@ -19,10 +19,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
-using System.Text;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using Humanizer;
 using Newtonsoft.Json;
 
 using Rock;
@@ -295,6 +293,7 @@ namespace RockWeb.Blocks.Groups
                 if ( CurrentGroupTypeId > 0 )
                 {
                     var group = new Group { GroupTypeId = CurrentGroupTypeId };
+
                     ShowGroupTypeEditDetails( CurrentGroupTypeCache, group, false );
                 }
             }
@@ -304,9 +303,9 @@ namespace RockWeb.Blocks.Groups
             if ( groupId.HasValue && groupId.Value != 0 )
             {
                 var group = GetGroup( groupId.Value, rockContext );
+                DisplayExisitingTags( rockContext, group );
                 FollowingsHelper.SetFollowing( group, pnlFollowing, this.CurrentPerson );
             }
-
         }
 
         /// <summary>
@@ -408,7 +407,7 @@ namespace RockWeb.Blocks.Groups
 
                 parentGroupId = group.ParentGroupId;
                 groupService.Archive( group, this.CurrentPersonAliasId, true );
-                
+
                 rockContext.SaveChanges();
             }
 
@@ -739,7 +738,7 @@ namespace RockWeb.Blocks.Groups
                     {
                         // Make sure this is the only thing using this schedule.
                         string errorMessage;
-                        if ( scheduleService.CanDelete(schedule, out errorMessage ) )
+                        if ( scheduleService.CanDelete( schedule, out errorMessage ) )
                         {
                             scheduleService.Delete( schedule );
                         }
@@ -812,6 +811,7 @@ namespace RockWeb.Blocks.Groups
                 return;
             }
 
+
             // use WrapTransaction since SaveAttributeValues does its own RockContext.SaveChanges()
             rockContext.WrapTransaction( () =>
             {
@@ -821,6 +821,8 @@ namespace RockWeb.Blocks.Groups
                     groupService.Add( group );
                 }
 
+                taglGroupTags.EntityGuid = group.Guid;
+                taglGroupTags.SaveTagValues( CurrentPersonAlias, false );
                 rockContext.SaveChanges();
 
                 if ( adding )
@@ -997,7 +999,7 @@ namespace RockWeb.Blocks.Groups
                     newGroup.Schedule.iCalendarContent = group.Schedule.iCalendarContent;
                     newGroup.Schedule.WeeklyDayOfWeek = group.Schedule.WeeklyDayOfWeek;
                     newGroup.Schedule.WeeklyTimeOfDay = group.Schedule.WeeklyTimeOfDay;
-              
+
                 }
 
                 var auths = authService.GetByGroup( group.Id );
@@ -1022,7 +1024,7 @@ namespace RockWeb.Blocks.Groups
                     var entityTypeId = EntityTypeCache.Get( typeof( GroupMember ) ).Id;
                     string qualifierColumn = "GroupId";
                     string qualifierValue = group.Id.ToString();
-                    
+
                     // Get the existing attributes for this entity type and qualifier value
                     var attributes = attributeService.GetByEntityTypeQualifier( entityTypeId, qualifierColumn, qualifierValue, true );
 
@@ -1305,6 +1307,13 @@ namespace RockWeb.Blocks.Groups
             // render UI based on Authorized and IsSystem
             bool readOnly = false;
 
+            // Handle tags
+            taglGroupTags.EntityTypeId = group.TypeId;
+            taglGroupTags.EntityGuid = group.Guid;
+            taglGroupTags.CategoryGuid = GetAttributeValue( "TagCategory" ).AsGuidOrNull();
+            taglGroupTags.GetTagValues( null );
+            taglGroupTags.DelaySave = true;
+
             nbEditModeMessage.Text = string.Empty;
             if ( !editAllowed )
             {
@@ -1320,7 +1329,7 @@ namespace RockWeb.Blocks.Groups
             string roleLimitWarnings;
             nbRoleLimitWarning.Visible = group.GetGroupTypeRoleLimitWarnings( out roleLimitWarnings );
             nbRoleLimitWarning.Text = roleLimitWarnings;
-            
+
             if ( readOnly )
             {
                 btnEdit.Visible = false;
@@ -1609,7 +1618,7 @@ namespace RockWeb.Blocks.Groups
                     Rock.Attribute.Helper.AddEditControls( group, phGroupAttributes, setValues, BlockValidationGroup, excludeForEdit );
 
                     // Hide the panel if it won't show anything.
-                    if(excludeForEdit.Count() == group.Attributes.Count())
+                    if ( excludeForEdit.Count() == group.Attributes.Count() )
                     {
                         wpGroupAttributes.Visible = false;
                     }
@@ -2176,6 +2185,24 @@ namespace RockWeb.Blocks.Groups
 
                 movedItem.Order = newIndex;
             }
+        }
+
+        private void DisplayExisitingTags( RockContext rockContext, Group group )
+        {
+            string sTags = string.Empty;
+            var entityTypeId = group.TypeId;
+
+            foreach ( var taggedItem in new TaggedItemService( rockContext )
+                       .Queryable().AsNoTracking()
+                       .Where( i => i.EntityGuid == group.Guid ) )
+            {
+                if ( taggedItem.Tag.IsAuthorized( Authorization.VIEW, CurrentPerson ) )
+                {
+                    sTags += string.Format( "<span class='tag'>{0}</span>", taggedItem.EntityStringValue);
+                }
+            }
+
+            lTags.Text = sTags;
         }
 
         #endregion
@@ -2769,7 +2796,7 @@ namespace RockWeb.Blocks.Groups
             int groupId = hfGroupId.ValueAsInt();
 
             // If not 0 then get the existing roles to remove, if 0 then this is a new group that has not yet been saved.
-            if ( groupId > 0)
+            if ( groupId > 0 )
             {
                 currentSyncdRoles = GroupSyncState
                     .Where( s => s.GroupId == groupId )
