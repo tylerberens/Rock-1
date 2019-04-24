@@ -111,10 +111,7 @@
                                     </div>
                                 </div>
 
-
-                                <h4>Filters</h4>
-                                <Rock:AttributeValuesContainer ID="avcFilters" runat="server" ShowCategoryLabel="false" />
-
+                                <Rock:AttributeValuesContainer ID="avcFilters" runat="server" />
                                 <Rock:AttributeValuesContainer ID="avcAttributes" runat="server" />
 
                                 <div class="actions">
