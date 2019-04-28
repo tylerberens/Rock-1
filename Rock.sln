@@ -72,6 +72,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Tests.Integration", "R
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.TransNational.Pi", "Rock.TransNational.Pi\Rock.TransNational.Pi.csproj", "{13711BED-69DD-4182-9BB5-B3C9A4DE32DF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rock.Mobile.Core", "Rock.Mobile.Core\Rock.Mobile.Core.csproj", "{E3BDCDDC-50B2-4AC2-AF7E-2A23A662BDD1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -166,6 +168,10 @@ Global
 		{13711BED-69DD-4182-9BB5-B3C9A4DE32DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{13711BED-69DD-4182-9BB5-B3C9A4DE32DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{13711BED-69DD-4182-9BB5-B3C9A4DE32DF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E3BDCDDC-50B2-4AC2-AF7E-2A23A662BDD1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E3BDCDDC-50B2-4AC2-AF7E-2A23A662BDD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E3BDCDDC-50B2-4AC2-AF7E-2A23A662BDD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E3BDCDDC-50B2-4AC2-AF7E-2A23A662BDD1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
