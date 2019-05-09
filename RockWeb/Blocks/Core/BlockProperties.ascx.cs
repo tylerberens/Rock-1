@@ -161,7 +161,7 @@ namespace RockWeb.Blocks.Core
 
             if ( this.ShowMobileOptions )
             {
-                result.Insert( 1, "Mobile Settings" );
+                result.Insert( 1, "Mobile Local Settings" );
             }
 
             if ( this.ShowCustomGridOptions || this.ShowCustomGridColumns )
@@ -392,7 +392,7 @@ namespace RockWeb.Blocks.Core
         {
             pnlAdvancedSettings.Visible = CurrentTab.Equals( "Advanced Settings" );
             pnlBasicProperty.Visible = CurrentTab.Equals( "Basic Settings" );
-            pnlMobileSettings.Visible = CurrentTab.Equals( "Mobile Settings" );
+            pnlMobileSettings.Visible = CurrentTab.Equals( "Mobile Local Settings" );
             pnlCustomGridTab.Visible = CurrentTab.Equals( "Custom Grid Options" );
         }
 

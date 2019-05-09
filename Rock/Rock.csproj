@@ -387,8 +387,10 @@
     <Compile Include="Attribute\WorkflowAttributeAttribute.cs" />
     <Compile Include="Attribute\WorkflowTextOrAttributeAttribute.cs" />
     <Compile Include="Attribute\WorkflowTypeFieldAttribute.cs" />
+    <Compile Include="Blocks\IconCssClassAttribute.cs" />
     <Compile Include="Blocks\IRockMobileBlockType.cs" />
     <Compile Include="Blocks\RockBlockType.cs" />
+    <Compile Include="Blocks\Types\Mobile\MobileContent.cs" />
     <Compile Include="Communication\SmsActions\SmsActionComponent.cs" />
     <Compile Include="Communication\SmsActions\SmsActionContainer.cs" />
     <Compile Include="Communication\SmsActions\SmsActionLaunchWorkflow.cs" />
@@ -2447,7 +2449,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="bin\Auth\" />
-    <Folder Include="Blocks\Types\" />
     <Folder Include="Pbx\Provider\" />
     <Folder Include="Web\UI\Controls\Finance\" />
   </ItemGroup>

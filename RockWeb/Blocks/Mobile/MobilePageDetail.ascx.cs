@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using System.Web.UI.WebControls;
 using System.Xml.Linq;
 
@@ -67,6 +68,8 @@ namespace RockWeb.Blocks.Mobile
             if ( !IsPostBack )
             {
                 int pageId = PageParameter( "Page" ).AsInteger();
+
+                BlockTypeService.RegisterBlockTypes( Request.MapPath( "~" ), Page );
 
                 if ( pageId != 0 )
                 {
@@ -281,6 +284,12 @@ namespace RockWeb.Blocks.Mobile
             //
             foreach ( var block in new BlockService( rockContext ).Queryable().Where( b => b.PageId == pageId ).OrderBy( b => b.Order ).ThenBy( b => b.Id ) )
             {
+                var blockCompiledType = BlockTypeCache.Get( block.BlockTypeId ).GetCompiledType();
+                if ( !typeof( Rock.Blocks.IRockMobileBlockType ).IsAssignableFrom( blockCompiledType ) )
+                {
+                    continue;
+                }
+
                 var zone = zones.SingleOrDefault( z => z.Name == block.Zone );
 
                 //
@@ -300,11 +309,13 @@ namespace RockWeb.Blocks.Mobile
                     }
                 }
 
+                var iconCssClassAttribute = ( Rock.Blocks.IconCssClassAttribute ) blockCompiledType.GetCustomAttribute( typeof( Rock.Blocks.IconCssClassAttribute ) );
+
                 zone.Components.Add( new BlockInstance
                 {
                     Name = block.Name,
                     Type = block.BlockType.Name,
-                    IconCssClass = "fa fa-question", // TODO: Get block Icon.
+                    IconCssClass = iconCssClassAttribute != null ? iconCssClassAttribute.IconCssClass : "fa fa-question",
                     Id = block.Id
                 } );
             }
@@ -319,20 +330,44 @@ namespace RockWeb.Blocks.Mobile
         /// </summary>
         private void BindBlockTypeRepeater()
         {
+            var items = new List<ComponentItem>();
+
             //
             // Find all mobile block types and build the component repeater.
             //
-            ComponentItemState = BlockTypeCache.All()
+            var blockTypes = BlockTypeCache.All()
                 .Where( t => t.Category == ddlBlockTypeCategory.SelectedValue )
-                .OrderBy( t => t.Name )
-                .Select( t => new ComponentItem
-                {
-                    IconClass = "fa fa-comment", // TODO: Get real css icon or default to fa-question
-                    Name = t.Name,
-                    Id = t.Id
-                } )
-                .ToList();
+                .OrderBy( t => t.Name );
 
+            foreach ( var blockType in blockTypes )
+            {
+                try
+                {
+                    var blockCompiledType = blockType.GetCompiledType();
+
+                    if ( !typeof( Rock.Blocks.IRockMobileBlockType ).IsAssignableFrom( blockCompiledType ) )
+                    {
+                        continue;
+                    }
+
+                    var iconCssClassAttribute = ( Rock.Blocks.IconCssClassAttribute ) blockCompiledType.GetCustomAttribute( typeof( Rock.Blocks.IconCssClassAttribute ) );
+
+                    var item = new ComponentItem
+                    {
+                        IconCssClass = iconCssClassAttribute != null ? iconCssClassAttribute.IconCssClass : "fa fa-question",
+                        Name = blockType.Name,
+                        Id = blockType.Id
+                    };
+
+                    items.Add( item );
+                }
+                catch
+                {
+                    /* Intentionally ignored. */
+                }
+            }
+
+            ComponentItemState = items;
             rptrBlockTypes.DataSource = ComponentItemState;
             rptrBlockTypes.DataBind();
         }
@@ -442,13 +477,28 @@ namespace RockWeb.Blocks.Mobile
             // Setup the category drop down list for filtering blocks.
             //
             var selectedCategory = ddlBlockTypeCategory.SelectedValue;
+            var categories = new List<string>();
+            foreach ( var blockType in BlockTypeCache.All() )
+            {
+                try
+                {
+                    var blockCompiledType = blockType.GetCompiledType();
+
+                    if ( typeof( Rock.Blocks.IRockMobileBlockType ).IsAssignableFrom( blockCompiledType ) )
+                    {
+                        if ( !categories.Contains( blockType.Category ) )
+                        {
+                            categories.Add( blockType.Category );
+                        }
+                    }
+                }
+                catch
+                {
+                    /* Intentionally ignored. */
+                }
+            }
             ddlBlockTypeCategory.Items.Clear();
-            BlockTypeCache.All()
-                .GroupBy( t => t.Category )
-                .Select( g => g.Key )
-                .OrderBy( c => c )
-                .ToList()
-                .ForEach( c => ddlBlockTypeCategory.Items.Add( new ListItem( c ) ) );
+            categories.ForEach( c => ddlBlockTypeCategory.Items.Add( c ) );
             ddlBlockTypeCategory.SetValue( selectedCategory );
 
             BindBlockTypeRepeater();
@@ -783,7 +833,7 @@ namespace RockWeb.Blocks.Mobile
         [Serializable]
         public class ComponentItem
         {
-            public string IconClass { get; set; }
+            public string IconCssClass { get; set; }
 
             public string Name { get; set; }
 

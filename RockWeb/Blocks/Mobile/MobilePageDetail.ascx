@@ -70,7 +70,7 @@
                                     <asp:Repeater ID="rptrBlockTypes" runat="server">
                                         <ItemTemplate>
                                             <li class="component" data-component-id="<%# Eval( "Id" ) %>">
-                                                <i class="<%# Eval( "IconClass" ) %>"></i>
+                                                <i class="<%# Eval( "IconCssClass" ) %>"></i>
                                                 <span><%# Eval( "Name" ) %></span>
                                             </li>
                                         </ItemTemplate>

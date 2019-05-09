@@ -42,12 +42,18 @@ namespace Rock.Rest.Controllers
             return launchPacket;
         }
 
+        /// <summary>
+        /// Gets the latest version of an application. This is temporary and should probably go away at some point.
+        /// </summary>
+        /// <param name="applicationId">The application identifier.</param>
+        /// <param name="platform">The platform.</param>
+        /// <returns></returns>
         [Route( "api/mobile/GetLatestVersion" )]
         [HttpGet]
         [Authenticate]
         public object GetLatestVersion( int applicationId, int platform )
         {
-            var site = SiteCache.Get( 8 );
+            var site = SiteCache.Get( applicationId );
             var rockContext = new Rock.Data.RockContext();
 
             var package = new Dictionary<string, object>();
