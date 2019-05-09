@@ -122,8 +122,7 @@ namespace RockWeb.Blocks.Core
                     {
                         using ( var rockContext = new RockContext() )
                         {
-                            string blockTypePath = BlockTypeCache.Get( blockTypeId ).Path;
-                            var blockCompiledType = System.Web.Compilation.BuildManager.GetCompiledType( blockTypePath );
+                            var blockCompiledType = _block.BlockType.GetCompiledType();
                             int? blockEntityTypeId = EntityTypeCache.Get( typeof( Block ) ).Id;
                             bool attributesUpdated = Rock.Attribute.Helper.UpdateAttributes( blockCompiledType, blockEntityTypeId, "BlockTypeId", blockTypeId.ToString(), rockContext );
                             BlockTypeCache.Get( blockTypeId ).MarkInstancePropertiesVerified( true );
@@ -169,7 +168,8 @@ namespace RockWeb.Blocks.Core
             int blockId = Convert.ToInt32( PageParameter( "BlockId" ) );
             BlockCache _block = BlockCache.Get( blockId );
 
-            var blockControlType = System.Web.Compilation.BuildManager.GetCompiledType( _block.BlockType.Path );
+            var blockControlType = _block.BlockType.GetCompiledType();
+
             this.ShowCustomGridColumns = typeof( Rock.Web.UI.ICustomGridColumns ).IsAssignableFrom( blockControlType );
             this.ShowCustomGridOptions = typeof( Rock.Web.UI.ICustomGridOptions ).IsAssignableFrom( blockControlType );
 

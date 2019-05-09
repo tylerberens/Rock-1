@@ -1488,8 +1488,9 @@ namespace Rock.Web.UI
                             {
                                 using ( var rockContext = new RockContext() )
                                 {
-                                    string blockTypePath = BlockTypeCache.Get( blockTypeId ).Path;
-                                    var blockCompiledType = System.Web.Compilation.BuildManager.GetCompiledType( blockTypePath );
+                                    var blockTypeCache = BlockTypeCache.Get( blockTypeId );
+                                    Type blockCompiledType = blockTypeCache.GetCompiledType();
+
                                     bool attributesUpdated = RockBlock.CreateAttributes( rockContext, blockCompiledType, blockTypeId );
                                     BlockTypeCache.Get( blockTypeId )?.MarkInstancePropertiesVerified( true );
                                 }
@@ -3053,7 +3054,7 @@ Sys.Application.add_load(function () {
         {
             foreach ( var rockBlock in RockBlocks )
             {
-                if ( rockBlock.BlockCache.BlockType.Path.Equals( blockTypePath, StringComparison.OrdinalIgnoreCase ) )
+                if ( rockBlock.BlockCache.BlockType.Path?.Equals( blockTypePath, StringComparison.OrdinalIgnoreCase ) ?? false )
                 {
                     OnBlockUpdated( rockBlock.BlockId );
                 }

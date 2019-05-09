@@ -65,6 +65,15 @@ namespace Rock.Web.Cache
         public string Path { get; private set; }
 
         /// <summary>
+        /// Gets the entity type identifier.
+        /// </summary>
+        /// <value>
+        /// The entity type identifier.
+        /// </value>
+        [DataMember]
+        public int? EntityTypeId { get; private set; }
+
+        /// <summary>
         /// Gets or sets the name.
         /// </summary>
         /// <value>
@@ -125,6 +134,14 @@ namespace Rock.Web.Cache
         [DataMember]
         public ConcurrentDictionary<string, string> SecurityActions { get; private set; }
 
+        /// <summary>
+        /// Gets the type of the entity.
+        /// </summary>
+        /// <value>
+        /// The type of the entity.
+        /// </value>
+        public EntityTypeCache EntityType => EntityTypeId.HasValue ? EntityTypeCache.Get( EntityTypeId.Value ) : null;
+
         #endregion
 
         #region Public Methods
@@ -162,6 +179,7 @@ namespace Rock.Web.Cache
             IsSystem = blockType.IsSystem;
             IsCommon = blockType.IsCommon;
             Path = blockType.Path;
+            EntityTypeId = blockType.EntityTypeId;
             Name = blockType.Name;
             Description = blockType.Description;
             Category = blockType.Category;
@@ -174,6 +192,14 @@ namespace Rock.Web.Cache
         public override void PostCached()
         {
             base.PostCached();
+
+            //
+            // This method is only necessary if there is an associated file on disk.
+            //
+            if ( string.IsNullOrWhiteSpace( Path ) )
+            {
+                return;
+            }
 
             string physicalPath;
 
@@ -216,6 +242,25 @@ namespace Rock.Web.Cache
         {
             IsInstancePropertiesVerified = verified;
             UpdateCacheItem( this.Id.ToString(), this, TimeSpan.MaxValue );
+        }
+
+        /// <summary>
+        /// Gets the compiled type of this block type. If this is a legacy ASCX block then it
+        /// is dynamically compiled (and cached), otherwise a lookup is done via Entity Type.
+        /// </summary>
+        /// <returns>A Type that represents the logic class of this block type.</returns>
+        public Type GetCompiledType()
+        {
+            if ( !string.IsNullOrWhiteSpace( this.Path ) )
+            {
+                return System.Web.Compilation.BuildManager.GetCompiledType( Path );
+            }
+            else if ( EntityTypeId.HasValue )
+            {
+                return EntityType.GetEntityType();
+            }
+
+            return null;
         }
 
         /// <summary>
