@@ -74,6 +74,14 @@ namespace RockWeb.Blocks.Core
         private bool ShowCustomGridOptions { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether this blocktype has any 'custommobile' category attributes.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this instance should show the Mobile Options tab; otherwise, <c>false</c>.
+        /// </value>
+        private bool ShowMobileOptions { get; set; }
+
+        /// <summary>
         /// Gets or sets the current tab.
         /// </summary>
         /// <value>
@@ -151,6 +159,11 @@ namespace RockWeb.Blocks.Core
         {
             var result = new List<string> { "Basic Settings", "Advanced Settings" };
 
+            if ( this.ShowMobileOptions )
+            {
+                result.Insert( 1, "Mobile Settings" );
+            }
+
             if ( this.ShowCustomGridOptions || this.ShowCustomGridColumns )
             {
                 result.Add( "Custom Grid Options" );
@@ -172,6 +185,7 @@ namespace RockWeb.Blocks.Core
 
             this.ShowCustomGridColumns = typeof( Rock.Web.UI.ICustomGridColumns ).IsAssignableFrom( blockControlType );
             this.ShowCustomGridOptions = typeof( Rock.Web.UI.ICustomGridOptions ).IsAssignableFrom( blockControlType );
+            this.ShowMobileOptions = _block.Attributes.Any( a => a.Value.Categories.Any( c => c.Name == "custommobile" ) );
 
             if ( !Page.IsPostBack && _block.IsAuthorized( Authorization.ADMINISTRATE, CurrentPerson ) )
             {
@@ -180,7 +194,10 @@ namespace RockWeb.Blocks.Core
                     avcAdvancedAttributes.IncludedCategoryNames = new string[] { "advanced" };
                     avcAdvancedAttributes.AddEditControls( _block );
 
-                    avcAttributes.ExcludedCategoryNames = new string[] { "advanced", "customsetting" };
+                    avcMobileAttributes.IncludedCategoryNames = new string[] { "custommobile" };
+                    avcMobileAttributes.AddEditControls( _block );
+
+                    avcAttributes.ExcludedCategoryNames = new string[] { "advanced", "customsetting", "custommobile" };
                     avcAttributes.AddEditControls( _block );
                 }
 
@@ -264,6 +281,7 @@ namespace RockWeb.Blocks.Core
                 rockContext.SaveChanges();
 
                 avcAttributes.GetEditValues( block );
+                avcMobileAttributes.GetEditValues( block );
                 avcAdvancedAttributes.GetEditValues( block );
 
                 SaveCustomColumnsConfigToViewState();
@@ -374,6 +392,7 @@ namespace RockWeb.Blocks.Core
         {
             pnlAdvancedSettings.Visible = CurrentTab.Equals( "Advanced Settings" );
             pnlBasicProperty.Visible = CurrentTab.Equals( "Basic Settings" );
+            pnlMobileSettings.Visible = CurrentTab.Equals( "Mobile Settings" );
             pnlCustomGridTab.Visible = CurrentTab.Equals( "Custom Grid Options" );
         }
 

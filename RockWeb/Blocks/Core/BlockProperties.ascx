@@ -29,6 +29,10 @@
                         <Rock:AttributeValuesContainer ID="avcAttributes" runat="server" />
                     </asp:Panel>
 
+                    <asp:Panel ID="pnlMobileSettings" runat="server" Visible="false">
+                        <Rock:AttributeValuesContainer ID="avcMobileAttributes" runat="server" ShowCategoryLabel="false" />
+                    </asp:Panel>
+
                     <asp:Panel ID="pnlAdvancedSettings" runat="server" Visible="false" >
                         <Rock:RockTextBox ID="tbCssClass" runat="server" Label="CSS Class" Help="An optional CSS class to include with this block's containing div" />
                         <Rock:CodeEditor ID="cePreHtml" runat="server" Label="Pre-HTML" Help="HTML Content to render before the block <span class='tip tip-lava'></span>." EditorMode="Lava" EditorTheme="Rock" EditorHeight="400" />
