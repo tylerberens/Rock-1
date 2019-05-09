@@ -1168,8 +1168,35 @@ namespace Rock.Web.UI
                             {
                                 try
                                 {
-                                    control = TemplateControl.LoadControl( block.BlockType.Path );
-                                    control.ClientIDMode = ClientIDMode.AutoID;
+                                    if ( !string.IsNullOrWhiteSpace( block.BlockType.Path ) )
+                                    {
+                                        control = TemplateControl.LoadControl( block.BlockType.Path );
+                                        control.ClientIDMode = ClientIDMode.AutoID;
+                                    }
+                                    else if ( block.BlockType.EntityTypeId.HasValue )
+                                    {
+                                        var blockEntity = Activator.CreateInstance( block.BlockType.EntityType.GetEntityType() );
+
+                                        if ( blockEntity is Rock.Blocks.IRockBlockType rockBlockEntity )
+                                        {
+                                            var wrapper = new RockBlockTypeWrapper
+                                            {
+                                                Page = this,
+                                                Block = rockBlockEntity
+                                            };
+
+                                            wrapper.InitializeAsUserControl( this );
+                                            wrapper.AppRelativeTemplateSourceDirectory = "~";
+
+                                            control = wrapper;
+                                            control.ClientIDMode = ClientIDMode.AutoID;
+                                        }
+                                    }
+
+                                    if ( control == null )
+                                    {
+                                        throw new Exception( "Cannot instantiate unknown block type" );
+                                    }
                                 }
                                 catch ( Exception ex )
                                 {

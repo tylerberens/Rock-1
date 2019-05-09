@@ -387,6 +387,8 @@
     <Compile Include="Attribute\WorkflowAttributeAttribute.cs" />
     <Compile Include="Attribute\WorkflowTextOrAttributeAttribute.cs" />
     <Compile Include="Attribute\WorkflowTypeFieldAttribute.cs" />
+    <Compile Include="Blocks\IRockMobileBlockType.cs" />
+    <Compile Include="Blocks\RockBlockType.cs" />
     <Compile Include="Communication\SmsActions\SmsActionComponent.cs" />
     <Compile Include="Communication\SmsActions\SmsActionContainer.cs" />
     <Compile Include="Communication\SmsActions\SmsActionLaunchWorkflow.cs" />
@@ -1734,6 +1736,7 @@
     <Compile Include="Web\HttpModules\ResponseHeaders.cs" />
     <Compile Include="Web\HttpModules\HttpModuleComponent.cs" />
     <Compile Include="Web\HttpModules\HttpModuleContainer.cs" />
+    <Compile Include="Blocks\IRockBlockType.cs" />
     <Compile Include="Web\UI\Adapters\ListControlAdaptor.cs" />
     <Compile Include="Web\UI\Adapters\CheckBoxListAdapter.cs" />
     <Compile Include="Web\UI\Controls\AccordionPanel.cs" />
@@ -1783,6 +1786,9 @@
     <Compile Include="Web\UI\ICustomGridOptions.cs" />
     <Compile Include="Web\UI\IPickerBlock.cs" />
     <Compile Include="Web\UI\IIdleRedirectBlock.cs" />
+    <Compile Include="Web\UI\RockBlockTypeWrapper.cs">
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
     <Compile Include="Web\UI\RockHiddenFieldPageStatePersister.cs" />
     <Compile Include="Web\UI\Controls\Grid\LavaBoundField.cs" />
     <Compile Include="Web\UI\Controls\Pickers\DefinedValuesPickerEnhanced.cs" />
@@ -2441,6 +2447,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="bin\Auth\" />
+    <Folder Include="Blocks\Types\" />
     <Folder Include="Pbx\Provider\" />
     <Folder Include="Web\UI\Controls\Finance\" />
   </ItemGroup>

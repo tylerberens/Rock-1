@@ -132,6 +132,7 @@
     <Compile Include="Controllers\FinancialBatchesController.Partial.cs" />
     <Compile Include="Controllers\FinancialGatewaysController.Partial.cs" />
     <Compile Include="Controllers\GroupMemberHistoricalsController.Partial.cs" />
+    <Compile Include="Controllers\MobileController.cs" />
     <Compile Include="Controllers\NotesController.Partial.cs" />
     <Compile Include="Controllers\PbxController.cs" />
     <Compile Include="Controllers\PrayerRequestsController.Partial.cs" />
