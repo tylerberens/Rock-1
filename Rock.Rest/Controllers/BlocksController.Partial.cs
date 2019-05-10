@@ -274,7 +274,7 @@ namespace Rock.Rest.Controllers
             // Find the action they requested.
             //
             action = block.GetType().GetMethods( BindingFlags.Instance | BindingFlags.Public )
-                .SingleOrDefault( m => m.GetCustomAttributes( true ).Any( a => typeof( ActionNameAttribute ).IsAssignableFrom( a.GetType() ) && ( ( ActionNameAttribute ) a ).Name == actionName ) );
+                .SingleOrDefault( m => m.GetCustomAttribute<Blocks.BlockActionAttribute>()?.ActionName == actionName );
 
             if ( action == null )
             {

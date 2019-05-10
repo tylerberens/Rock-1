@@ -387,10 +387,12 @@
     <Compile Include="Attribute\WorkflowAttributeAttribute.cs" />
     <Compile Include="Attribute\WorkflowTextOrAttributeAttribute.cs" />
     <Compile Include="Attribute\WorkflowTypeFieldAttribute.cs" />
+    <Compile Include="Blocks\BlockActionAttribute.cs" />
     <Compile Include="Blocks\IconCssClassAttribute.cs" />
     <Compile Include="Blocks\IRockMobileBlockType.cs" />
     <Compile Include="Blocks\RockBlockType.cs" />
     <Compile Include="Blocks\Types\Mobile\MobileContent.cs" />
+    <Compile Include="Blocks\Types\Mobile\MobileImage.cs" />
     <Compile Include="Communication\SmsActions\SmsActionComponent.cs" />
     <Compile Include="Communication\SmsActions\SmsActionContainer.cs" />
     <Compile Include="Communication\SmsActions\SmsActionLaunchWorkflow.cs" />
