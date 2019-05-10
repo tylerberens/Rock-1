@@ -37,7 +37,36 @@ namespace Rock.Rest.Controllers
                 { "LatestVersionSettingsUrl", $"{baseUrl}/api/mobile/GetLatestVersion?ApplicationId={applicationId}&Platform={platform}" }
             };
 
-            // TODO: Set CurrentPerson
+            using ( var rockContext = new Data.RockContext() )
+            {
+                var homePhoneTypeId = DefinedValueCache.Get( SystemGuid.DefinedValue.PERSON_PHONE_TYPE_HOME.AsGuid() ).Id;
+                var mobilePhoneTypeId = DefinedValueCache.Get( SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE ).Id;
+
+                var person = GetPerson( rockContext ) ?? new PersonService( rockContext ).Get( 1 );
+                person.LoadAttributes( rockContext );
+
+                var personAttributes = person.Attributes
+                    .Select( a => a.Value )
+                    .Where( a => a.Categories.Any( c => c.Name == "Mobile" ) );
+
+                var mobilePerson = new Dictionary<string, object>
+                {
+                    { "FirstName", person.FirstName },
+                    { "LastName", person.LastName },
+                    { "Email", person.Email },
+                    { "HomePhone", person.PhoneNumbers.Where( p => p.NumberTypeValueId == homePhoneTypeId ).Select(p => p.NumberFormatted ).FirstOrDefault() },
+                    { "MobilePhone", person.PhoneNumbers.Where( p => p.NumberTypeValueId == mobilePhoneTypeId ).Select(p => p.NumberFormatted ).FirstOrDefault() },
+                    { "AuthToken", null },
+                    { "PersonAliasId", person.PrimaryAliasId },
+                    { "PhotoUrl", person.PhotoUrl },
+                    { "SecurityGroupGuids", new List<Guid>() },
+                    { "PersonalizationSegmentGuids", new List<Guid>() },
+                    { "PersonGuid", person.Guid },
+                    { "AttributeValues", GetMobileAttributeValues( person, personAttributes ) }
+                };
+
+                launchPacket.Add( "CurrentPerson", mobilePerson );
+            }
 
             return launchPacket;
         }
@@ -61,6 +90,7 @@ namespace Rock.Rest.Controllers
             var layouts = new List<Dictionary<string, object>>();
             var pages = new List<Dictionary<string, object>>();
             var blocks = new List<Dictionary<string, object>>();
+            var campuses = new List<Dictionary<string, object>>();
 
             var additionalSettings = site.AdditionalSettings.FromJsonOrNull<AdditionalSettings>();
 
@@ -71,6 +101,7 @@ namespace Rock.Rest.Controllers
             package.Add( "Layouts", layouts );
             package.Add( "Pages", pages );
             package.Add( "Blocks", blocks );
+            package.Add( "Campuses", campuses );
 
             appearanceSettings.Add( "BarTextColor", "#ffffff" );
             appearanceSettings.Add( "BarBackgroundColor", "#ee7725" );
@@ -117,21 +148,238 @@ namespace Rock.Rest.Controllers
                     mobileBlock.Add( "BlockType", mobileBlockEntity.MobileBlockType );
                     mobileBlock.Add( "ConfigurationValues", mobileBlockEntity.GetMobileConfigurationValues() );
 
-                    var values = block.Attributes
-                        .Where( a => a.Value.Categories.Any( c => c.Name == "custommobile" ) )
-                        .ToDictionary( a => a.Key, a => block.GetAttributeValue( a.Key ) );
-
-                    mobileBlock.Add( "AttributeValues", values );
+                    var attributes = block.Attributes
+                        .Select( a => a.Value );
+                        //.Where( a => a.Categories.Any( c => c.Name == "custommobile" ) );
+                    mobileBlock.Add( "AttributeValues", GetMobileAttributeValues( block, attributes ) );
 
                     blocks.Add( mobileBlock );
                 }
             }
 
+            foreach ( var campus in CampusCache.All().Where( c => c.IsActive ?? true ) )
+            {
+                var mobileCampus = new Dictionary<string, object>
+                {
+                    { "Guid", campus.Guid },
+                    { "Name", campus.Name }
+                };
+
+                if ( campus.Location != null )
+                {
+                    if ( campus.Location.Latitude.HasValue && campus.Location.Longitude.HasValue )
+                    {
+                        mobileCampus.Add( "Latitude", campus.Location.Latitude );
+                        mobileCampus.Add( "Longitude", campus.Location.Longitude );
+                    }
+
+                    if ( !string.IsNullOrWhiteSpace( campus.Location.Street1 ) )
+                    {
+                        mobileCampus.Add( "Street1", campus.Location.Street1 );
+                        mobileCampus.Add( "City", campus.Location.City );
+                        mobileCampus.Add( "State", campus.Location.State );
+                        mobileCampus.Add( "PostalCode", campus.Location.PostalCode );
+                    }
+                }
+
+                campuses.Add( mobileCampus );
+            }
+
             return package;
+        }
+
+        /// <summary>
+        /// Posts the interactions that have been queued up by the mobile client.
+        /// </summary>
+        /// <param name="sessions">The sessions.</param>
+        /// <returns></returns>
+        [Route( "api/mobile/Interactions" )]
+        [HttpPost]
+        [Authenticate]
+        public IHttpActionResult PostInteractions( [FromBody] List<InteractionSessionData> sessions )
+        {
+            var person = GetPerson();
+            var ipAddress = System.Web.HttpContext.Current?.Request?.UserHostAddress;
+            var appApiKey = System.Web.HttpContext.Current?.Request?.Headers?["X-Rock-Mobile-Api-Key"];
+
+            //
+            // TODO: Security at it's finest. -dsh
+            //
+            if ( appApiKey != "PUT_ME_IN_COACH!" )
+            {
+                return StatusCode( System.Net.HttpStatusCode.Forbidden );
+            }
+
+            using ( var rockContext = new Data.RockContext() )
+            {
+                var interactionChannelService = new InteractionChannelService( rockContext );
+                var interactionComponentService = new InteractionComponentService( rockContext );
+                var interactionSessionService = new InteractionSessionService( rockContext );
+                var interactionService = new InteractionService( rockContext );
+                var channelMediumTypeValue = DefinedValueCache.Get( SystemGuid.DefinedValue.INTERACTIONCHANNELTYPE_WEBSITE );
+                var pageEntityTypeId = EntityTypeCache.Get( typeof( Page ) ).Id;
+
+                rockContext.WrapTransaction( () =>
+                {
+                    foreach ( var mobileSession in sessions )
+                    {
+                        Guid? interactionSessionGuid = null;
+
+                        foreach ( var mobileInteraction in mobileSession.Interactions )
+                        {
+                            int? interactionComponentId = null;
+
+                            //
+                            // Lookup the interaction channel, and create it if it doesn't exist
+                            //
+                            if ( mobileInteraction.AppId.HasValue && mobileInteraction.PageGuid.HasValue )
+                            {
+                                var site = SiteCache.Get( mobileInteraction.AppId.Value );
+                                var page = PageCache.Get( mobileInteraction.PageGuid.Value );
+
+                                if ( site == null || page == null )
+                                {
+                                    continue;
+                                }
+
+                                //
+                                // Try to find an existing interaction channel.
+                                //
+                                var interactionChannelId = interactionChannelService.Queryable()
+                                    .Where( a =>
+                                        a.ChannelTypeMediumValueId == channelMediumTypeValue.Id &&
+                                        a.ChannelEntityId == site.Id )
+                                    .Select( a => ( int? ) a.Id )
+                                    .FirstOrDefault();
+
+                                //
+                                // If not found, create one.
+                                //
+                                if ( !interactionChannelId.HasValue )
+                                {
+                                    var interactionChannel = new InteractionChannel
+                                    {
+                                        Name = site.Name,
+                                        ChannelTypeMediumValueId = channelMediumTypeValue.Id,
+                                        ChannelEntityId = site.Id,
+                                        ComponentEntityTypeId = pageEntityTypeId
+                                    };
+
+                                    interactionChannelService.Add( interactionChannel );
+                                    rockContext.SaveChanges();
+
+                                    interactionChannelId = interactionChannel.Id;
+                                }
+
+                                //
+                                // Get an existing or create a new component.
+                                //
+                                var interactionComponent = interactionComponentService.GetComponentByEntityId( interactionChannelId.Value, page.Id, page.InternalName);
+                                rockContext.SaveChanges();
+
+                                interactionComponentId = interactionComponent.Id;
+                            }
+                            else if ( mobileInteraction.ChannelGuid.HasValue && !string.IsNullOrWhiteSpace( mobileInteraction.ComponentName ) )
+                            {
+                                //
+                                // Try to find an existing interaction channel.
+                                //
+                                var interactionChannelId = interactionChannelService.Get( mobileInteraction.ChannelGuid.Value )?.Id;
+
+                                //
+                                // If not found, skip this interaction.
+                                //
+                                if ( !interactionChannelId.HasValue )
+                                {
+                                    continue;
+                                }
+
+                                //
+                                // Get an existing or create a new component.
+                                //
+                                var interactionComponent = interactionComponentService.GetComponentByComponentName( interactionChannelId.Value, mobileInteraction.ComponentName );
+                                rockContext.SaveChanges();
+
+                                interactionComponentId = interactionComponent.Id;
+                            }
+                            else
+                            {
+                                continue;
+                            }
+
+                            //
+                            // Add the interaction
+                            //
+                            if ( interactionComponentId.HasValue )
+                            {
+                                var interaction = interactionService.CreateInteraction( interactionComponentId.Value,
+                                    null,
+                                    mobileInteraction.Operation,
+                                    mobileInteraction.Summary,
+                                    mobileInteraction.Data,
+                                    person?.PrimaryAliasId,
+                                    mobileInteraction.DateTime,
+                                    mobileSession.Application,
+                                    mobileSession.OperatingSystem,
+                                    mobileSession.ClientType,
+                                    null,
+                                    ipAddress,
+                                    interactionSessionGuid );
+
+                                interactionService.Add( interaction );
+                                rockContext.SaveChanges();
+
+                                //
+                                // If this is the first interaction we saved, get the session id for re-use.
+                                //
+                                if ( !interactionSessionGuid.HasValue && interaction.InteractionSessionId.HasValue )
+                                {
+                                    interactionSessionGuid = interactionSessionService.Get( interaction.InteractionSessionId.Value )?.Guid;
+                                }
+                            }
+                        }
+                    }
+                } );
+            }
+
+            return Ok();
+        }
+
+        /// <summary>
+        /// Gets the mobile attribute values.
+        /// </summary>
+        /// <param name="entity">The entity.</param>
+        /// <param name="attributes">The attributes.</param>
+        /// <returns></returns>
+        private Dictionary<string, MobileAttributeValue> GetMobileAttributeValues( IHasAttributes entity, IEnumerable<AttributeCache> attributes )
+        {
+            var mobileAttributeValues = new Dictionary<string, MobileAttributeValue>();
+
+            if ( entity.Attributes == null )
+            {
+                entity.LoadAttributes();
+            }
+
+            foreach ( var attribute in attributes )
+            {
+                var value = entity.GetAttributeValue( attribute.Key );
+                var formattedValue = entity.AttributeValues.ContainsKey( attribute.Key ) ? entity.AttributeValues[attribute.Key].ValueFormatted : attribute.DefaultValueAsFormatted;
+
+                var mobileAttributeValue = new MobileAttributeValue
+                {
+                    Value = value,
+                    FormattedValue = formattedValue
+                };
+
+                mobileAttributeValues.AddOrReplace( attribute.Key, mobileAttributeValue );
+            }
+
+            return mobileAttributeValues;
         }
 
 
         #region Support Classes
+#pragma warning disable 1591
 
         /// <summary>
         /// This class is used to store and retrieve
@@ -164,6 +412,13 @@ namespace Rock.Rest.Controllers
             public string CssStyle { get; set; }
         }
 
+        public class MobileAttributeValue
+        {
+            public string Value { get; set; }
+
+            public string FormattedValue { get; set; }
+        }
+
         /// <summary>The type of application shell.</summary>
         public enum ShellType
         {
@@ -178,6 +433,37 @@ namespace Rock.Rest.Controllers
             Bottom = 1,
         }
 
+        public class InteractionSessionData
+        {
+            public string ClientType { get; set; }
+
+            public string OperatingSystem { get; set; }
+
+            public string Application { get; set; }
+
+            public List<InteractionData> Interactions { get; set; }
+        }
+
+        public class InteractionData
+        {
+            public int? AppId { get; set; }
+
+            public Guid? PageGuid { get; set; }
+
+            public Guid? ChannelGuid { get; set; }
+
+            public string ComponentName { get; set; }
+
+            public DateTime DateTime { get; set; }
+
+            public string Operation { get; set; }
+
+            public string Summary { get; set; }
+
+            public string Data { get; set; }
+        }
+
+#pragma warning restore 1591
         #endregion
     }
 }
