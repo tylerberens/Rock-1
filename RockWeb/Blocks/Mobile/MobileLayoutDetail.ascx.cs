@@ -68,7 +68,7 @@ namespace RockWeb.Blocks.Mobile
             //
             // Ensure the layout is part of a mobile site.
             //
-            if ( layout.Site.SiteType != SiteType.Mobile )
+            if ( layout.Site != null && layout.Site.SiteType != SiteType.Mobile )
             {
                 nbError.Text = "This block can only edit mobile layouts.";
                 pnlDetails.Visible = false;
