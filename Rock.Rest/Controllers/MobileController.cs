@@ -202,30 +202,39 @@ namespace Rock.Rest.Controllers
             var ipAddress = System.Web.HttpContext.Current?.Request?.UserHostAddress;
             var appApiKey = System.Web.HttpContext.Current?.Request?.Headers?["X-Rock-Mobile-Api-Key"];
 
-            //
-            // TODO: Security at it's finest. -dsh
-            //
-            if ( appApiKey != "PUT_ME_IN_COACH!" )
-            {
-                return StatusCode( System.Net.HttpStatusCode.Forbidden );
-            }
-
             using ( var rockContext = new Data.RockContext() )
             {
                 var interactionChannelService = new InteractionChannelService( rockContext );
                 var interactionComponentService = new InteractionComponentService( rockContext );
                 var interactionSessionService = new InteractionSessionService( rockContext );
                 var interactionService = new InteractionService( rockContext );
+                var userLoginService = new UserLoginService( rockContext );
                 var channelMediumTypeValue = DefinedValueCache.Get( SystemGuid.DefinedValue.INTERACTIONCHANNELTYPE_WEBSITE );
                 var pageEntityTypeId = EntityTypeCache.Get( typeof( Page ) ).Id;
+
+                //
+                // Check against our temporary development api key or a real api key.
+                // Do we need to somehow validate this api key against a site or is this enough? -dsh
+                //
+                if ( appApiKey != "PUT_ME_IN_COACH!" && !userLoginService.GetByApiKey( appApiKey ).Any() )
+                {
+                    return StatusCode( System.Net.HttpStatusCode.Forbidden );
+                }
 
                 rockContext.WrapTransaction( () =>
                 {
                     foreach ( var mobileSession in sessions )
                     {
-                        Guid? interactionSessionGuid = null;
+                        var interactionGuids = mobileSession.Interactions.Select( i => i.Guid ).ToList();
+                        var existingInteractionGuids = interactionService.Queryable()
+                            .Where( i => interactionGuids.Contains( i.Guid ) )
+                            .Select( i => i.Guid )
+                            .ToList();
 
-                        foreach ( var mobileInteraction in mobileSession.Interactions )
+                        //
+                        // Loop through all interactions that don't already exist and add each one.
+                        //
+                        foreach ( var mobileInteraction in mobileSession.Interactions.Where( i => !existingInteractionGuids.Contains( i.Guid ) ) )
                         {
                             int? interactionComponentId = null;
 
@@ -324,18 +333,11 @@ namespace Rock.Rest.Controllers
                                     mobileSession.ClientType,
                                     null,
                                     ipAddress,
-                                    interactionSessionGuid );
+                                    mobileSession.Guid );
 
+                                interaction.Guid = mobileInteraction.Guid;
                                 interactionService.Add( interaction );
                                 rockContext.SaveChanges();
-
-                                //
-                                // If this is the first interaction we saved, get the session id for re-use.
-                                //
-                                if ( !interactionSessionGuid.HasValue && interaction.InteractionSessionId.HasValue )
-                                {
-                                    interactionSessionGuid = interactionSessionService.Get( interaction.InteractionSessionId.Value )?.Guid;
-                                }
                             }
                         }
                     }
@@ -410,6 +412,8 @@ namespace Rock.Rest.Controllers
             /// The CSS style.
             /// </value>
             public string CssStyle { get; set; }
+
+            public int? ApiKeyId { get; set; }
         }
 
         public class MobileAttributeValue
@@ -435,6 +439,8 @@ namespace Rock.Rest.Controllers
 
         public class InteractionSessionData
         {
+            public Guid Guid { get; set; }
+
             public string ClientType { get; set; }
 
             public string OperatingSystem { get; set; }
@@ -446,6 +452,8 @@ namespace Rock.Rest.Controllers
 
         public class InteractionData
         {
+            public Guid Guid { get; set; }
+
             public int? AppId { get; set; }
 
             public Guid? PageGuid { get; set; }
