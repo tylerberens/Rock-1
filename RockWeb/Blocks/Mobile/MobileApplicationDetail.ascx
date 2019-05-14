@@ -125,6 +125,12 @@
                         </div>
                     </div>
 
+                    <div class="row">
+                        <div class="col-md-6">
+                            <Rock:RockTextBox ID="tbEditApiKey" runat="server" Label="API Key" Required="true" />
+                        </div>
+                    </div>
+
                     <Rock:CodeEditor ID="ceEditCssStyles" runat="server" Label="CSS Styles" Help="CSS Styles to apply to UI elements." EditorMode="Css" />
 
                     <div class="row">

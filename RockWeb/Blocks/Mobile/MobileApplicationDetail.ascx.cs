@@ -14,6 +14,7 @@ using TabLocation = Rock.Rest.Controllers.MobileController.TabLocation;
 using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Security;
+using System.Text;
 
 namespace RockWeb.Blocks.Mobile
 {
@@ -101,7 +102,8 @@ namespace RockWeb.Blocks.Mobile
         /// <param name="siteId">The site identifier.</param>
         private void ShowDetail( int siteId )
         {
-            var site = new SiteService( new RockContext() ).Get( siteId );
+            var rockContext = new RockContext();
+            var site = new SiteService( rockContext ).Get( siteId );
 
             //
             // Make sure the site exists.
@@ -149,7 +151,7 @@ namespace RockWeb.Blocks.Mobile
             imgAppIcon.ImageUrl = string.Format( "~/GetImage.ashx?Id={0}", site.SiteLogoBinaryFileId );
             imgAppIcon.Visible = site.SiteLogoBinaryFileId.HasValue;
             imgAppPreview.ImageUrl = string.Format( "~/GetImage.ashx?Id={0}", site.ThumbnailFileId );
-            imgAppPreview.Visible = site.ThumbnailFileId.HasValue;
+            pnlPreviewImage.Visible = site.ThumbnailFileId.HasValue;
 
             //
             // Set the UI fields for the additional details.
@@ -161,6 +163,9 @@ namespace RockWeb.Blocks.Mobile
             {
                 fields.Add( new KeyValuePair<string, string>( "Application Type", additionalSettings.ShellType.ToString() ) );
             }
+
+            var apiKeyLogin = new UserLoginService( rockContext ).Get( additionalSettings.ApiKeyId ?? 0 );
+            fields.Add( new KeyValuePair<string, string>( "API Key", apiKeyLogin != null ? apiKeyLogin.ApiKey : string.Empty ) );
 
             // TODO: I'm pretty sure something like this already exists in Rock, but I can never find it. - dh
             ltAppDetails.Text = string.Join( "", fields.Select( f => string.Format( "<dl><dt>{0}</dt><dd>{1}</dd></dl>", f.Key, f.Value ) ) );
@@ -240,7 +245,8 @@ namespace RockWeb.Blocks.Mobile
         /// <param name="siteId">The site identifier.</param>
         private void ShowEdit( int siteId )
         {
-            var site = new SiteService( new RockContext() ).Get( siteId );
+            var rockContext = new RockContext();
+            var site = new SiteService( rockContext ).Get( siteId );
             AdditionalSettings additionalSettings;
 
             //
@@ -297,6 +303,12 @@ namespace RockWeb.Blocks.Mobile
             rblEditAndroidTabLocation.Visible = rblEditApplicationType.SelectedValueAsInt() == ( int ) ShellType.Tabbed;
 
             //
+            // Set the API Key.
+            //
+            var apiKeyLogin = new UserLoginService( rockContext ).Get( additionalSettings.ApiKeyId ?? 0 );
+            tbEditApiKey.Text = apiKeyLogin != null ? apiKeyLogin.ApiKey : GenerateApiKey();
+
+            //
             // Set image UI fields.
             //
             imgEditIcon.BinaryFileId = site.SiteLogoBinaryFileId;
@@ -304,6 +316,81 @@ namespace RockWeb.Blocks.Mobile
 
             pnlContent.Visible = false;
             pnlEdit.Visible = true;
+        }
+
+        /// <summary>
+        /// Generates the API key.
+        /// </summary>
+        /// <returns></returns>
+        private string GenerateApiKey()
+        {
+            // Generate a unique random 12 digit api key
+            var rockContext = new RockContext();
+            var userLoginService = new UserLoginService( rockContext );
+            var key = string.Empty;
+            var isGoodKey = false;
+
+            while ( isGoodKey == false )
+            {
+                StringBuilder sb = new StringBuilder();
+                Random rnd = new Random();
+                char[] codeCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".ToCharArray(); ;
+                int poolSize = codeCharacters.Length;
+
+                for ( int i = 0; i < 24; i++ )
+                {
+                    sb.Append( codeCharacters[rnd.Next( poolSize )] );
+                }
+
+                key = sb.ToString();
+
+                var userLogins = userLoginService.Queryable().Where( a => a.ApiKey == key );
+                if ( userLogins.Count() == 0 )
+                {
+                    // no other user login has this key.
+                    isGoodKey = true;
+                }
+            }
+
+            return key;
+        }
+
+        /// <summary>
+        /// Saves the API key.
+        /// </summary>
+        /// <param name="restLoginId">The rest login identifier.</param>
+        /// <param name="apiKey">The API key.</param>
+        /// <param name="userName">Name of the user.</param>
+        /// <returns></returns>
+        private int SaveApiKey( int? restLoginId, string apiKey, string userName )
+        {
+            var rockContext = new RockContext();
+            var userLoginService = new UserLoginService( rockContext );
+            UserLogin userLogin = null;
+
+            // the key gets saved in the api key field of a user login (which you have to create if needed)
+            var entityType = new EntityTypeService( rockContext )
+                .Get( "Rock.Security.Authentication.Database" );
+
+            if ( restLoginId.HasValue )
+            {
+                userLogin = userLoginService.Get( restLoginId.Value );
+            }
+
+            if ( userLogin == null )
+            {
+                userLogin = new UserLogin();
+                userLoginService.Add( userLogin );
+            }
+
+            userLogin.UserName = userName;
+            userLogin.IsConfirmed = true;
+            userLogin.ApiKey = apiKey;
+            userLogin.EntityTypeId = entityType.Id;
+
+            rockContext.SaveChanges();
+
+            return userLogin.Id;
         }
 
         /// <summary>
@@ -380,6 +467,7 @@ namespace RockWeb.Blocks.Mobile
             var rockContext = new RockContext();
             var siteService = new SiteService( rockContext );
             var binaryFileService = new BinaryFileService( rockContext );
+            var userLoginService = new UserLoginService( rockContext );
 
             //
             // Find the site or if we are creating a new one, bootstrap it.
@@ -401,16 +489,20 @@ namespace RockWeb.Blocks.Mobile
             site.IsActive = cbEditActive.Checked;
             site.Description = tbEditDescription.Text;
 
+            var additionalSettings = site.AdditionalSettings.FromJsonOrNull<AdditionalSettings>() ?? new AdditionalSettings();
+
             //
             // Save the additional settings.
             //
-            var additionalSettings = new AdditionalSettings
-            {
-                ShellType = rblEditApplicationType.SelectedValueAsEnum<ShellType>(),
-                TabLocation = rblEditAndroidTabLocation.SelectedValueAsEnum<TabLocation>(),
-                CssStyle = ceEditCssStyles.Text
-            };
+            additionalSettings.ShellType = rblEditApplicationType.SelectedValueAsEnum<ShellType>();
+            additionalSettings.TabLocation = rblEditAndroidTabLocation.SelectedValueAsEnum<TabLocation>();
+            additionalSettings.CssStyle = ceEditCssStyles.Text;
 
+            //
+            // Save the API Key.
+            //
+            additionalSettings.ApiKeyId = SaveApiKey( additionalSettings.ApiKeyId, tbEditApiKey.Text, string.Format( "mobile_application_{0}", site.Id ) );
+            
             site.AdditionalSettings = additionalSettings.ToJson();
 
             //
