@@ -9,7 +9,7 @@ using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
 using AdditionalSettings = Rock.Rest.Controllers.MobileController.AdditionalSettings;
-using ShellType = Rock.Rest.Controllers.MobileController.ShellType;
+using ShellType = Rock.Mobile.Common.Enums.ShellType;
 using TabLocation = Rock.Rest.Controllers.MobileController.TabLocation;
 using Rock.Web.Cache;
 using Rock.Web.UI;

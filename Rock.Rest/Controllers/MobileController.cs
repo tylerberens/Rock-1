@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web.Http;
 using Rock.Attribute;
+using Rock.Mobile.Common;
+using Rock.Mobile.Common.Enums;
 using Rock.Model;
 using Rock.Rest.Filters;
 using Rock.Web.Cache;
@@ -26,15 +28,14 @@ namespace Rock.Rest.Controllers
         [Route( "api/mobile/GetLaunchPacket" )]
         [HttpPost]
         [Authenticate]
-        public object GetLaunchPacket( [FromBody] IDictionary<string, object> deviceData, int applicationId )
+        public object GetLaunchPacket( [FromBody] DeviceData deviceData, int applicationId )
         {
-            var baseUrl = $"{Request.RequestUri.Scheme}://{Request.RequestUri.Authority}";
-            var platform = deviceData.ContainsKey( "DeviceType" ) ? ( int ) ( long ) deviceData["DeviceType"] : 0; // Phone
+            var baseUrl = GetBaseUrl();
 
-            var launchPacket = new Dictionary<string, object>()
+            var launchPacket = new LaunchPackage
             {
-                { "LatestVersionId", RockDateTime.Now.ToJavascriptMilliseconds() / 1000 },
-                { "LatestVersionSettingsUrl", $"{baseUrl}/api/mobile/GetLatestVersion?ApplicationId={applicationId}&Platform={platform}" }
+                LatestVersionId = ( int ) ( RockDateTime.Now.ToJavascriptMilliseconds() / 1000 ),
+                LatestVersionSettingsUrl = $"{baseUrl}api/mobile/GetLatestVersion?ApplicationId={applicationId}&Platform={deviceData.DevicePlatform.ConvertToInt()}"
             };
 
             using ( var rockContext = new Data.RockContext() )
@@ -49,23 +50,26 @@ namespace Rock.Rest.Controllers
                     .Select( a => a.Value )
                     .Where( a => a.Categories.Any( c => c.Name == "Mobile" ) );
 
-                var mobilePerson = new Dictionary<string, object>
+                if ( person != null )
                 {
-                    { "FirstName", person.FirstName },
-                    { "LastName", person.LastName },
-                    { "Email", person.Email },
-                    { "HomePhone", person.PhoneNumbers.Where( p => p.NumberTypeValueId == homePhoneTypeId ).Select(p => p.NumberFormatted ).FirstOrDefault() },
-                    { "MobilePhone", person.PhoneNumbers.Where( p => p.NumberTypeValueId == mobilePhoneTypeId ).Select(p => p.NumberFormatted ).FirstOrDefault() },
-                    { "AuthToken", null },
-                    { "PersonAliasId", person.PrimaryAliasId },
-                    { "PhotoUrl", person.PhotoUrl },
-                    { "SecurityGroupGuids", new List<Guid>() },
-                    { "PersonalizationSegmentGuids", new List<Guid>() },
-                    { "PersonGuid", person.Guid },
-                    { "AttributeValues", GetMobileAttributeValues( person, personAttributes ) }
-                };
+                    var mobilePerson = new MobilePerson
+                    {
+                        FirstName = person.FirstName,
+                        LastName = person.LastName,
+                        Email = person.Email,
+                        HomePhone = person.PhoneNumbers.Where( p => p.NumberTypeValueId == homePhoneTypeId ).Select( p => p.NumberFormatted ).FirstOrDefault(),
+                        MobilePhone = person.PhoneNumbers.Where( p => p.NumberTypeValueId == mobilePhoneTypeId ).Select( p => p.NumberFormatted ).FirstOrDefault(),
+                        AuthToken = null,
+                        PersonAliasId = person.PrimaryAliasId.Value,
+                        PhotoUrl = person.PhotoUrl,
+                        SecurityGroupGuids = new List<Guid>(),
+                        PersonalizationSegmentGuids = new List<Guid>(),
+                        PersonGuid = person.Guid,
+                        AttributeValues = GetMobileAttributeValues( person, personAttributes )
+                    };
 
-                launchPacket.Add( "CurrentPerson", mobilePerson );
+                    launchPacket.CurrentPerson = mobilePerson;
+                }
             }
 
             return launchPacket;
@@ -80,54 +84,55 @@ namespace Rock.Rest.Controllers
         [Route( "api/mobile/GetLatestVersion" )]
         [HttpGet]
         [Authenticate]
-        public object GetLatestVersion( int applicationId, int platform )
+        public object GetLatestVersion( int applicationId, DeviceType platform )
         {
-            var site = SiteCache.Get( applicationId );
             var rockContext = new Rock.Data.RockContext();
-
-            var package = new Dictionary<string, object>();
-            var appearanceSettings = new Dictionary<string, object>();
-            var layouts = new List<Dictionary<string, object>>();
-            var pages = new List<Dictionary<string, object>>();
-            var blocks = new List<Dictionary<string, object>>();
-            var campuses = new List<Dictionary<string, object>>();
-
+            var site = SiteCache.Get( applicationId );
             var additionalSettings = site.AdditionalSettings.FromJsonOrNull<AdditionalSettings>();
 
-            package.Add( "ApplicationType", 1 );
-            package.Add( "ApplicationVersionId", RockDateTime.Now.ToJavascriptMilliseconds() / 1000 );
-            package.Add( "AppearanceSettings", appearanceSettings );
-            package.Add( "CssStyles", additionalSettings?.CssStyle ?? string.Empty );
-            package.Add( "Layouts", layouts );
-            package.Add( "Pages", pages );
-            package.Add( "Blocks", blocks );
-            package.Add( "Campuses", campuses );
+            var package = new UpdatePackage
+            {
+                ApplicationType = additionalSettings.ShellType ?? ShellType.Blank,
+                ApplicationVersionId = ( int ) ( RockDateTime.Now.ToJavascriptMilliseconds() / 1000 ),
+                CssStyles = additionalSettings?.CssStyle ?? string.Empty
+            };
 
-            appearanceSettings.Add( "BarTextColor", "#ffffff" );
-            appearanceSettings.Add( "BarBackgroundColor", "#ee7725" );
+            package.AppearanceSettings.BarTextColor = "#ffffff";
+            package.AppearanceSettings.BarBackgroundColor = "#ee7725";
 
+            //
+            // Load all the campuses.
+            //
             foreach ( var cachedLayout in LayoutCache.All().Where( l => l.SiteId == site.Id ) )
             {
                 var layout = new LayoutService( rockContext ).Get( cachedLayout.Id );
-                var mobileLayout = new Dictionary<string, object>();
+                var mobileLayout = new Mobile.Common.Layout
+                {
+                    LayoutGuid = layout.Guid,
+                    Name = layout.Name,
+                    LayoutXaml = platform == DeviceType.Tablet ? layout.LayoutMobileTablet : layout.LayoutMobilePhone
+                };
 
-                mobileLayout.Add( "LayoutGuid", layout.Guid );
-                mobileLayout.Add( "Name", layout.Name );
-                mobileLayout.Add( "LayoutXaml", platform == 1 ? layout.LayoutMobileTablet : layout.LayoutMobilePhone );
-
-                layouts.Add( mobileLayout );
+                package.Layouts.Add( mobileLayout );
             }
 
+            //
+            // Load all the pages.
+            //
             foreach ( var page in PageCache.All().Where( p => p.SiteId == site.Id ) )
             {
-                var mobilePage = new Dictionary<string, object>();
+                var mobilePage = new Mobile.Common.Page
+                {
+                    LayoutGuid = page.Layout.Guid,
+                    DisplayInNav = page.DisplayInNavWhen == DisplayInNavWhen.WhenAllowed,
+                    Title = page.PageTitle,
+                    PageGuid = page.Guid,
+                    Order = page.Order,
+                    ParentPageGuid = page.ParentPage?.Guid,
+                    IconUrl = page.IconFileId.HasValue ? $"" : null
+                };
 
-                mobilePage.Add( "LayoutGuid", page.Layout.Guid );
-                mobilePage.Add( "DisplayInNav", page.DisplayInNavWhen == DisplayInNavWhen.WhenAllowed );
-                mobilePage.Add( "Title", page.PageTitle );
-                mobilePage.Add( "PageGuid", page.Guid );
-
-                pages.Add( mobilePage );
+                package.Pages.Add( mobilePage );
             }
 
             foreach ( var block in BlockCache.All().Where( b => b.Page != null && b.Page.SiteId == site.Id && b.BlockType.EntityTypeId.HasValue ).OrderBy( b => b.Order ) )
@@ -140,49 +145,51 @@ namespace Rock.Rest.Controllers
                     mobileBlockEntity.BlockCache = block;
                     mobileBlockEntity.PageCache = block.Page;
 
-                    var mobileBlock = new Dictionary<string, object>();
-
-                    mobileBlock.Add( "PageGuid", block.Page.Guid );
-                    mobileBlock.Add( "Zone", block.Zone );
-                    mobileBlock.Add( "BlockGuid", block.Guid );
-                    mobileBlock.Add( "BlockType", mobileBlockEntity.MobileBlockType );
-                    mobileBlock.Add( "ConfigurationValues", mobileBlockEntity.GetMobileConfigurationValues() );
-
                     var attributes = block.Attributes
                         .Select( a => a.Value );
-                        //.Where( a => a.Categories.Any( c => c.Name == "custommobile" ) );
-                    mobileBlock.Add( "AttributeValues", GetMobileAttributeValues( block, attributes ) );
+                    //.Where( a => a.Categories.Any( c => c.Name == "custommobile" ) );
 
-                    blocks.Add( mobileBlock );
+                    var mobileBlock = new Mobile.Common.Block
+                    {
+                        PageGuid = block.Page.Guid,
+                        Zone = block.Zone,
+                        BlockGuid = block.Guid,
+                        BlockType = mobileBlockEntity.MobileBlockType,
+                        ConfigurationValues = ( Dictionary<string, object> ) mobileBlockEntity.GetMobileConfigurationValues(),
+                        Order = block.Order,
+                        AttributeValues = GetMobileAttributeValues( block, attributes )
+                    };
+
+                    package.Blocks.Add( mobileBlock );
                 }
             }
 
             foreach ( var campus in CampusCache.All().Where( c => c.IsActive ?? true ) )
             {
-                var mobileCampus = new Dictionary<string, object>
+                var mobileCampus = new MobileCampus
                 {
-                    { "Guid", campus.Guid },
-                    { "Name", campus.Name }
+                    Guid = campus.Guid,
+                    Name = campus.Name
                 };
 
                 if ( campus.Location != null )
                 {
                     if ( campus.Location.Latitude.HasValue && campus.Location.Longitude.HasValue )
                     {
-                        mobileCampus.Add( "Latitude", campus.Location.Latitude );
-                        mobileCampus.Add( "Longitude", campus.Location.Longitude );
+                        mobileCampus.Latitude = campus.Location.Latitude;
+                        mobileCampus.Longitude = campus.Location.Longitude;
                     }
 
                     if ( !string.IsNullOrWhiteSpace( campus.Location.Street1 ) )
                     {
-                        mobileCampus.Add( "Street1", campus.Location.Street1 );
-                        mobileCampus.Add( "City", campus.Location.City );
-                        mobileCampus.Add( "State", campus.Location.State );
-                        mobileCampus.Add( "PostalCode", campus.Location.PostalCode );
+                        mobileCampus.Street1 = campus.Location.Street1;
+                        mobileCampus.City = campus.Location.City;
+                        mobileCampus.State = campus.Location.State;
+                        mobileCampus.PostalCode = campus.Location.PostalCode;
                     }
                 }
 
-                campuses.Add( mobileCampus );
+                package.Campuses.Add( mobileCampus );
             }
 
             return package;
@@ -196,7 +203,7 @@ namespace Rock.Rest.Controllers
         [Route( "api/mobile/Interactions" )]
         [HttpPost]
         [Authenticate]
-        public IHttpActionResult PostInteractions( [FromBody] List<InteractionSessionData> sessions )
+        public IHttpActionResult PostInteractions( [FromBody] List<MobileInteractionSession> sessions )
         {
             var person = GetPerson();
             var ipAddress = System.Web.HttpContext.Current?.Request?.UserHostAddress;
@@ -210,7 +217,7 @@ namespace Rock.Rest.Controllers
                 var interactionService = new InteractionService( rockContext );
                 var userLoginService = new UserLoginService( rockContext );
                 var channelMediumTypeValue = DefinedValueCache.Get( SystemGuid.DefinedValue.INTERACTIONCHANNELTYPE_WEBSITE );
-                var pageEntityTypeId = EntityTypeCache.Get( typeof( Page ) ).Id;
+                var pageEntityTypeId = EntityTypeCache.Get( typeof( Model.Page ) ).Id;
 
                 //
                 // Check against our temporary development api key or a real api key.
@@ -379,6 +386,31 @@ namespace Rock.Rest.Controllers
             return mobileAttributeValues;
         }
 
+        /// <summary>
+        /// Gets the base URL.
+        /// </summary>
+        /// <returns></returns>
+        private string GetBaseUrl()
+        {
+            if ( Request.Headers.Contains( "X-Forwarded-Host" ) && Request.Headers.Contains( "X-Forwarded-Proto" ) && Request.Headers.Contains( "X-Forwarded-Port" ) )
+            {
+                var proto = Request.GetHeader( "X-Forwarded-Proto" );
+                var host = Request.GetHeader( "X-Forwarded-Host" );
+
+                return $"{proto}://{host}/";
+            }
+            else
+            {
+                var url = GlobalAttributesCache.Value( "PublicApplicationRoot" );
+
+                if ( !url.EndsWith( "/", StringComparison.CurrentCultureIgnoreCase ) )
+                {
+                    url += "/";
+                }
+
+                return url;
+            }
+        }
 
         #region Support Classes
 #pragma warning disable 1591
@@ -416,59 +448,10 @@ namespace Rock.Rest.Controllers
             public int? ApiKeyId { get; set; }
         }
 
-        public class MobileAttributeValue
-        {
-            public string Value { get; set; }
-
-            public string FormattedValue { get; set; }
-        }
-
-        /// <summary>The type of application shell.</summary>
-        public enum ShellType
-        {
-            Blank = 0,
-            Flyout = 1,
-            Tabbed = 2
-        }
-
         public enum TabLocation
         {
             Top = 0,
             Bottom = 1,
-        }
-
-        public class InteractionSessionData
-        {
-            public Guid Guid { get; set; }
-
-            public string ClientType { get; set; }
-
-            public string OperatingSystem { get; set; }
-
-            public string Application { get; set; }
-
-            public List<InteractionData> Interactions { get; set; }
-        }
-
-        public class InteractionData
-        {
-            public Guid Guid { get; set; }
-
-            public int? AppId { get; set; }
-
-            public Guid? PageGuid { get; set; }
-
-            public Guid? ChannelGuid { get; set; }
-
-            public string ComponentName { get; set; }
-
-            public DateTime DateTime { get; set; }
-
-            public string Operation { get; set; }
-
-            public string Summary { get; set; }
-
-            public string Data { get; set; }
         }
 
 #pragma warning restore 1591
