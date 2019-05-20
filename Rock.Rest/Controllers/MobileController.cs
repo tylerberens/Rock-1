@@ -55,6 +55,7 @@ namespace Rock.Rest.Controllers
                     var mobilePerson = new MobilePerson
                     {
                         FirstName = person.FirstName,
+                        NickName = person.NickName,
                         LastName = person.LastName,
                         Email = person.Email,
                         HomePhone = person.PhoneNumbers.Where( p => p.NumberTypeValueId == homePhoneTypeId ).Select( p => p.NumberFormatted ).FirstOrDefault(),
@@ -94,7 +95,9 @@ namespace Rock.Rest.Controllers
             {
                 ApplicationType = additionalSettings.ShellType ?? ShellType.Blank,
                 ApplicationVersionId = ( int ) ( RockDateTime.Now.ToJavascriptMilliseconds() / 1000 ),
-                CssStyles = additionalSettings?.CssStyle ?? string.Empty
+                CssStyles = additionalSettings?.CssStyle ?? string.Empty,
+                LoginPageGuid = site.LoginPageId.HasValue ? PageCache.Get( site.LoginPageId.Value )?.Guid : null,
+                ProfileDetailsPageGuid = site.RegistrationPageId.HasValue ? PageCache.Get( site.RegistrationPageId.Value )?.Guid : null
             };
 
             package.AppearanceSettings.BarTextColor = "#ffffff";
@@ -106,7 +109,7 @@ namespace Rock.Rest.Controllers
             foreach ( var cachedLayout in LayoutCache.All().Where( l => l.SiteId == site.Id ) )
             {
                 var layout = new LayoutService( rockContext ).Get( cachedLayout.Id );
-                var mobileLayout = new Mobile.Common.Layout
+                var mobileLayout = new MobileLayout
                 {
                     LayoutGuid = layout.Guid,
                     Name = layout.Name,
@@ -121,7 +124,7 @@ namespace Rock.Rest.Controllers
             //
             foreach ( var page in PageCache.All().Where( p => p.SiteId == site.Id ) )
             {
-                var mobilePage = new Mobile.Common.Page
+                var mobilePage = new MobilePage
                 {
                     LayoutGuid = page.Layout.Guid,
                     DisplayInNav = page.DisplayInNavWhen == DisplayInNavWhen.WhenAllowed,
@@ -149,7 +152,7 @@ namespace Rock.Rest.Controllers
                         .Select( a => a.Value );
                     //.Where( a => a.Categories.Any( c => c.Name == "custommobile" ) );
 
-                    var mobileBlock = new Mobile.Common.Block
+                    var mobileBlock = new MobileBlock
                     {
                         PageGuid = block.Page.Guid,
                         Zone = block.Zone,
