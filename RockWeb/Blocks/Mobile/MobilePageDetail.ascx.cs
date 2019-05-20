@@ -597,6 +597,7 @@ namespace RockWeb.Blocks.Mobile
             page.Description = tbDescription.Text;
             page.LayoutId = ddlLayout.SelectedValueAsId().Value;
             page.DisplayInNavWhen = cbDisplayInNavigation.Checked ? DisplayInNavWhen.WhenAllowed : DisplayInNavWhen.Never;
+            page.ParentPageId = SiteCache.Get( PageParameter( "SiteId" ).AsInteger() ).DefaultPageId.Value;
 
             rockContext.SaveChanges();
 

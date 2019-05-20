@@ -61,7 +61,7 @@ namespace Rock.Rest.Controllers
                         MobilePhone = person.PhoneNumbers.Where( p => p.NumberTypeValueId == mobilePhoneTypeId ).Select( p => p.NumberFormatted ).FirstOrDefault(),
                         AuthToken = null,
                         PersonAliasId = person.PrimaryAliasId.Value,
-                        PhotoUrl = person.PhotoUrl,
+                        PhotoUrl = ( person.PhotoId.HasValue ? $"{baseUrl}{person.PhotoUrl}" : null ),
                         SecurityGroupGuids = new List<Guid>(),
                         PersonalizationSegmentGuids = new List<Guid>(),
                         PersonGuid = person.Guid,
@@ -401,14 +401,7 @@ namespace Rock.Rest.Controllers
             }
             else
             {
-                var url = GlobalAttributesCache.Value( "PublicApplicationRoot" );
-
-                if ( !url.EndsWith( "/", StringComparison.CurrentCultureIgnoreCase ) )
-                {
-                    url += "/";
-                }
-
-                return url;
+                return $"{Request.RequestUri.Scheme}://{Request.RequestUri.Authority}/";
             }
         }
 

@@ -32,6 +32,24 @@ namespace RockWeb.Blocks.Mobile
             public const string PageDetail = "PageDetail";
         }
 
+        #region Private Fields
+
+        private const string _defaultLayoutXaml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+<ContentPage xmlns=""http://xamarin.com/schemas/2014/forms""
+             xmlns:x=""http://schemas.microsoft.com/winfx/2009/xaml""
+             xmlns:Rock=""clr-namespace:Rock.Mobile.Cms""
+             xmlns:RockBlock=""clr-namespace:Rock.Mobile.Blocks"">
+    <ContentPage.Content>
+        <ScrollView>
+            <StackLayout>
+                <Rock:RockZone ZoneName=""Main""></Rock:RockZone>
+            </StackLayout>
+        </ScrollView>
+    </ContentPage.Content>
+</ContentPage>";
+
+        #endregion
+
         #region Base Method Overrides
 
         /// <summary>
@@ -534,7 +552,47 @@ namespace RockWeb.Blocks.Mobile
                 binaryFileService.Get( site.ThumbnailFileId.Value ).IsTemporary = false;
             }
 
-            rockContext.SaveChanges();
+            if ( site.Id == 0 )
+            {
+                rockContext.WrapTransaction( () =>
+                {
+                    var pageService = new PageService( rockContext );
+                    var layoutService = new LayoutService( rockContext );
+                    var pageName = string.Format( "{0} Homepage", site.Name );
+
+                    var layout = new Layout
+                    {
+                        Name = "Homepage",
+                        FileName = "Homepage.xaml",
+                        Description = string.Empty,
+                        LayoutMobilePhone = _defaultLayoutXaml,
+                        LayoutMobileTablet = _defaultLayoutXaml
+                    };
+
+                    layoutService.Add( layout );
+                    rockContext.SaveChanges();
+
+                    var page = new Page
+                    {
+                        InternalName = pageName,
+                        BrowserTitle = pageName,
+                        PageTitle = pageName,
+                        Description = string.Empty,
+                        LayoutId = layout.Id,
+                        DisplayInNavWhen = DisplayInNavWhen.WhenAllowed
+                    };
+
+                    pageService.Add( page );
+                    rockContext.SaveChanges();
+
+                    site.DefaultPageId = page.Id;
+                    rockContext.SaveChanges();
+                } );
+            }
+            else
+            {
+                rockContext.SaveChanges();
+            }
 
             NavigateToCurrentPage( new Dictionary<string, string>
             {
