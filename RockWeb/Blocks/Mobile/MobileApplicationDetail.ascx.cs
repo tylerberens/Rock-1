@@ -75,6 +75,7 @@ namespace RockWeb.Blocks.Mobile
                 }
                 else
                 {
+                    ltAppName.Text = "Add Application";
                     ShowEdit( siteId );
                 }
             }
@@ -455,6 +456,16 @@ namespace RockWeb.Blocks.Mobile
             {
                 ShowDetail( siteId );
             }
+        }
+
+        /// <summary>
+        /// Handles the Click event of the lbCancel control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void lbCancel_Click( object sender, EventArgs e )
+        {
+            NavigateToParentPage();
         }
 
         /// <summary>
