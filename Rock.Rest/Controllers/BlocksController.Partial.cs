@@ -130,7 +130,7 @@ namespace Rock.Rest.Controllers
         [Route( "api/blocks/action/{pageIdentifier}/{blockIdentifier}/{actionName}" )]
         public IHttpActionResult BlockAction( string pageIdentifier, string blockIdentifier, string actionName, [FromBody] JToken parameters )
         {
-            return ProcessAction( "GET", pageIdentifier, blockIdentifier, actionName, parameters );
+            return ProcessAction( Request.Method.ToString(), pageIdentifier, blockIdentifier, actionName, parameters );
         }
 
         /// <summary>

@@ -9,17 +9,17 @@ namespace Rock.Blocks.Types.Mobile
     [Category( "Mobile" )]
     [Description( "Places an image on the mobile device screen." )]
     [IconCssClass( "fa fa-image" )]
-    [CodeEditorField( "Image Url", "The URL to use for displaying the image. <span class='tip tip-lava'></span>", Web.UI.Controls.CodeEditorMode.Lava )]
+
+    #region Block Attributes
+
+    [CodeEditorField( "Image Url",
+        "The URL to use for displaying the image. <span class='tip tip-lava'></span>",
+        Web.UI.Controls.CodeEditorMode.Lava )]
+
+    #endregion
     public class MobileImage : RockBlockType, IRockMobileBlockType
     {
-        private static string Xaml = @"<?xml version=""1.0"" encoding=""UTF-8""?>
-<ContentView xmlns=""http://xamarin.com/schemas/2014/forms""
-             xmlns:x=""http://schemas.microsoft.com/winfx/2009/xaml""
-             xmlns:Rock=""clr-namespace:Rock.Mobile.Cms"">
-  <ContentView.Content>
-    <Rock:RockImage ImageUrl=""{Binding ConfigurationValues[Url]}"" />
-  </ContentView.Content>
-</ContentView>";
+        private static string Xaml = @"<Rock:RockImage ImageUrl=""{Binding ConfigurationValues[Url]}"" />";
 
         public int RequiredMobileApiVersion => 1;
 
@@ -32,14 +32,8 @@ namespace Rock.Blocks.Types.Mobile
             return new Dictionary<string, object>
             {
                 { "Xaml", Xaml },
-                { "Url", GetAttributeValue( "ImageUrl" ).ResolveMergeFields( mergeFields, null ) }
+                { "Url", GetAttributeValue( "ImageUrl" ).ResolveMergeFields( mergeFields, null ) },
             };
-        }
-
-        [BlockAction( "GetContent" )]
-        public object GetContent()
-        {
-            return "dynamix";
         }
     }
 }

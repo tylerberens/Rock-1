@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace Rock.Blocks
 {
@@ -21,7 +22,7 @@ namespace Rock.Blocks
         /// Initializes a new instance of the <see cref="BlockActionAttribute"/> class.
         /// </summary>
         /// <param name="actionName">Name of the action.</param>
-        public BlockActionAttribute( string actionName )
+        public BlockActionAttribute( [CallerMemberName] string actionName = "" )
         {
             ActionName = actionName;
         }

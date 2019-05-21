@@ -149,8 +149,8 @@ namespace Rock.Rest.Controllers
                     mobileBlockEntity.PageCache = block.Page;
 
                     var attributes = block.Attributes
-                        .Select( a => a.Value );
-                    //.Where( a => a.Categories.Any( c => c.Name == "custommobile" ) );
+                        .Select( a => a.Value )
+                        .Where( a => a.Categories.Any( c => c.Name == "custommobile" ) );
 
                     var mobileBlock = new MobileBlock
                     {
