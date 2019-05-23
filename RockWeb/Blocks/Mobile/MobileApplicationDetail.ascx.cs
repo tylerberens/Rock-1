@@ -113,6 +113,10 @@ namespace RockWeb.Blocks.Mobile
 
             rblEditApplicationType.BindToEnum<ShellType>();
             rblEditAndroidTabLocation.BindToEnum<TabLocation>();
+
+            cpEditPersonAttributeCategories.EntityTypeId = EntityTypeCache.Get( typeof( Rock.Model.Attribute ) ).Id;
+            cpEditPersonAttributeCategories.EntityTypeQualifierColumn = "EntityTypeId";
+            cpEditPersonAttributeCategories.EntityTypeQualifierValue = EntityTypeCache.Get( typeof( Person ) ).Id.ToString();
         }
 
         /// <summary>
@@ -185,6 +189,15 @@ namespace RockWeb.Blocks.Mobile
 
             var apiKeyLogin = new UserLoginService( rockContext ).Get( additionalSettings.ApiKeyId ?? 0 );
             fields.Add( new KeyValuePair<string, string>( "API Key", apiKeyLogin != null ? apiKeyLogin.ApiKey : string.Empty ) );
+
+            var selectedCategories = CategoryCache.All( rockContext )
+                .Where( c => additionalSettings.PersonAttributeCategories.Contains( c.Id ) )
+                .Select( c => c.Name )
+                .ToList();
+            if ( selectedCategories.Any() )
+            {
+                fields.Add( new KeyValuePair<string, string>( "Person Attribute Categories", string.Join( ", ", selectedCategories ) ) );
+            }
 
             // TODO: I'm pretty sure something like this already exists in Rock, but I can never find it. - dh
             ltAppDetails.Text = string.Join( "", fields.Select( f => string.Format( "<dl><dt>{0}</dt><dd>{1}</dd></dl>", f.Key, f.Value ) ) );
@@ -318,6 +331,7 @@ namespace RockWeb.Blocks.Mobile
             rblEditApplicationType.SetValue( ( int? ) additionalSettings.ShellType ?? ( int ) ShellType.Flyout );
             rblEditAndroidTabLocation.SetValue( ( int? ) additionalSettings.TabLocation ?? ( int ) TabLocation.Bottom );
             ceEditCssStyles.Text = additionalSettings.CssStyle ?? string.Empty;
+            cpEditPersonAttributeCategories.SetValues( CategoryCache.All( rockContext ).Where( c => additionalSettings.PersonAttributeCategories.Contains( c.Id ) ).Select( c => c.Id ) );
 
             rblEditAndroidTabLocation.Visible = rblEditApplicationType.SelectedValueAsInt() == ( int ) ShellType.Tabbed;
 
@@ -526,6 +540,7 @@ namespace RockWeb.Blocks.Mobile
             additionalSettings.ShellType = rblEditApplicationType.SelectedValueAsEnum<ShellType>();
             additionalSettings.TabLocation = rblEditAndroidTabLocation.SelectedValueAsEnum<TabLocation>();
             additionalSettings.CssStyle = ceEditCssStyles.Text;
+            additionalSettings.PersonAttributeCategories = cpEditPersonAttributeCategories.SelectedValues.AsIntegerList();
 
             //
             // Save the API Key.

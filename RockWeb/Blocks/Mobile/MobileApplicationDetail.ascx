@@ -130,6 +130,10 @@
                         <div class="col-md-6">
                             <Rock:RockTextBox ID="tbEditApiKey" runat="server" Label="API Key" Required="true" />
                         </div>
+
+                        <div class="col-md-6">
+                            <Rock:CategoryPicker ID="cpEditPersonAttributeCategories" runat="server" Label="Person Attribute Categories" Help="All attributes in selected categories will be sent to the client and made available remotely."  AllowMultiSelect="true" />
+                        </div>
                     </div>
 
                     <Rock:CodeEditor ID="ceEditCssStyles" runat="server" Label="CSS Styles" Help="CSS Styles to apply to UI elements." EditorMode="Css" />

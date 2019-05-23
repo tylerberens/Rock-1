@@ -31,6 +31,8 @@ namespace Rock.Rest.Controllers
         public object GetLaunchPacket( [FromBody] DeviceData deviceData, int applicationId )
         {
             var baseUrl = GetBaseUrl();
+            var site = SiteCache.Get( applicationId );
+            var additionalSettings = site.AdditionalSettings.FromJsonOrNull<AdditionalSettings>();
 
             var launchPacket = new LaunchPackage
             {
@@ -48,7 +50,7 @@ namespace Rock.Rest.Controllers
 
                 var personAttributes = person.Attributes
                     .Select( a => a.Value )
-                    .Where( a => a.Categories.Any( c => c.Name == "Mobile" ) );
+                    .Where( a => a.Categories.Any( c => additionalSettings.PersonAttributeCategories.Contains( c.Id ) ) );
 
                 if ( person != null )
                 {
@@ -441,7 +443,21 @@ namespace Rock.Rest.Controllers
             /// </value>
             public string CssStyle { get; set; }
 
+            /// <summary>
+            /// Gets or sets the API key identifier.
+            /// </summary>
+            /// <value>
+            /// The API key identifier.
+            /// </value>
             public int? ApiKeyId { get; set; }
+
+            /// <summary>
+            /// Gets or sets the person attribute categories.
+            /// </summary>
+            /// <value>
+            /// The person attribute categories.
+            /// </value>
+            public List<int> PersonAttributeCategories { get; set; } = new List<int>();
         }
 
         public enum TabLocation
