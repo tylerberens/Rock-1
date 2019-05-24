@@ -478,7 +478,7 @@ namespace RockWeb.Blocks.Mobile
             //
             var selectedCategory = ddlBlockTypeCategory.SelectedValue;
             var categories = new List<string>();
-            foreach ( var blockType in BlockTypeCache.All() )
+            foreach ( var blockType in BlockTypeCache.All().Where( b => string.IsNullOrEmpty( b.Path ) ) )
             {
                 try
                 {
