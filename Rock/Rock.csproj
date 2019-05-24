@@ -393,6 +393,7 @@
     <Compile Include="Blocks\RockBlockType.cs" />
     <Compile Include="Blocks\Types\Mobile\MobileContent.cs" />
     <Compile Include="Blocks\Types\Mobile\MobileImage.cs" />
+    <Compile Include="Blocks\Types\Mobile\MobileLogin.cs" />
     <Compile Include="Communication\SmsActions\SmsActionComponent.cs" />
     <Compile Include="Communication\SmsActions\SmsActionContainer.cs" />
     <Compile Include="Communication\SmsActions\SmsActionLaunchWorkflow.cs" />
