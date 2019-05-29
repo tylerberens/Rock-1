@@ -312,14 +312,39 @@ namespace Rock.Rest.Controllers
                 }
             }
 
-            var result = action.Invoke( block, parameters.ToArray() );
+            object result;
+            try
+            {
+                result = action.Invoke( block, parameters.ToArray() );
+            }
+            catch ( Exception ex )
+            {
+                ExceptionLogService.LogException( ex );
+                result = new Rock.Blocks.BlockActionResult( HttpStatusCode.InternalServerError );
+            }
 
             //
             // Handle the result type.
             //
-            if ( action.ReturnType == typeof( IHttpActionResult ) )
+            if ( result is IHttpActionResult )
             {
                 return ( IHttpActionResult ) result;
+            }
+            else if ( result is Rock.Blocks.BlockActionResult actionResult )
+            {
+                if ( actionResult.Error != null )
+                {
+                    return Content( actionResult.StatusCode, new HttpError( actionResult.Error ) );
+                }
+                else if ( actionResult.ContentClrType != null )
+                {
+                    var genericType = typeof( System.Web.Http.Results.NegotiatedContentResult<> ).MakeGenericType( actionResult.ContentClrType );
+                    return ( IHttpActionResult ) Activator.CreateInstance( genericType, actionResult.StatusCode, actionResult.Content, this );
+                }
+                else
+                {
+                    return StatusCode( actionResult.StatusCode );
+                }
             }
             else if ( action.ReturnType == typeof(void))
             {

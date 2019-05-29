@@ -500,7 +500,7 @@ namespace Rock.Rest.Controllers
         {
             var baseUrl = GetBaseUrl();
             var homePhoneTypeId = DefinedValueCache.Get( SystemGuid.DefinedValue.PERSON_PHONE_TYPE_HOME.AsGuid() ).Id;
-            var mobilePhoneTypeId = DefinedValueCache.Get( SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE ).Id;
+            var mobilePhoneTypeId = DefinedValueCache.Get( SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE.AsGuid() ).Id;
 
             var additionalSettings = site.AdditionalSettings.FromJsonOrNull<AdditionalSettings>();
 
