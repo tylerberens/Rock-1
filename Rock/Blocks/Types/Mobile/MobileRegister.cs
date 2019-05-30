@@ -3,6 +3,7 @@ using System.ComponentModel;
 
 using Rock.Attribute;
 using Rock.Data;
+using Rock.Mobile.Common.Blocks.RegisterAccount;
 using Rock.Model;
 using Rock.Web.Cache;
 
@@ -292,26 +293,5 @@ namespace Rock.Blocks.Types.Mobile
         }
 
         #endregion
-
-        public class AccountData
-        {
-            public string Username { get; set; }
-
-            public string Password { get; set; }
-
-            public string FirstName { get; set; }
-
-            public string LastName { get; set; }
-
-            public int Gender { get; set; }
-
-            public DateTime? BirthDate { get; set; }
-
-            public Guid? Campus { get; set; }
-
-            public string Email { get; set; }
-
-            public string MobilePhone { get; set; }
-        }
     }
 }
