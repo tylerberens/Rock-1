@@ -76,14 +76,14 @@ namespace Rock.Rest.Controllers
                 ApplicationVersionId = ( int ) ( RockDateTime.Now.ToJavascriptMilliseconds() / 1000 ),
                 CssStyles = additionalSettings?.CssStyle ?? string.Empty,
                 LoginPageGuid = site.LoginPageId.HasValue ? PageCache.Get( site.LoginPageId.Value )?.Guid : null,
-                ProfileDetailsPageGuid = site.RegistrationPageId.HasValue ? PageCache.Get( site.RegistrationPageId.Value )?.Guid : null
+                ProfileDetailsPageGuid = additionalSettings.ProfilePageId.HasValue ? PageCache.Get( additionalSettings.ProfilePageId.Value )?.Guid : null
             };
 
             package.AppearanceSettings.BarTextColor = "#ffffff";
             package.AppearanceSettings.BarBackgroundColor = "#ee7725";
 
             //
-            // Load all the campuses.
+            // Load all the layouts.
             //
             foreach ( var cachedLayout in LayoutCache.All().Where( l => l.SiteId == site.Id ) )
             {
@@ -117,6 +117,9 @@ namespace Rock.Rest.Controllers
                 package.Pages.Add( mobilePage );
             }
 
+            //
+            // Load all the blocks.
+            //
             foreach ( var block in BlockCache.All().Where( b => b.Page != null && b.Page.SiteId == site.Id && b.BlockType.EntityTypeId.HasValue ).OrderBy( b => b.Order ) )
             {
                 var blockEntityType = block.BlockType.EntityType.GetEntityType();
@@ -146,6 +149,9 @@ namespace Rock.Rest.Controllers
                 }
             }
 
+            //
+            // Load all the campuses.
+            //
             foreach ( var campus in CampusCache.All().Where( c => c.IsActive ?? true ) )
             {
                 var mobileCampus = new MobileCampus
@@ -665,6 +671,14 @@ namespace Rock.Rest.Controllers
             /// The API key identifier.
             /// </value>
             public int? ApiKeyId { get; set; }
+
+            /// <summary>
+            /// Gets or sets the profile page identifier.
+            /// </summary>
+            /// <value>
+            /// The profile page identifier.
+            /// </value>
+            public int? ProfilePageId { get; set; }
 
             /// <summary>
             /// Gets or sets the person attribute categories.

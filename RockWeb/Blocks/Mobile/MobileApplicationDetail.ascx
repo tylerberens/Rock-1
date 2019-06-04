@@ -128,6 +128,16 @@
 
                     <div class="row">
                         <div class="col-md-6">
+                            <Rock:PagePicker ID="ppEditLoginPage" runat="server" Label="Login Page" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <Rock:PagePicker ID="ppEditProfilePage" runat="server" Label="Profile Page" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
                             <Rock:RockTextBox ID="tbEditApiKey" runat="server" Label="API Key" Required="true" />
                         </div>
 

@@ -335,6 +335,9 @@ namespace RockWeb.Blocks.Mobile
 
             rblEditAndroidTabLocation.Visible = rblEditApplicationType.SelectedValueAsInt() == ( int ) ShellType.Tabbed;
 
+            ppEditLoginPage.SetValue( site.LoginPageId );
+            ppEditProfilePage.SetValue( additionalSettings.ProfilePageId );
+
             //
             // Set the API Key.
             //
@@ -531,6 +534,7 @@ namespace RockWeb.Blocks.Mobile
             site.Name = tbEditName.Text;
             site.IsActive = cbEditActive.Checked;
             site.Description = tbEditDescription.Text;
+            site.LoginPageId = ppEditLoginPage.PageId;
 
             var additionalSettings = site.AdditionalSettings.FromJsonOrNull<AdditionalSettings>() ?? new AdditionalSettings();
 
@@ -541,6 +545,7 @@ namespace RockWeb.Blocks.Mobile
             additionalSettings.TabLocation = rblEditAndroidTabLocation.SelectedValueAsEnum<TabLocation>();
             additionalSettings.CssStyle = ceEditCssStyles.Text;
             additionalSettings.PersonAttributeCategories = cpEditPersonAttributeCategories.SelectedValues.AsIntegerList();
+            additionalSettings.ProfilePageId = ppEditProfilePage.PageId;
 
             //
             // Save the API Key.
