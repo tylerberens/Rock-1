@@ -57,7 +57,7 @@
 
         <asp:Panel ID="pnlBlocks" runat="server" CssClass="panel panel-block">
             <div class="panel-heading">
-                <h3 class="panel-title">Blocks</h3>
+                <h3 class="panel-title"><i class="fa fa-th-large"></i> Blocks</h3>
             </div>
 
             <div class="panel-body padding-all-none">
