@@ -118,5 +118,15 @@ namespace Rock.Blocks.Types.Mobile
         }
 
         #endregion
+
+        #region Custom Settings
+
+        [TargetType( typeof( MobileContent ) )]
+        public class MobileContentCustomSettingsProvider : RockCustomSettingsUserControlProvider
+        {
+            protected override string UserControlPath => "~/BlockConfig/MobileContent.ascx";
+        }
+
+        #endregion
     }
 }
