@@ -101,6 +101,14 @@ namespace RockWeb.Blocks.Core
             }
         }
 
+        /// <summary>
+        /// Gets or sets the custom settings providers. These are defined by RockCustomSettingsProvider instances.
+        /// </summary>
+        /// <value>
+        /// The custom settings providers.
+        /// </value>
+        protected Dictionary<Rock.Blocks.RockCustomSettingsProvider, Control> CustomSettingsProviders { get; set; }
+
         #endregion
 
         /// <summary>
@@ -148,6 +156,22 @@ namespace RockWeb.Blocks.Core
             }
 
             base.OnInit( e );
+
+            LoadCustomSettingsTabs();
+        }
+
+        /// <summary>
+        /// Restores the view-state information from a previous user control request that was saved by the <see cref="M:System.Web.UI.UserControl.SaveViewState" /> method.
+        /// </summary>
+        /// <param name="savedState">An <see cref="T:System.Object" /> that represents the user control state to be restored.</param>
+        protected override void LoadViewState( object savedState )
+        {
+            base.LoadViewState( savedState );
+
+            //
+            // Ensure the proper tab is selected if it's a custom tab.
+            //
+            ShowSelectedPane();
         }
 
         /// <summary>
@@ -168,6 +192,8 @@ namespace RockWeb.Blocks.Core
             {
                 result.Add( "Custom Grid Options" );
             }
+
+            result.AddRange( CustomSettingsProviders.Keys.Select( p => p.CustomSettingsTitle ) );
 
             return result;
         }
@@ -199,6 +225,11 @@ namespace RockWeb.Blocks.Core
 
                     avcAttributes.ExcludedCategoryNames = new string[] { "advanced", "customsetting", "custommobile" };
                     avcAttributes.AddEditControls( _block );
+                }
+
+                foreach ( var kvp in CustomSettingsProviders )
+                {
+                    kvp.Key.SetCustomSettings( _block, kvp.Value );
                 }
 
                 rptProperties.DataSource = GetTabs(_block.BlockType );
@@ -283,6 +314,11 @@ namespace RockWeb.Blocks.Core
                 avcAttributes.GetEditValues( block );
                 avcMobileAttributes.GetEditValues( block );
                 avcAdvancedAttributes.GetEditValues( block );
+
+                foreach ( var kvp in CustomSettingsProviders )
+                {
+                    kvp.Key.GetCustomSettings( block, kvp.Value );
+                }
 
                 SaveCustomColumnsConfigToViewState();
                 if ( this.CustomGridColumnsConfigState != null && this.CustomGridColumnsConfigState.ColumnsConfig.Any() )
@@ -386,6 +422,27 @@ namespace RockWeb.Blocks.Core
         }
 
         /// <summary>
+        /// Loads the custom settings tabs.
+        /// </summary>
+        protected void LoadCustomSettingsTabs()
+        {
+            int blockId = PageParameter( "BlockId" ).AsInteger();
+            var block = BlockCache.Get( blockId );
+
+            CustomSettingsProviders = new Dictionary<Rock.Blocks.RockCustomSettingsProvider, Control>();
+
+            var providers = Rock.Blocks.RockCustomSettingsProvider.GetProvidersForType( block.BlockType.GetCompiledType() );
+            foreach ( var provider in providers )
+            {
+                var control = provider.GetCustomSettingsControl( block, phCustomSettings );
+                control.Visible = false;
+                phCustomSettings.Controls.Add( control );
+
+                CustomSettingsProviders.Add( provider, control );
+            }
+        }
+
+        /// <summary>
         /// Shows the selected pane.
         /// </summary>
         private void ShowSelectedPane()
@@ -394,6 +451,11 @@ namespace RockWeb.Blocks.Core
             pnlBasicProperty.Visible = CurrentTab.Equals( "Basic Settings" );
             pnlMobileSettings.Visible = CurrentTab.Equals( "Mobile Local Settings" );
             pnlCustomGridTab.Visible = CurrentTab.Equals( "Custom Grid Options" );
+
+            foreach ( var kvp in CustomSettingsProviders )
+            {
+                kvp.Value.Visible = CurrentTab.Equals( kvp.Key.CustomSettingsTitle );
+            }
         }
 
         #endregion

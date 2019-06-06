@@ -80,6 +80,8 @@
                         </Rock:RockControlWrapper>
                     </asp:Panel>
 
+                    <asp:Placeholder ID="phCustomSettings" runat="server" />
+
                 </div>
 
             </asp:PlaceHolder>
