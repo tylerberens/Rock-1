@@ -95,12 +95,14 @@
                                                 <ItemTemplate>
                                                     <div class="panel panel-widget">
                                                         <div class="panel-heading js-block" data-block-id="<%# Eval( "Id" ) %>">
-                                                            <a class="btn btn-link btn-xs panel-widget-reorder">
-                                                                <i class="fa fa-bars js-reorder"></i>
-                                                            </a>
-                                                            <i class="<%# Eval( "IconCssClass" ) %>"></i>
-                                                            <%# Eval( "Name" ) %> (<%# Eval( "Type" ) %>)
+                                                            <span>
+                                                                <i class="<%# Eval( "IconCssClass" ) %>"></i>
+                                                                <%# Eval( "Name" ) %> (<%# Eval( "Type" ) %>)
+                                                            </span>
                                                             <div class="pull-right">
+                                                                <a class="btn btn-default btn-sm btn-link panel-widget-reorder">
+                                                                    <i class="fa fa-bars js-reorder"></i>
+                                                                </a>
                                                                 <asp:PlaceHolder ID="phAdminButtons" runat="server" />
                                                             </div>
                                                         </div>
