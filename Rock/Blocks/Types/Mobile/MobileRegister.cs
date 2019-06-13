@@ -11,7 +11,7 @@ namespace Rock.Blocks.Types.Mobile
 {
     [DisplayName( "Mobile Register" )]
     [Category( "Mobile" )]
-    [Description( "Allows user to register a new account on mobile applicatoin." )]
+    [Description( "Allows user to register a new account on mobile application." )]
     [IconCssClass( "fa fa-user-plus" )]
 
     #region Block Attributes

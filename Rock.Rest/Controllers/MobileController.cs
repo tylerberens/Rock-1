@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web.Http;
 using Rock.Attribute;
+using Rock.Mobile;
 using Rock.Mobile.Common;
 using Rock.Mobile.Common.Enums;
 using Rock.Model;
@@ -33,8 +34,8 @@ namespace Rock.Rest.Controllers
         [Authenticate]
         public object GetLaunchPacket( [FromBody] DeviceData deviceData, int applicationId )
         {
-            var baseUrl = GetBaseUrl();
-            var site = GetCurrentApplicationSite();
+            var baseUrl = MobileHelper.GetBaseUrl();
+            var site = MobileHelper.GetCurrentApplicationSite();
             var additionalSettings = site.AdditionalSettings.FromJsonOrNull<AdditionalSettings>();
 
             var launchPacket = new LaunchPackage
@@ -48,8 +49,8 @@ namespace Rock.Rest.Controllers
             {
                 var principal = ControllerContext.Request.GetUserPrincipal();
 
-                launchPacket.CurrentPerson = GetMobilePerson( person, site );
-                launchPacket.CurrentPerson.AuthToken = GetAuthenticationToken( principal.Identity.Name );
+                launchPacket.CurrentPerson = MobileHelper.GetMobilePerson( person, site );
+                launchPacket.CurrentPerson.AuthToken = MobileHelper.GetAuthenticationToken( principal.Identity.Name );
             }
 
             return launchPacket;
@@ -142,7 +143,7 @@ namespace Rock.Rest.Controllers
                         BlockType = mobileBlockEntity.MobileBlockType,
                         ConfigurationValues = mobileBlockEntity.GetMobileConfigurationValues(),
                         Order = block.Order,
-                        AttributeValues = GetMobileAttributeValues( block, attributes )
+                        AttributeValues = MobileHelper.GetMobileAttributeValues( block, attributes )
                     };
 
                     package.Blocks.Add( mobileBlock );
@@ -210,7 +211,7 @@ namespace Rock.Rest.Controllers
                 // Check against our temporary development api key or a real api key.
                 // Do we need to somehow validate this api key against a site or is this enough? -dsh
                 //
-                if ( GetCurrentApplicationSite() != null )
+                if ( MobileHelper.GetCurrentApplicationSite() != null )
                 {
                     return StatusCode( System.Net.HttpStatusCode.Forbidden );
                 }
@@ -351,7 +352,7 @@ namespace Rock.Rest.Controllers
         public IHttpActionResult Login( [FromBody] LoginParameters loginParameters )
         {
             var authController = new AuthController();
-            var site = GetCurrentApplicationSite();
+            var site = MobileHelper.GetCurrentApplicationSite();
 
             if ( site == null )
             {
@@ -369,9 +370,9 @@ namespace Rock.Rest.Controllers
             //
             var userLoginService = new UserLoginService( new Rock.Data.RockContext() );
             var userLogin = userLoginService.GetByUserName( loginParameters.Username );
-            var mobilePerson = GetMobilePerson( userLogin.Person, site );
+            var mobilePerson = MobileHelper.GetMobilePerson( userLogin.Person, site );
 
-            mobilePerson.AuthToken = GetAuthenticationToken( loginParameters.Username );
+            mobilePerson.AuthToken = MobileHelper.GetAuthenticationToken( loginParameters.Username );
 
             return Ok( mobilePerson );
         }
@@ -398,7 +399,7 @@ namespace Rock.Rest.Controllers
             // Check against our temporary development api key or a real api key.
             // Do we need to somehow validate this api key against a site or is this enough? -dsh
             //
-            if ( GetCurrentApplicationSite() == null )
+            if ( MobileHelper.GetCurrentApplicationSite() == null )
             {
                 return StatusCode( System.Net.HttpStatusCode.Forbidden );
             }
@@ -447,255 +448,8 @@ namespace Rock.Rest.Controllers
                     rockContext.SaveChanges();
                 }
 
-                return Ok( $"{GetBaseUrl()}{person.PhotoUrl}" );
+                return Ok( $"{MobileHelper.GetBaseUrl()}{person.PhotoUrl}" );
             }
         }
-
-        #region Private Methods
-
-        /// <summary>
-        /// Gets the mobile attribute values.
-        /// </summary>
-        /// <param name="entity">The entity.</param>
-        /// <param name="attributes">The attributes.</param>
-        /// <returns></returns>
-        private Dictionary<string, MobileAttributeValue> GetMobileAttributeValues( IHasAttributes entity, IEnumerable<AttributeCache> attributes )
-        {
-            var mobileAttributeValues = new Dictionary<string, MobileAttributeValue>();
-
-            if ( entity.Attributes == null )
-            {
-                entity.LoadAttributes();
-            }
-
-            foreach ( var attribute in attributes )
-            {
-                var value = entity.GetAttributeValue( attribute.Key );
-                var formattedValue = entity.AttributeValues.ContainsKey( attribute.Key ) ? entity.AttributeValues[attribute.Key].ValueFormatted : attribute.DefaultValueAsFormatted;
-
-                var mobileAttributeValue = new MobileAttributeValue
-                {
-                    Value = value,
-                    FormattedValue = formattedValue
-                };
-
-                mobileAttributeValues.AddOrReplace( attribute.Key, mobileAttributeValue );
-            }
-
-            return mobileAttributeValues;
-        }
-
-        /// <summary>
-        /// Gets the base URL.
-        /// </summary>
-        /// <returns></returns>
-        private string GetBaseUrl()
-        {
-            if ( Request.Headers.Contains( "X-Forwarded-Host" ) && Request.Headers.Contains( "X-Forwarded-Proto" ) && Request.Headers.Contains( "X-Forwarded-Port" ) )
-            {
-                var proto = Request.GetHeader( "X-Forwarded-Proto" );
-                var host = Request.GetHeader( "X-Forwarded-Host" );
-
-                return $"{proto}://{host}/";
-            }
-            else
-            {
-                return $"{Request.RequestUri.Scheme}://{Request.RequestUri.Authority}/";
-            }
-        }
-
-        /// <summary>
-        /// Get the current site as specified by the X-Rock-App-Id header and optionally
-        /// validate the X-Rock-Mobile-Api-Key against that site.
-        /// </summary>
-        /// <param name="validateApiKey"><c>true</c> if the X-Rock-Mobile-Api-Key header should be validated.</param>
-        /// <param name="rockContext">The Rock context to use when accessing the database.</param>
-        /// <returns>A SiteCache object or null if the request was not valid.</returns>
-        private SiteCache GetCurrentApplicationSite( bool validateApiKey = true, Data.RockContext rockContext = null )
-        {
-            var appId = System.Web.HttpContext.Current?.Request?.Headers?["X-Rock-App-Id"];
-
-            if ( !appId.AsIntegerOrNull().HasValue )
-            {
-                return null;
-            }
-
-            //
-            // Lookup the site from the App Id.
-            //
-            var site = SiteCache.Get( appId.AsInteger() );
-            if ( site == null )
-            {
-                return null;
-            }
-
-            //
-            // If we have been requested to validate the Api Key then do so.
-            //
-            if ( validateApiKey )
-            {
-                var appApiKey = System.Web.HttpContext.Current?.Request?.Headers?["X-Rock-Mobile-Api-Key"];
-                var additionalSettings = site.AdditionalSettings.FromJsonOrNull<AdditionalSettings>();
-
-                //
-                // Ensure we have valid site configuration.
-                //
-                if ( additionalSettings == null || !additionalSettings.ApiKeyId.HasValue )
-                {
-                    return null;
-                }
-
-                rockContext = rockContext ?? new Data.RockContext();
-                var userLogin = new UserLoginService( rockContext ).GetByApiKey( appApiKey ).FirstOrDefault();
-
-                if ( userLogin != null && userLogin.Id == additionalSettings.ApiKeyId )
-                {
-                    return site;
-                }
-#if DEBUG
-                //
-                // Check against our temporary development api key or a real api key.
-                //
-                else if ( appApiKey == "PUT_ME_IN_COACH!" )
-                {
-                    return site;
-                }
-#endif
-                else
-                {
-                    return null;
-                }
-            }
-            else
-            {
-                return site;
-            }
-        }
-
-        /// <summary>
-        /// Get the MobilePerson object for the specified Person.
-        /// </summary>
-        /// <param name="person">The person to be converted into a MobilePerson object.</param>
-        /// <param name="site">The site to use for configuration data.</param>
-        /// <returns>A MobilePerson object.</returns>
-        private MobilePerson GetMobilePerson( Person person, SiteCache site )
-        {
-            var baseUrl = GetBaseUrl();
-            var homePhoneTypeId = DefinedValueCache.Get( SystemGuid.DefinedValue.PERSON_PHONE_TYPE_HOME.AsGuid() ).Id;
-            var mobilePhoneTypeId = DefinedValueCache.Get( SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE.AsGuid() ).Id;
-
-            var additionalSettings = site.AdditionalSettings.FromJsonOrNull<AdditionalSettings>();
-
-            if ( person.Attributes == null )
-            {
-                person.LoadAttributes();
-            }
-
-            var personAttributes = person.Attributes
-                .Select( a => a.Value )
-                .Where( a => a.Categories.Any( c => additionalSettings.PersonAttributeCategories.Contains( c.Id ) ) );
-
-            return new MobilePerson
-            {
-                FirstName = person.FirstName,
-                NickName = person.NickName,
-                LastName = person.LastName,
-                Email = person.Email,
-                HomePhone = person.PhoneNumbers.Where( p => p.NumberTypeValueId == homePhoneTypeId ).Select( p => p.NumberFormatted ).FirstOrDefault(),
-                MobilePhone = person.PhoneNumbers.Where( p => p.NumberTypeValueId == mobilePhoneTypeId ).Select( p => p.NumberFormatted ).FirstOrDefault(),
-                PersonAliasId = person.PrimaryAliasId.Value,
-                PhotoUrl = ( person.PhotoId.HasValue ? $"{baseUrl}{person.PhotoUrl}" : null ),
-                SecurityGroupGuids = new List<Guid>(),
-                PersonalizationSegmentGuids = new List<Guid>(),
-                PersonGuid = person.Guid,
-                AttributeValues = GetMobileAttributeValues( person, personAttributes )
-            };
-        }
-
-        /// <summary>
-        /// Generate an authentication token (.ROCK Cookie) for the given username.
-        /// </summary>
-        /// <param name="username">The username whose token should be generated for.</param>
-        /// <returns>A string that represents the user's authentication token.</returns>
-        private string GetAuthenticationToken( string username )
-        {
-            var ticket = new System.Web.Security.FormsAuthenticationTicket( 1,
-                username,
-                RockDateTime.Now,
-                RockDateTime.Now.Add( System.Web.Security.FormsAuthentication.Timeout ),
-                true,
-                false.ToString() );
-
-            return System.Web.Security.FormsAuthentication.Encrypt( ticket );
-        }
-
-        #endregion
-
-        #region Support Classes
-#pragma warning disable 1591
-
-        /// <summary>
-        /// This class is used to store and retrieve
-        /// Additional Setting for Mobile against the Site Entity
-        /// </summary>
-        public class AdditionalSettings
-        {
-            /// <summary>
-            /// Gets or sets the type of the shell.
-            /// </summary>
-            /// <value>
-            /// The type of the shell.
-            /// </value>
-            public ShellType? ShellType { get; set; }
-
-            /// <summary>
-            /// Gets or sets the tab location.
-            /// </summary>
-            /// <value>
-            /// The tab location.
-            /// </value>
-            public TabLocation? TabLocation { get; set; }
-
-            /// <summary>
-            /// Gets or sets the CSS style.
-            /// </summary>
-            /// <value>
-            /// The CSS style.
-            /// </value>
-            public string CssStyle { get; set; }
-
-            /// <summary>
-            /// Gets or sets the API key identifier.
-            /// </summary>
-            /// <value>
-            /// The API key identifier.
-            /// </value>
-            public int? ApiKeyId { get; set; }
-
-            /// <summary>
-            /// Gets or sets the profile page identifier.
-            /// </summary>
-            /// <value>
-            /// The profile page identifier.
-            /// </value>
-            public int? ProfilePageId { get; set; }
-
-            /// <summary>
-            /// Gets or sets the person attribute categories.
-            /// </summary>
-            /// <value>
-            /// The person attribute categories.
-            /// </value>
-            public List<int> PersonAttributeCategories { get; set; } = new List<int>();
-        }
-
-        public enum TabLocation
-        {
-            Top = 0,
-            Bottom = 1,
-        }
-
-#pragma warning restore 1591
-        #endregion
     }
 }

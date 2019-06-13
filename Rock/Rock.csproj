@@ -194,8 +194,8 @@
     <Reference Include="RestSharp, Version=105.2.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\RestSharp.105.2.3\lib\net452\RestSharp.dll</HintPath>
     </Reference>
-    <Reference Include="Rock.Mobile.Common, Version=0.1.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Rock.Mobile.Common.0.1.4\lib\net452\Rock.Mobile.Common.dll</HintPath>
+    <Reference Include="Rock.Mobile.Common, Version=0.1.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Rock.Mobile.Common.0.1.5\lib\net452\Rock.Mobile.Common.dll</HintPath>
     </Reference>
     <Reference Include="StackExchange.Redis.StrongName, Version=1.2.6.0, Culture=neutral, PublicKeyToken=c219ff1ca8c2ce46, processorArchitecture=MSIL">
       <HintPath>..\packages\StackExchange.Redis.StrongName.1.2.6\lib\net45\StackExchange.Redis.StrongName.dll</HintPath>
@@ -402,7 +402,9 @@
     <Compile Include="Blocks\Types\Mobile\MobileContent.cs" />
     <Compile Include="Blocks\Types\Mobile\MobileImage.cs" />
     <Compile Include="Blocks\Types\Mobile\MobileLogin.cs" />
+    <Compile Include="Blocks\Types\Mobile\MobileProfileDetails.cs" />
     <Compile Include="Blocks\Types\Mobile\MobileRegister.cs" />
+    <Compile Include="Blocks\Types\Mobile\MobileWorkflowEntry.cs" />
     <Compile Include="Communication\SmsActions\SmsActionComponent.cs" />
     <Compile Include="Communication\SmsActions\SmsActionContainer.cs" />
     <Compile Include="Communication\SmsActions\SmsActionLaunchWorkflow.cs" />
@@ -541,6 +543,7 @@
     <Compile Include="Utility\ExtensionMethods\DictionaryFieldExtensions.cs" />
     <Compile Include="Utility\ExtensionMethods\EnumUtilityExtensions.cs" />
     <Compile Include="Utility\ExtensionMethods\ScheduleExtensions.cs" />
+    <Compile Include="Mobile\MobileHelper.cs" />
     <Compile Include="Utility\RockObsolete.cs" />
     <Compile Include="SystemGuid\SystemSetting.cs" />
     <Compile Include="SystemKey\GroupTypeAttributeKey.cs" />
