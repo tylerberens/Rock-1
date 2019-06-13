@@ -2,6 +2,7 @@
 using System.Linq;
 
 using Rock.Attribute;
+using Rock.Mobile;
 using Rock.Mobile.Common;
 using Rock.Model;
 using Rock.Web.Cache;
@@ -189,144 +190,152 @@ namespace Rock.Blocks.Types.Mobile
         [BlockAction]
         public object UpdateProfile( MobilePerson profile )
         {
-            var personId = UserLoginService.GetCurrentUser( false ).PersonId.Value;
+            var user = UserLoginService.GetCurrentUser( false );
 
-            using ( var rockContext = new Data.RockContext() )
+            if ( user == null )
             {
-                var personService = new PersonService( rockContext );
-                var phoneNumberService = new PhoneNumberService( rockContext );
-                var person = personService.Get( personId );
-
-                person.NickName = person.NickName == person.FirstName ? profile.FirstName : person.NickName;
-                person.FirstName = profile.FirstName;
-                person.LastName = profile.LastName;
-                person.Gender = ( Gender ) profile.Gender;
-
-                if ( GetAttributeValue( AttributeKeys.BirthDateShow ).AsBoolean() )
-                {
-                    person.SetBirthDate( profile.BirthDate );
-                }
-
-                if ( GetAttributeValue( AttributeKeys.CampusShow ).AsBoolean() )
-                {
-                    person.PrimaryFamily.CampusId = profile.CampusGuid.HasValue ? CampusCache.Get( profile.CampusGuid.Value )?.Id : null;
-                }
-
-                if ( GetAttributeValue( AttributeKeys.EmailShow ).AsBoolean() )
-                {
-                    person.Email = profile.Email;
-                }
-
-                if ( GetAttributeValue( AttributeKeys.MobilePhoneShow ).AsBoolean() )
-                {
-                    int phoneNumberTypeId = DefinedValueCache.Get( SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE ).Id;
-
-                    var phoneNumber = person.PhoneNumbers.FirstOrDefault( n => n.NumberTypeValueId == phoneNumberTypeId );
-                    if ( phoneNumber == null )
-                    {
-                        phoneNumber = new PhoneNumber { NumberTypeValueId = phoneNumberTypeId };
-                        person.PhoneNumbers.Add( phoneNumber );
-                    }
-
-                    // TODO: What to do with country code?
-                    phoneNumber.CountryCode = PhoneNumber.CleanNumber( "+1" );
-                    phoneNumber.Number = PhoneNumber.CleanNumber( profile.MobilePhone );
-
-                    if ( string.IsNullOrWhiteSpace( phoneNumber.Number ) )
-                    {
-                        person.PhoneNumbers.Remove( phoneNumber );
-                        phoneNumberService.Delete( phoneNumber );
-                    }
-                }
-
-                if ( GetAttributeValue( AttributeKeys.AddressShow ).AsBoolean() )
-                {
-                    var addressTypeGuid = SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME.AsGuid();
-
-                    var groupLocationService = new GroupLocationService( rockContext );
-
-                    var dvHomeAddressType = DefinedValueCache.Get( addressTypeGuid );
-                    var familyAddress = groupLocationService.Queryable().Where( l => l.GroupId == person.PrimaryFamily.Id && l.GroupLocationTypeValueId == dvHomeAddressType.Id ).FirstOrDefault();
-
-                    if ( familyAddress != null && string.IsNullOrWhiteSpace( profile.HomeAddress.Street1 ) )
-                    {
-                        // delete the current address
-                        groupLocationService.Delete( familyAddress );
-                    }
-                    else
-                    {
-                        if ( !string.IsNullOrWhiteSpace( profile.HomeAddress.Street1 ) )
-                        {
-                            if ( familyAddress == null )
-                            {
-                                familyAddress = new GroupLocation();
-                                groupLocationService.Add( familyAddress );
-                                familyAddress.GroupLocationTypeValueId = dvHomeAddressType.Id;
-                                familyAddress.GroupId = person.PrimaryFamily.Id;
-                                familyAddress.IsMailingLocation = true;
-                                familyAddress.IsMappedLocation = true;
-                            }
-                            else if ( familyAddress.Location.Street1 != profile.HomeAddress.Street1 )
-                            {
-                                // user clicked move so create a previous address
-                                var previousAddress = new GroupLocation();
-                                groupLocationService.Add( previousAddress );
-
-                                var previousAddressValue = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_PREVIOUS.AsGuid() );
-                                if ( previousAddressValue != null )
-                                {
-                                    previousAddress.GroupLocationTypeValueId = previousAddressValue.Id;
-                                    previousAddress.GroupId = person.PrimaryFamily.Id;
-
-                                    Location previousAddressLocation = new Location
-                                    {
-                                        Street1 = familyAddress.Location.Street1,
-                                        Street2 = familyAddress.Location.Street2,
-                                        City = familyAddress.Location.City,
-                                        State = familyAddress.Location.State,
-                                        PostalCode = familyAddress.Location.PostalCode,
-                                        Country = familyAddress.Location.Country
-                                    };
-
-                                    previousAddress.Location = previousAddressLocation;
-                                }
-                            }
-
-                            // TODO: ???
-                            //familyAddress.IsMailingLocation = cbIsMailingAddress.Checked;
-                            //familyAddress.IsMappedLocation = cbIsPhysicalAddress.Checked;
-
-                            familyAddress.Location = new LocationService( rockContext ).Get(
-                                profile.HomeAddress.Street1,
-                                "",
-                                profile.HomeAddress.City,
-                                profile.HomeAddress.State,
-                                profile.HomeAddress.PostalCode,
-                                profile.HomeAddress.Country,
-                                person.PrimaryFamily,
-                                true );
-
-                            // since there can only be one mapped location, set the other locations to not mapped
-                            if ( familyAddress.IsMappedLocation )
-                            {
-                                var groupLocations = groupLocationService.Queryable()
-                                    .Where( l => l.GroupId == person.PrimaryFamily.Id && l.Id != familyAddress.Id ).ToList();
-
-                                foreach ( var groupLocation in groupLocations )
-                                {
-                                    groupLocation.IsMappedLocation = false;
-                                }
-                            }
-
-                            rockContext.SaveChanges();
-                        }
-                    }
-                }
-
-                rockContext.SaveChanges();
+                return ActionStatusCode( System.Net.HttpStatusCode.Unauthorized );
             }
 
-            return ActionOk();
+            var personId = user.PersonId.Value;
+            var rockContext = new Data.RockContext();
+
+            var personService = new PersonService( rockContext );
+            var phoneNumberService = new PhoneNumberService( rockContext );
+            var person = personService.Get( personId );
+
+            person.NickName = person.NickName == person.FirstName ? profile.FirstName : person.NickName;
+            person.FirstName = profile.FirstName;
+            person.LastName = profile.LastName;
+            person.Gender = ( Gender ) profile.Gender;
+
+            if ( GetAttributeValue( AttributeKeys.BirthDateShow ).AsBoolean() )
+            {
+                person.SetBirthDate( profile.BirthDate );
+            }
+
+            if ( GetAttributeValue( AttributeKeys.CampusShow ).AsBoolean() )
+            {
+                person.PrimaryFamily.CampusId = profile.CampusGuid.HasValue ? CampusCache.Get( profile.CampusGuid.Value )?.Id : null;
+            }
+
+            if ( GetAttributeValue( AttributeKeys.EmailShow ).AsBoolean() )
+            {
+                person.Email = profile.Email;
+            }
+
+            if ( GetAttributeValue( AttributeKeys.MobilePhoneShow ).AsBoolean() )
+            {
+                int phoneNumberTypeId = DefinedValueCache.Get( SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE ).Id;
+
+                var phoneNumber = person.PhoneNumbers.FirstOrDefault( n => n.NumberTypeValueId == phoneNumberTypeId );
+                if ( phoneNumber == null )
+                {
+                    phoneNumber = new PhoneNumber { NumberTypeValueId = phoneNumberTypeId };
+                    person.PhoneNumbers.Add( phoneNumber );
+                }
+
+                // TODO: What to do with country code?
+                phoneNumber.CountryCode = PhoneNumber.CleanNumber( "+1" );
+                phoneNumber.Number = PhoneNumber.CleanNumber( profile.MobilePhone );
+
+                if ( string.IsNullOrWhiteSpace( phoneNumber.Number ) )
+                {
+                    person.PhoneNumbers.Remove( phoneNumber );
+                    phoneNumberService.Delete( phoneNumber );
+                }
+            }
+
+            if ( GetAttributeValue( AttributeKeys.AddressShow ).AsBoolean() )
+            {
+                var addressTypeGuid = SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_HOME.AsGuid();
+
+                var groupLocationService = new GroupLocationService( rockContext );
+
+                var dvHomeAddressType = DefinedValueCache.Get( addressTypeGuid );
+                var familyAddress = groupLocationService.Queryable().Where( l => l.GroupId == person.PrimaryFamily.Id && l.GroupLocationTypeValueId == dvHomeAddressType.Id ).FirstOrDefault();
+
+                if ( familyAddress != null && string.IsNullOrWhiteSpace( profile.HomeAddress.Street1 ) )
+                {
+                    // delete the current address
+                    groupLocationService.Delete( familyAddress );
+                }
+                else
+                {
+                    if ( !string.IsNullOrWhiteSpace( profile.HomeAddress.Street1 ) )
+                    {
+                        if ( familyAddress == null )
+                        {
+                            familyAddress = new GroupLocation();
+                            groupLocationService.Add( familyAddress );
+                            familyAddress.GroupLocationTypeValueId = dvHomeAddressType.Id;
+                            familyAddress.GroupId = person.PrimaryFamily.Id;
+                            familyAddress.IsMailingLocation = true;
+                            familyAddress.IsMappedLocation = true;
+                        }
+                        else if ( familyAddress.Location.Street1 != profile.HomeAddress.Street1 )
+                        {
+                            // user clicked move so create a previous address
+                            var previousAddress = new GroupLocation();
+                            groupLocationService.Add( previousAddress );
+
+                            var previousAddressValue = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_PREVIOUS.AsGuid() );
+                            if ( previousAddressValue != null )
+                            {
+                                previousAddress.GroupLocationTypeValueId = previousAddressValue.Id;
+                                previousAddress.GroupId = person.PrimaryFamily.Id;
+
+                                Location previousAddressLocation = new Location
+                                {
+                                    Street1 = familyAddress.Location.Street1,
+                                    Street2 = familyAddress.Location.Street2,
+                                    City = familyAddress.Location.City,
+                                    State = familyAddress.Location.State,
+                                    PostalCode = familyAddress.Location.PostalCode,
+                                    Country = familyAddress.Location.Country
+                                };
+
+                                previousAddress.Location = previousAddressLocation;
+                            }
+                        }
+
+                        // TODO: ???
+                        //familyAddress.IsMailingLocation = cbIsMailingAddress.Checked;
+                        //familyAddress.IsMappedLocation = cbIsPhysicalAddress.Checked;
+
+                        familyAddress.Location = new LocationService( rockContext ).Get(
+                            profile.HomeAddress.Street1,
+                            "",
+                            profile.HomeAddress.City,
+                            profile.HomeAddress.State,
+                            profile.HomeAddress.PostalCode,
+                            profile.HomeAddress.Country,
+                            person.PrimaryFamily,
+                            true );
+
+                        // since there can only be one mapped location, set the other locations to not mapped
+                        if ( familyAddress.IsMappedLocation )
+                        {
+                            var groupLocations = groupLocationService.Queryable()
+                                .Where( l => l.GroupId == person.PrimaryFamily.Id && l.Id != familyAddress.Id ).ToList();
+
+                            foreach ( var groupLocation in groupLocations )
+                            {
+                                groupLocation.IsMappedLocation = false;
+                            }
+                        }
+
+                        rockContext.SaveChanges();
+                    }
+                }
+            }
+
+            rockContext.SaveChanges();
+
+            var mobilePerson = MobileHelper.GetMobilePerson( person, MobileHelper.GetCurrentApplicationSite() );
+            mobilePerson.AuthToken = MobileHelper.GetAuthenticationToken( user.UserName );
+
+            return ActionOk( mobilePerson );
         }
 
         #endregion

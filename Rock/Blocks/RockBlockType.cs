@@ -66,6 +66,16 @@ namespace Rock.Blocks
         }
 
         /// <summary>
+        /// Create a response with the given status code.
+        /// </summary>
+        /// <param name="statusCode">The status code.</param>
+        /// <returns>A BlockActionResult instance.</returns>
+        protected virtual BlockActionResult ActionStatusCode( System.Net.HttpStatusCode statusCode )
+        {
+            return new BlockActionResult( statusCode );
+        }
+
+        /// <summary>
         /// Creates a generic response of the specified status code for the content value.
         /// </summary>
         /// <typeparam name="T">The type of the content being returned.</typeparam>
