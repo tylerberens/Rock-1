@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.ServiceModel.Channels;
-using System.Text;
-using System.Threading.Tasks;
 using System.Web.Http;
-using Rock.Attribute;
+
 using Rock.Mobile;
 using Rock.Mobile.Common;
 using Rock.Mobile.Common.Enums;
@@ -71,13 +69,24 @@ namespace Rock.Rest.Controllers
             var site = SiteCache.Get( applicationId );
             var additionalSettings = site.AdditionalSettings.FromJsonOrNull<AdditionalSettings>();
 
+            var phoneFormats = DefinedTypeCache.Get( SystemGuid.DefinedType.COMMUNICATION_PHONE_COUNTRY_CODE )
+                .DefinedValues
+                .Select( dv => new MobilePhoneFormat
+                {
+                    CountryCode = dv.Value,
+                    MatchExpression = dv.GetAttributeValue( "MatchRegEx" ),
+                    FormatExpression = dv.GetAttributeValue( "FormatRegEx" )
+                } )
+                .ToList();
+
             var package = new UpdatePackage
             {
                 ApplicationType = additionalSettings.ShellType ?? ShellType.Blank,
                 ApplicationVersionId = ( int ) ( RockDateTime.Now.ToJavascriptMilliseconds() / 1000 ),
                 CssStyles = additionalSettings?.CssStyle ?? string.Empty,
                 LoginPageGuid = site.LoginPageId.HasValue ? PageCache.Get( site.LoginPageId.Value )?.Guid : null,
-                ProfileDetailsPageGuid = additionalSettings.ProfilePageId.HasValue ? PageCache.Get( additionalSettings.ProfilePageId.Value )?.Guid : null
+                ProfileDetailsPageGuid = additionalSettings.ProfilePageId.HasValue ? PageCache.Get( additionalSettings.ProfilePageId.Value )?.Guid : null,
+                PhoneFormats = phoneFormats
             };
 
             package.AppearanceSettings.BarTextColor = "#ffffff";
