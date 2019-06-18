@@ -20,12 +20,11 @@ namespace Rock.Mobile
         public static string GetBaseUrl()
         {
             var request = HttpContext.Current.Request;
-            var headerKeys = request.Headers.AllKeys;
 
-            if ( request.Headers.AllKeys.Contains( "X-Forwarded-Host" ) && request.Headers.AllKeys.Contains( "X-Forwarded-Proto" ) )
+            var proto = request.Headers["X-Forwarded-Proto"];
+            var host = request.Headers["X-Forwarded-Host"];
+            if ( proto != null && host != null )
             {
-                var proto = request.Headers["X-Forwarded-Proto"];
-                var host = request.Headers["X-Forwarded-Host"];
 
                 return $"{proto}://{host}/";
             }
