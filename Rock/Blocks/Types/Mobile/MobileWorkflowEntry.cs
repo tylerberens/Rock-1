@@ -1,10 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 
 using Rock.Attribute;
 using Rock.Data;
+using Rock.Mobile.Common;
+using Rock.Mobile.Common.Blocks.WorkflowEntry;
 using Rock.Model;
+using Rock.Security;
 using Rock.Web.Cache;
 
 namespace Rock.Blocks.Types.Mobile
@@ -17,10 +21,28 @@ namespace Rock.Blocks.Types.Mobile
     #region Block Attributes
 
     [WorkflowTypeField( "Workflow Type",
-        "The type of workflow to launch when viewing this.",
-        false,
-        true,
+        description: "The type of workflow to launch when viewing this.",
+        required: true,
         order: 0 )]
+
+    [CustomDropdownListField( "Completion Action",
+        description: "What action to perform when there is nothing left for the user to do.",
+        listSource: "0^Show Message from Workflow,1^Show Completion Xaml,2^Redirect to Page",
+        required: true,
+        defaultValue: "0",
+        order: 1 )]
+
+    [CodeEditorField( "Completion Xaml",
+        description: "The XAML markup that will be used if the Completion Action is set to Show Completion Xaml. <span class='tip tip-lava'></span>",
+        required: false,
+        defaultValue: "",
+        order: 2 )]
+
+    [LinkedPage( "Redirect To Page",
+        description: "The page the user will be redirected to if the Completion Action is set to Redirect to Page.",
+        required: false,
+        defaultValue: "",
+        order: 3 )]
 
     #endregion
 
@@ -29,6 +51,9 @@ namespace Rock.Blocks.Types.Mobile
         public static class AttributeKeys
         {
             public const string WorkflowType = "WorkflowType";
+            public const string CompletionAction = "CompletionAction";
+            public const string CompletionXaml = "CompletionXaml";
+            public const string RedirectToPage = "RedirectToPage";
         }
 
         #region IRockMobileBlockType Implementation
@@ -62,6 +87,308 @@ namespace Rock.Blocks.Types.Mobile
 
         #endregion
 
+        #region Methods
+
+        /// <summary>
+        /// Loads the workflow.
+        /// </summary>
+        /// <param name="workflowId">The workflow identifier.</param>
+        /// <param name="rockContext">The rock context.</param>
+        /// <returns></returns>
+        private Model.Workflow LoadWorkflow( int? workflowId, RockContext rockContext )
+        {
+            if ( workflowId.HasValue )
+            {
+                return new WorkflowService( rockContext ).Get( workflowId.Value );
+            }
+            else
+            {
+                var workflowType = WorkflowTypeCache.Get( GetAttributeValue( AttributeKeys.WorkflowType ).AsGuid() );
+
+                return Model.Workflow.Activate( workflowType, $"New {workflowType.Name}" );
+            }
+        }
+
+        /// <summary>
+        /// Gets the next action with a Form attached.
+        /// </summary>
+        /// <param name="workflow">The workflow.</param>
+        /// <param name="currentPerson">The current person.</param>
+        /// <returns></returns>
+        private WorkflowAction GetNextAction( Model.Workflow workflow, Person currentPerson )
+        {
+            int personId = currentPerson?.Id ?? 0;
+            bool canEdit = BlockCache.IsAuthorized( Authorization.EDIT, currentPerson );
+
+            //
+            // Find all the activities that this person can see.
+            //
+            var activities = workflow.Activities
+                .Where( a =>
+                    a.IsActive &&
+                    (
+                        canEdit ||
+                        ( !a.AssignedGroupId.HasValue && !a.AssignedPersonAliasId.HasValue ) ||
+                        ( a.AssignedPersonAlias != null && a.AssignedPersonAlias.PersonId == personId ) ||
+                        ( a.AssignedGroup != null && a.AssignedGroup.Members.Any( m => m.PersonId == personId ) )
+                    )
+                )
+                .OrderBy( a => a.ActivityTypeCache.Order )
+                .ToList();
+
+            //
+            // Find the first action that the user is authorized to work with that has a Form
+            // attached to it.
+            //
+            foreach ( var activity in activities )
+            {
+                if ( canEdit || activity.ActivityTypeCache.IsAuthorized( Authorization.VIEW, currentPerson ) )
+                {
+                    foreach ( var action in activity.ActiveActions )
+                    {
+                        if ( action.ActionTypeCache.WorkflowForm != null && action.IsCriteriaValid )
+                        {
+                            return action;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Sets the form values.
+        /// </summary>
+        /// <param name="action">The action.</param>
+        /// <param name="formFields">The form fields.</param>
+        private void SetFormValues( WorkflowAction action, List<MobileField> formFields )
+        {
+            var activity = action.Activity;
+            var workflow = activity.Workflow;
+            var form = action.ActionTypeCache.WorkflowForm;
+
+            var values = new Dictionary<int, string>();
+            foreach ( var formAttribute in form.FormAttributes.OrderBy( a => a.Order ) )
+            {
+                if ( formAttribute.IsVisible && !formAttribute.IsReadOnly )
+                {
+                    var attribute = AttributeCache.Get( formAttribute.AttributeId );
+                    var formField = formFields.FirstOrDefault( f => f.AttributeId == formAttribute.AttributeId );
+
+                    if ( attribute != null && formField != null )
+                    {
+                        IHasAttributes item = null;
+
+                        if ( attribute.EntityTypeId == workflow.TypeId )
+                        {
+                            item = workflow;
+                        }
+                        else if ( attribute.EntityTypeId == activity.TypeId )
+                        {
+                            item = activity;
+                        }
+
+                        if ( item != null )
+                        {
+                            item.SetAttributeValue( attribute.Key, formField.Value );
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Completes the form action based on the action selected by the user.
+        /// </summary>
+        /// <param name="action">The action.</param>
+        /// <param name="formAction">The form action.</param>
+        /// <param name="currentPerson">The current person.</param>
+        /// <param name="rockContext">The rock context.</param>
+        /// <returns></returns>
+        private string CompleteFormAction( WorkflowAction action, string formAction, Person currentPerson, RockContext rockContext )
+        {
+            var workflowService = new WorkflowService( rockContext );
+            var activity = action.Activity;
+            var workflow = activity.Workflow;
+
+            var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null, currentPerson );
+            mergeFields.Add( "Action", action );
+            mergeFields.Add( "Activity", activity );
+            mergeFields.Add( "Workflow", workflow );
+
+            Guid activityTypeGuid = Guid.Empty;
+            string responseText = "Your information has been submitted successfully.";
+
+            //
+            // Get the target activity type guid and response text from the
+            // submitted form action.
+            //
+            foreach ( var act in action.ActionTypeCache.WorkflowForm.Actions.Split( new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries ) )
+            {
+                var actionDetails = act.Split( new char[] { '^' } );
+                if ( actionDetails.Length > 0 && actionDetails[0] == formAction )
+                {
+                    if ( actionDetails.Length > 2 )
+                    {
+                        activityTypeGuid = actionDetails[2].AsGuid();
+                    }
+
+                    if ( actionDetails.Length > 3 && !string.IsNullOrWhiteSpace( actionDetails[3] ) )
+                    {
+                        responseText = actionDetails[3].ResolveMergeFields( mergeFields );
+                    }
+                    break;
+                }
+            }
+
+            action.MarkComplete();
+            action.FormAction = formAction;
+            action.AddLogEntry( "Form Action Selected: " + action.FormAction );
+
+            if ( action.ActionTypeCache.IsActivityCompletedOnSuccess )
+            {
+                action.Activity.MarkComplete();
+            }
+
+            //
+            // Set the attribute that should contain the submitted form action.
+            //
+            if ( action.ActionTypeCache.WorkflowForm.ActionAttributeGuid.HasValue )
+            {
+                var attribute = AttributeCache.Get( action.ActionTypeCache.WorkflowForm.ActionAttributeGuid.Value );
+                if ( attribute != null )
+                {
+                    IHasAttributes item = null;
+
+                    if ( attribute.EntityTypeId == workflow.TypeId )
+                    {
+                        item = workflow;
+                    }
+                    else if ( attribute.EntityTypeId == activity.TypeId )
+                    {
+                        item = activity;
+                    }
+
+                    if ( item != null )
+                    {
+                        item.SetAttributeValue( attribute.Key, formAction );
+                    }
+                }
+            }
+
+            //
+            // Activate the requested activity if there was one.
+            //
+            if ( !activityTypeGuid.IsEmpty() )
+            {
+                var activityType = workflow.WorkflowTypeCache.ActivityTypes.Where( a => a.Guid.Equals( activityTypeGuid ) ).FirstOrDefault();
+                if ( activityType != null )
+                {
+                    WorkflowActivity.Activate( activityType, workflow );
+                }
+            }
+
+            return responseText;
+        }
+
+        /// <summary>
+        /// Processes the workflow and then get next action.
+        /// </summary>
+        /// <param name="workflow">The workflow.</param>
+        /// <param name="currentPerson">The current person.</param>
+        /// <param name="rockContext">The rock context.</param>
+        /// <param name="message">The message.</param>
+        /// <returns></returns>
+        private WorkflowAction ProcessAndGetNextAction( Model.Workflow workflow, Person currentPerson, RockContext rockContext, out WorkflowFormMessage message )
+        {
+            message = null;
+
+            var processStatus = new WorkflowService( rockContext ).Process( workflow, null, out var errorMessages );
+            if ( !processStatus )
+            {
+                message = new WorkflowFormMessage
+                {
+                    Type = WorkflowFormMessageType.Error,
+                    Title = "Workflow Error",
+                    Content = string.Join( "\n", errorMessages )
+                };
+
+                return null;
+            }
+
+            return GetNextAction( workflow, currentPerson );
+        }
+
+        /// <summary>
+        /// Gets the completion message to use based on the block settings.
+        /// </summary>
+        /// <param name="workflow">The workflow.</param>
+        /// <param name="responseText">The response text from the last action.</param>
+        /// <returns></returns>
+        private WorkflowFormMessage GetCompletionMessage( Model.Workflow workflow, string responseText )
+        {
+            int completionAction = GetAttributeValue( AttributeKeys.CompletionAction ).AsInteger();
+            var xaml = GetAttributeValue( AttributeKeys.CompletionXaml );
+            var redirectToPage = GetAttributeValue( AttributeKeys.RedirectToPage ).AsGuidOrNull();
+
+            if ( completionAction == 2 && redirectToPage.HasValue )
+            {
+                return new WorkflowFormMessage
+                {
+                    Type = WorkflowFormMessageType.Redirect,
+                    Content = redirectToPage.ToString()
+                };
+            }
+            else if ( completionAction == 1 && !string.IsNullOrWhiteSpace( xaml ) )
+            {
+                var mergeFields = Lava.LavaHelper.GetCommonMergeFields( null, GetCurrentPerson() );
+
+                mergeFields.Add( "Workflow", workflow );
+
+                return new WorkflowFormMessage
+                {
+                    Type = WorkflowFormMessageType.Xaml,
+                    Content = xaml.ResolveMergeFields( mergeFields )
+                };
+            }
+            else
+            {
+                if ( string.IsNullOrWhiteSpace( responseText ) )
+                {
+                    var mergeFields = Lava.LavaHelper.GetCommonMergeFields( null, GetCurrentPerson() );
+
+                    mergeFields.Add( "Workflow", workflow );
+
+                    responseText = workflow.WorkflowTypeCache.NoActionMessage.ResolveMergeFields( mergeFields );
+                }
+
+                return new WorkflowFormMessage
+                {
+                    Type = WorkflowFormMessageType.Information,
+                    Content = responseText
+                };
+            }
+        }
+
+        /// <summary>
+        /// Gets the current person.
+        /// </summary>
+        /// <returns></returns>
+        private Person GetCurrentPerson()
+        {
+            var user = UserLoginService.GetCurrentUser( false );
+
+            if ( user == null )
+            {
+                return null;
+            }
+
+            return new PersonService( new RockContext() ).Get( user.PersonId.Value );
+        }
+
+        #endregion
+
         #region Action Methods
 
         /// <summary>
@@ -69,49 +396,77 @@ namespace Rock.Blocks.Types.Mobile
         /// </summary>
         /// <returns>A collection of string/string pairs.</returns>
         [BlockAction]
-        public WorkflowForm GetNextForm( int? workflowId )
+        public WorkflowForm GetNextForm( int? workflowId = null, string formAction = null, List<MobileField> formFields = null )
         {
-            var workflowType = WorkflowTypeCache.Get( GetAttributeValue( AttributeKeys.WorkflowType ).AsGuid() );
             var rockContext = new RockContext();
             var workflowService = new WorkflowService( rockContext );
 
-            var workflow = Rock.Model.Workflow.Activate( workflowType, $"New {workflowType.Name}" );
-            workflowService.Process( workflow, null, out var errorMessages );
-            var activity = workflow.ActiveActivities.First();
-            var action = activity.ActiveActions.First();
+            var workflow = LoadWorkflow( workflowId, rockContext );
+            var currentPerson = GetCurrentPerson();
+
+            var action = ProcessAndGetNextAction( workflow, currentPerson, rockContext, out var message );
+            if ( action == null )
+            {
+                return new WorkflowForm
+                {
+                    Message = message ?? GetCompletionMessage( workflow, string.Empty )
+                };
+            }
+
+            //
+            // If this is a form submittal, then complete the form and re-process.
+            //
+            if ( !string.IsNullOrEmpty( formAction ) && formFields != null )
+            {
+                SetFormValues( action, formFields );
+                var responseText = CompleteFormAction( action, formAction, currentPerson, rockContext );
+
+                action = ProcessAndGetNextAction( workflow, currentPerson, rockContext, out message );
+                if ( action == null )
+                {
+                    return new WorkflowForm
+                    {
+                        Message = message ?? GetCompletionMessage( workflow, responseText )
+                    };
+                }
+            }
+
+            //
+            // Begin building up the response with the form data.
+            //
+            var activity = action.Activity;
             var form = action.ActionTypeCache.WorkflowForm;
 
             var mobileForm = new WorkflowForm
             {
-                Message = "Workflow form summary message.",
-                ButtonTitles = new List<string> { "Submit" },
-                Fields = new List<MobileField>()
+                WorkflowId = workflow.Id
             };
 
+            //
+            // Populate all the form fields that should be visible on the workflow.
+            //
             foreach ( var formAttribute in form.FormAttributes.OrderBy( a => a.Order ) )
             {
                 if ( formAttribute.IsVisible )
                 {
                     var attribute = AttributeCache.Get( formAttribute.AttributeId );
-
                     string value = attribute.DefaultValue;
-                    if ( workflow != null && workflow.AttributeValues.ContainsKey( attribute.Key ) && workflow.AttributeValues[attribute.Key] != null )
+
+                    //
+                    // Get the current value from either the workflow or the activity.
+                    //
+                    if ( workflow.AttributeValues.ContainsKey( attribute.Key ) && workflow.AttributeValues[attribute.Key] != null )
                     {
                         value = workflow.AttributeValues[attribute.Key].Value;
                     }
-                    // Now see if the key is in the activity attributes so we can get it's value
-                    else if ( activity != null && activity.AttributeValues.ContainsKey( attribute.Key ) && activity.AttributeValues[attribute.Key] != null )
+                    else if ( activity.AttributeValues.ContainsKey( attribute.Key ) && activity.AttributeValues[attribute.Key] != null )
                     {
                         value = activity.AttributeValues[attribute.Key].Value;
                     }
 
-                    //if ( !string.IsNullOrWhiteSpace( formAttribute.PreHtml ) )
-                    //{
-                    //    phAttributes.Controls.Add( new LiteralControl( formAttribute.PreHtml.ResolveMergeFields( mergeFields ) ) );
-                    //}
-
                     var mobileField = new MobileField
                     {
+                        AttributeId = attribute.Id,
                         Key = attribute.Key,
                         Title = attribute.Name,
                         IsRequired = formAttribute.IsRequired,
@@ -146,12 +501,28 @@ namespace Rock.Blocks.Types.Mobile
                     }
 
                     mobileForm.Fields.Add( mobileField );
+                }
+            }
 
-                    //if ( !string.IsNullOrWhiteSpace( formAttribute.PostHtml ) )
-                    //{
-                    //    phAttributes.Controls.Add( new LiteralControl( formAttribute.PostHtml.ResolveMergeFields( mergeFields ) ) );
-                    //}
+            //
+            // Build the list of form actions (buttons) that should be presented
+            // to the user.
+            //
+            foreach ( var btn in form.Actions.Split( new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries ) )
+            {
+                var actionDetails = btn.Split( new char[] { '^' } );
+                if ( actionDetails.Length > 0 )
+                {
+                    var btnType = DefinedValueCache.Get( actionDetails[1].AsGuid() );
 
+                    if ( btnType != null )
+                    {
+                        mobileForm.Buttons.Add( new WorkflowFormButton
+                        {
+                            Text = actionDetails[0],
+                            Type = btnType.Value
+                        } );
+                    }
                 }
             }
 
@@ -159,29 +530,5 @@ namespace Rock.Blocks.Types.Mobile
         }
 
         #endregion
-
-        public class WorkflowForm
-        {
-            public string Message { get; set; }
-
-            public List<MobileField> Fields { get; set; }
-
-            public List<string> ButtonTitles { get; set; }
-        }
-
-        public class MobileField
-        {
-            public string Title { get; set; }
-
-            public string Key { get; set; }
-
-            public string Value { get; set; }
-
-            public string RockFieldType { get; set; }
-
-            public Dictionary<string, string> ConfigurationValues { get; set; } = new Dictionary<string, string>();
-
-            public bool IsRequired { get; set; }
-        }
     }
 }
