@@ -59,12 +59,12 @@ namespace Rock.Blocks.Types.Mobile
         #region IRockMobileBlockType Implementation
 
         /// <summary>
-        /// Gets the required mobile API version required to render this block.
+        /// Gets the required mobile application binary interface version required to render this block.
         /// </summary>
         /// <value>
-        /// The required mobile API version required to render this block.
+        /// The required mobile application binary interface version required to render this block.
         /// </value>
-        int IRockMobileBlockType.RequiredMobileApiVersion => 1;
+        int IRockMobileBlockType.RequiredMobileAbiVersion => 1;
 
         /// <summary>
         /// Gets the class name of the mobile block to use during rendering on the device.

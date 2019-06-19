@@ -21,7 +21,7 @@ namespace Rock.Blocks.Types.Mobile
     {
         private static string Xaml = @"<Rock:RockImage ImageUrl=""{Binding ConfigurationValues[Url]}"" />";
 
-        public int RequiredMobileApiVersion => 1;
+        public int RequiredMobileAbiVersion => 1;
 
         public string MobileBlockType => "Rock.Mobile.Blocks.XamlContent";
 

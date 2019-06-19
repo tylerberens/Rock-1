@@ -149,6 +149,7 @@ namespace Rock.Rest.Controllers
                         PageGuid = block.Page.Guid,
                         Zone = block.Zone,
                         BlockGuid = block.Guid,
+                        RequiredAbiVersion = mobileBlockEntity.RequiredMobileAbiVersion,
                         BlockType = mobileBlockEntity.MobileBlockType,
                         ConfigurationValues = mobileBlockEntity.GetMobileConfigurationValues(),
                         Order = block.Order,

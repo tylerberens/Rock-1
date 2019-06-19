@@ -7,12 +7,12 @@
     public interface IRockMobileBlockType : IRockBlockType
     {
         /// <summary>
-        /// Gets the required mobile API version.
+        /// Gets the required mobile application binary interface version.
         /// </summary>
         /// <value>
-        /// The required mobile API version.
+        /// The required mobile application binary interface version.
         /// </value>
-        int RequiredMobileApiVersion { get; }
+        int RequiredMobileAbiVersion { get; }
 
         /// <summary>
         /// Gets the class name of the mobile block to use during rendering on the device.
