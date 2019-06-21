@@ -108,6 +108,7 @@ namespace RockWeb.Blocks.Mobile
         /// </summary>
         private void ConfigureControls()
         {
+            imgEditTitleImage.BinaryFileTypeGuid = Rock.SystemGuid.BinaryFiletype.DEFAULT.AsGuid();
             imgEditIcon.BinaryFileTypeGuid = Rock.SystemGuid.BinaryFiletype.DEFAULT.AsGuid();
             imgEditPreviewThumbnail.BinaryFileTypeGuid = Rock.SystemGuid.BinaryFiletype.DEFAULT.AsGuid();
 
@@ -347,6 +348,7 @@ namespace RockWeb.Blocks.Mobile
             //
             // Set image UI fields.
             //
+            imgEditTitleImage.BinaryFileId = site.FavIconBinaryFileId;
             imgEditIcon.BinaryFileId = site.SiteLogoBinaryFileId;
             imgEditPreviewThumbnail.BinaryFileId = site.ThumbnailFileId;
 
@@ -557,12 +559,17 @@ namespace RockWeb.Blocks.Mobile
             //
             // Save the images.
             //
+            site.FavIconBinaryFileId = imgEditTitleImage.BinaryFileId;
             site.SiteLogoBinaryFileId = imgEditIcon.BinaryFileId;
             site.ThumbnailFileId = imgEditPreviewThumbnail.BinaryFileId;
 
             //
             // Ensure the images are persisted.
             //
+            if ( site.FavIconBinaryFileId.HasValue )
+            {
+                binaryFileService.Get( site.FavIconBinaryFileId.Value ).IsTemporary = false;
+            }
             if ( site.SiteLogoBinaryFileId.HasValue )
             {
                 binaryFileService.Get( site.SiteLogoBinaryFileId.Value ).IsTemporary = false;

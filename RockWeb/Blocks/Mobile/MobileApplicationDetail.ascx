@@ -149,11 +149,15 @@
                     <Rock:CodeEditor ID="ceEditCssStyles" runat="server" Label="CSS Styles" Help="CSS Styles to apply to UI elements." EditorMode="Css" />
 
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <Rock:ImageUploader ID="imgEditTitleImage" runat="server" Label="Title Image" Help="The image to use in the top title bar." />
+                        </div>
+
+                        <div class="col-md-4">
                             <Rock:ImageUploader ID="imgEditIcon" runat="server" Label="Icon" Help="The icon to be used by the application when it's built. This will only update when a new application is deployed to the various stores." />
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <Rock:ImageUploader ID="imgEditPreviewThumbnail" runat="server" Label="Preview Thumbnail" Help="Preview thumbnail to be used by Rock to distinguish application." />
                         </div>
                     </div>

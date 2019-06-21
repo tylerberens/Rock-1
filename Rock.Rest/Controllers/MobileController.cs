@@ -91,6 +91,7 @@ namespace Rock.Rest.Controllers
 
             package.AppearanceSettings.BarTextColor = "#ffffff";
             package.AppearanceSettings.BarBackgroundColor = "#ee7725";
+            package.AppearanceSettings.LogoUrl = $"{MobileHelper.GetBaseUrl()}/GetImage.ashx?Id={site.FavIconBinaryFileId.Value}";
 
             //
             // Load all the layouts.
