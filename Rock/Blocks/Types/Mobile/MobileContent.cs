@@ -124,6 +124,8 @@ namespace Rock.Blocks.Types.Mobile
         [TargetType( typeof( MobileContent ) )]
         public class MobileContentCustomSettingsProvider : RockCustomSettingsUserControlProvider
         {
+            public override string CustomSettingsTitle => "Advanced Settings";
+
             protected override string UserControlPath => "~/BlockConfig/MobileContent.ascx";
         }
 

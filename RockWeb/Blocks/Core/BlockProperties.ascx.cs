@@ -193,7 +193,11 @@ namespace RockWeb.Blocks.Core
                 result.Add( "Custom Grid Options" );
             }
 
-            result.AddRange( CustomSettingsProviders.Keys.Select( p => p.CustomSettingsTitle ) );
+            var customSettingTabNames = CustomSettingsProviders.Keys
+                .Where( p => p.CustomSettingsTitle != "Basic Settings" )
+                .Where( p => p.CustomSettingsTitle != "Advanced Settings" )
+                .Select( p => p.CustomSettingsTitle );
+            result.AddRange( customSettingTabNames );
 
             return result;
         }
@@ -261,6 +265,8 @@ namespace RockWeb.Blocks.Core
                 {
                     tglEnableStickyHeader.Checked = _block.GetAttributeValue( CustomGridOptionsConfig.EnableStickyHeadersAttributeKey ).AsBoolean();
                 }
+
+                ShowSelectedPane();
             }
 
             base.OnLoad( e );
@@ -436,7 +442,19 @@ namespace RockWeb.Blocks.Core
             {
                 var control = provider.GetCustomSettingsControl( block, phCustomSettings );
                 control.Visible = false;
-                phCustomSettings.Controls.Add( control );
+
+                if ( provider.CustomSettingsTitle == "Basic Settings" )
+                {
+                    phCustomBasicSettings.Controls.Add( control );
+                }
+                else if ( provider.CustomSettingsTitle == "Advanced Settings" )
+                {
+                    phCustomAdvancedSettings.Controls.Add( control );
+                }
+                else
+                {
+                    phCustomSettings.Controls.Add( control );
+                }
 
                 CustomSettingsProviders.Add( provider, control );
             }
