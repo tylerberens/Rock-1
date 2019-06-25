@@ -11,42 +11,54 @@ namespace Rock.Blocks.Types.Mobile
     [IconCssClass( "fa fa-th-list" )]
 
     #region Block Attributes
-    [CodeEditorField(
-        "Lava Template",
-        Description = "The Lava template to use to return the XAML for the CollectionList. <span class='tip tip-lava'></span>",
-        EditorMode = Web.UI.Controls.CodeEditorMode.Xml,
-        Key = "",
-        Order = 0 )]
-
+    
     [ContentChannelField(
         "Content Channel",
         Description = "The content channel to retrieve the items for.",
         Key = "",
-        Order = 1 )]
+        Order = 1,
+        Category = "CustomSettings" )]
 
-    [IntegerField(
-        "PageSize",
+    [TextField(
+        "Page Size",
         Description = "The number of items to send per page.",
-        DefaultIntegerValue = 50,
-        Order = 2 )]
+        Key = AttributeKeys.PageSize,
+        DefaultValue = "50",
+        Order = 2,
+        Category = "CustomSettings" )]
+
+    [BooleanField(
+        "Include Following",
+        Description = "Determines if following data should be sent along with the results.",
+        Key = AttributeKeys.IncludeFollowing,
+        Order = 3,
+        Category = "CustomSettings" )]
+
+    [TextField(
+        "Field Settings",
+        Description = "JSON object of the configured fields to show.",
+        Key = AttributeKeys.FieldSettings,
+        Order = 4,
+        Category = "CustomSettings")]
+
     #endregion
 
     public class ContentChannelItemList : RockBlockType, IRockMobileBlockType
     {
-        private static class AttributeKeys
+        public static class AttributeKeys
         {
             public const string LavaTemplate = "LavaTemplate";
 
             public const string ContentChannel = "ContentChannel";
+
+            public const string FieldSettings = "FieldSettings";
+
+            public const string PageSize = "PageSize";
+
+            public const string IncludeFollowing = "IncludeFollowing";
         }
 
-        /// <summary>
-        /// Gets the required mobile API version.
-        /// </summary>
-        /// <value>
-        /// The required mobile API version.
-        /// </value>
-        public int RequiredMobileApiVersion => 1;
+        #region IRockMobileBlockType Implementation
 
         /// <summary>
         /// Gets the class name of the mobile block to use during rendering on the device.
@@ -55,6 +67,10 @@ namespace Rock.Blocks.Types.Mobile
         /// The class name of the mobile block to use during rendering on the device
         /// </value>
         public string MobileBlockType => "Rock.Mobile.Blocks.ContentChannelItemList";
+
+        public int RequiredMobileAbiVersion => 1;
+
+        #endregion
 
         /// <summary>
         /// Gets the property values that will be sent to the device in the application bundle.
@@ -75,5 +91,17 @@ namespace Rock.Blocks.Types.Mobile
         }
         #endregion
 
+
+        #region Custom Settings
+
+        [TargetType( typeof( ContentChannelItemList ) )]
+        public class MobileContentCustomSettingsProvider : RockCustomSettingsUserControlProvider
+        {
+            protected override string UserControlPath => "~/BlockConfig/ContentChannelListSettings.ascx";
+
+            public override string CustomSettingsTitle => "Basic Settings";
+        }
+
+        #endregion
     }
 }
