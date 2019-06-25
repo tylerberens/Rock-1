@@ -46,19 +46,19 @@ namespace Rock.Blocks
         public abstract Control GetCustomSettingsControl( IHasAttributes attributeEntity, Control parent );
 
         /// <summary>
-        /// Updates the UI to reflect the current settings found in the entity.
+        /// Update the custom UI to reflect the current settings found in the entity.
         /// </summary>
         /// <param name="attributeEntity">The attribute entity.</param>
-        /// <param name="control">The control returned by GetCustomSettingsControl().</param>
-        public abstract void SetCustomSettings( IHasAttributes attributeEntity, Control control );
+        /// <param name="control">The control returned by GetCustomSettingsControl() method.</param>
+        public abstract void ReadSettingsFromEntity( IHasAttributes attributeEntity, Control control );
 
         /// <summary>
-        /// Updates the entity with values from the custom UI.
+        /// Update the entity with values from the custom UI.
         /// </summary>
         /// <param name="attributeEntity">The attribute entity.</param>
-        /// <param name="control">The control.</param>
+        /// <param name="control">The control returned by the GetCustomSettingsControl() method.</param>
         /// <remarks>Do not save the entity, it will be automatically saved later.</remarks>
-        public abstract void GetCustomSettings( IHasAttributes attributeEntity, Control control );
+        public abstract void WriteSettingsToEntity( IHasAttributes attributeEntity, Control control );
 
         #endregion
 

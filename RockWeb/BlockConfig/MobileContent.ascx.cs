@@ -7,12 +7,12 @@ namespace RockWeb.BlockConfig
 {
     public partial class MobileContent : System.Web.UI.UserControl, IRockCustomSettingsUserControl
     {
-        public void GetCustomSettings( IHasAttributes attributeEntity )
+        public void WriteSettingsToEntity( IHasAttributes attributeEntity )
         {
             attributeEntity.SetAttributeValue( Rock.Blocks.Types.Mobile.MobileContent.AttributeKeys.LavaRenderLocation, tbCustomValue.Text );
         }
 
-        public void SetCustomSettings( IHasAttributes attributeEntity )
+        public void ReadSettingsFromEntity( IHasAttributes attributeEntity )
         {
             tbCustomValue.Text = attributeEntity.GetAttributeValue( Rock.Blocks.Types.Mobile.MobileContent.AttributeKeys.LavaRenderLocation );
         }

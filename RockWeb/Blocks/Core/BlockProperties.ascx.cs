@@ -229,7 +229,7 @@ namespace RockWeb.Blocks.Core
 
                 foreach ( var kvp in CustomSettingsProviders )
                 {
-                    kvp.Key.SetCustomSettings( _block, kvp.Value );
+                    kvp.Key.ReadSettingsFromEntity( _block, kvp.Value );
                 }
 
                 rptProperties.DataSource = GetTabs(_block.BlockType );
@@ -317,7 +317,7 @@ namespace RockWeb.Blocks.Core
 
                 foreach ( var kvp in CustomSettingsProviders )
                 {
-                    kvp.Key.GetCustomSettings( block, kvp.Value );
+                    kvp.Key.WriteSettingsToEntity( block, kvp.Value );
                 }
 
                 SaveCustomColumnsConfigToViewState();

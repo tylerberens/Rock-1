@@ -41,23 +41,23 @@ namespace Rock.Blocks
         }
 
         /// <summary>
-        /// Updates the UI to reflect the current settings found in the entity.
+        /// Update the custom UI to reflect the current settings found in the entity.
         /// </summary>
         /// <param name="attributeEntity">The attribute entity.</param>
         /// <param name="control">The control returned by GetCustomSettingsControl().</param>
         /// <exception cref="InvalidOperationException">Custom settings user control does not implement {nameof( IRockCustomSettingsUserControl )}</exception>
-        public override void SetCustomSettings( IHasAttributes attributeEntity, Control control )
+        public override void ReadSettingsFromEntity( IHasAttributes attributeEntity, Control control )
         {
             if ( !( control is IRockCustomSettingsUserControl customSettingsControl ) )
             {
                 throw new InvalidOperationException( $"Custom settings user control does not implement {nameof( IRockCustomSettingsUserControl )}" );
             }
 
-            customSettingsControl.SetCustomSettings( attributeEntity );
+            customSettingsControl.ReadSettingsFromEntity( attributeEntity );
         }
 
         /// <summary>
-        /// Updates the entity with values from the custom UI.
+        /// Update the entity with values from the custom UI.
         /// </summary>
         /// <param name="attributeEntity">The attribute entity.</param>
         /// <param name="control">The control.</param>
@@ -65,14 +65,14 @@ namespace Rock.Blocks
         /// <remarks>
         /// Do not save the entity, it will be automatically saved later.
         /// </remarks>
-        public override void GetCustomSettings( IHasAttributes attributeEntity, Control control )
+        public override void WriteSettingsToEntity( IHasAttributes attributeEntity, Control control )
         {
             if ( !( control is IRockCustomSettingsUserControl customSettingsControl ) )
             {
                 throw new InvalidOperationException( $"Custom settings user control does not implement {nameof( IRockCustomSettingsUserControl )}" );
             }
 
-            customSettingsControl.GetCustomSettings( attributeEntity );
+            customSettingsControl.WriteSettingsToEntity( attributeEntity );
         }
 
         #endregion

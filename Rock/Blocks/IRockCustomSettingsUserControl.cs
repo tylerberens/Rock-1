@@ -10,15 +10,15 @@ namespace Rock.Blocks
     public interface IRockCustomSettingsUserControl
     {
         /// <summary>
-        /// Sets the UI values to match the custom settings.
+        /// Update the custom UI to reflect the current settings found in the entity.
         /// </summary>
         /// <param name="attributeEntity">The attribute entity.</param>
-        void SetCustomSettings( IHasAttributes attributeEntity );
+        void ReadSettingsFromEntity( IHasAttributes attributeEntity );
 
         /// <summary>
-        /// Gets the custom settings from the UI and updates the entity.
+        /// Update the entity with values from the custom UI.
         /// </summary>
         /// <param name="attributeEntity">The attribute entity.</param>
-        void GetCustomSettings( IHasAttributes attributeEntity );
+        void WriteSettingsToEntity( IHasAttributes attributeEntity );
     }
 }
