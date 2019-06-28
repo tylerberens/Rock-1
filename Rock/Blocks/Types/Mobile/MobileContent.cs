@@ -13,10 +13,17 @@ namespace Rock.Blocks.Types.Mobile
     #region Block Attributes
 
     [CodeEditorField( "Content",
-        "The XAML to use when rendering the block. <span class='tip tip-lava'></span>",
-        Web.UI.Controls.CodeEditorMode.Xml,
+        description: "The XAML to use when rendering the block. <span class='tip tip-lava'></span>",
+        mode: Web.UI.Controls.CodeEditorMode.Xml,
+        key: AttributeKeys.Content,
         order: 0 )]
 
+    [LavaCommandsField( "Enabled Lava Commands",
+        description: "The Lava commands that should be enabled for this block, only affects Lava rendered on the server.",
+        required: false,
+        key: AttributeKeys.EnabledLavaCommands,
+        order: 1 )]
+    
     [BooleanField( "Dynamic Content",
         "If enabled then the client will download fresh content from the server every period of Cache Duration, otherwise the content will remain static.",
         true,
@@ -49,6 +56,8 @@ namespace Rock.Blocks.Types.Mobile
             public const string Content = "Content";
 
             public const string DynamicContent = "DynamicContent";
+
+            public const string EnabledLavaCommands = "EnabledLavaCommands";
 
             public const string LavaRenderLocation = "LavaRenderLocation";
         }
@@ -107,9 +116,9 @@ namespace Rock.Blocks.Types.Mobile
             if ( GetAttributeValue( AttributeKeys.LavaRenderLocation ) != "On Device" )
             {
                 // TODO: We need a GetCommonMergeFields() method that does not rely on WebForms. -dsh
-                var mergeFields = new Dictionary<string, object>();
+                var mergeFields = Lava.LavaHelper.GetCommonMergeFields( null );
 
-                content = content.ResolveMergeFields( mergeFields, null );
+                content = content.ResolveMergeFields( mergeFields, null, GetAttributeValue( AttributeKeys.EnabledLavaCommands ) );
             }
 
             config.Add( "Xaml", content );

@@ -38,11 +38,17 @@ namespace Rock.Blocks.Types.Mobile
         defaultValue: "",
         order: 2 )]
 
+    [LavaCommandsField( "Enabled Lava Commands",
+        description: "The Lava commands that should be enabled for this block.",
+        required: false,
+        key: AttributeKeys.EnabledLavaCommands,
+        order: 3 )]
+
     [LinkedPage( "Redirect To Page",
         description: "The page the user will be redirected to if the Completion Action is set to Redirect to Page.",
         required: false,
         defaultValue: "",
-        order: 3 )]
+        order: 4 )]
 
     #endregion
 
@@ -50,10 +56,15 @@ namespace Rock.Blocks.Types.Mobile
     {
         public static class AttributeKeys
         {
-            public const string WorkflowType = "WorkflowType";
             public const string CompletionAction = "CompletionAction";
+
             public const string CompletionXaml = "CompletionXaml";
+
+            public const string EnabledLavaCommands = "EnabledLavaCommands";
+
             public const string RedirectToPage = "RedirectToPage";
+
+            public const string WorkflowType = "WorkflowType";
         }
 
         #region IRockMobileBlockType Implementation
@@ -349,18 +360,19 @@ namespace Rock.Blocks.Types.Mobile
                 return new WorkflowFormMessage
                 {
                     Type = WorkflowFormMessageType.Xaml,
-                    Content = xaml.ResolveMergeFields( mergeFields )
+                    Content = xaml.ResolveMergeFields( mergeFields, null, GetAttributeValue( AttributeKeys.EnabledLavaCommands ) )
                 };
             }
             else
             {
                 if ( string.IsNullOrWhiteSpace( responseText ) )
                 {
+                    var message = workflow.WorkflowTypeCache.NoActionMessage;
                     var mergeFields = Lava.LavaHelper.GetCommonMergeFields( null, GetCurrentPerson() );
 
                     mergeFields.Add( "Workflow", workflow );
 
-                    responseText = workflow.WorkflowTypeCache.NoActionMessage.ResolveMergeFields( mergeFields );
+                    responseText = message.ResolveMergeFields( mergeFields, null, GetAttributeValue( AttributeKeys.EnabledLavaCommands ) );
                 }
 
                 return new WorkflowFormMessage

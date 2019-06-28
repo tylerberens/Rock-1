@@ -13,16 +13,24 @@ namespace Rock.Blocks.Types.Mobile
     #region Block Attributes
 
     [CodeEditorField( "Content",
-        "The XAML to use when rendering the block. <span class='tip tip-lava'></span>",
-        Web.UI.Controls.CodeEditorMode.Xml,
+        description: "The XAML to use when rendering the block. <span class='tip tip-lava'></span>",
+        mode: Web.UI.Controls.CodeEditorMode.Xml,
+        key: AttributeKeys.Content,
         order: 0 )]
 
-    [CustomDropdownListField( "Initial Content",
-        "If the initial content should be static or dynamic.",
-        "Static,Dynamic",
-        true,
-        "Static",
+    [LavaCommandsField( "Enabled Lava Commands",
+        description: "The Lava commands that should be enabled for this block.",
+        required: false,
+        key: AttributeKeys.EnabledLavaCommands,
         order: 1 )]
+
+    [CustomDropdownListField( "Initial Content",
+        description: "If the initial content should be static or dynamic.",
+        listSource: "Static,Dynamic",
+        required: true,
+        defaultValue: "Static",
+        key: AttributeKeys.InitialContent,
+        order: 2 )]
 
     #endregion
 
@@ -31,6 +39,9 @@ namespace Rock.Blocks.Types.Mobile
         public static class AttributeKeys
         {
             public const string Content = "Content";
+
+            public const string EnabledLavaCommands = "EnabledLavaCommands";
+
             public const string InitialContent = "InitialContent";
         }
 
@@ -80,13 +91,11 @@ namespace Rock.Blocks.Types.Mobile
         {
             var content = GetAttributeValue( AttributeKeys.Content );
 
-            var mergeFields = new Dictionary<string, object>
-            {
-                { "Action", string.Empty },
-                { "Parameters", new Dictionary<string, object>() }
-            };
+            var mergeFields = Lava.LavaHelper.GetCommonMergeFields( null );
+            mergeFields.Add( "Action", string.Empty );
+            mergeFields.Add( "Parameters", new Dictionary<string, object>() );
 
-            return content.ResolveMergeFields( mergeFields );
+            return content.ResolveMergeFields( mergeFields, null, GetAttributeValue( AttributeKeys.EnabledLavaCommands ) );
         }
 
         /// <summary>
@@ -100,13 +109,11 @@ namespace Rock.Blocks.Types.Mobile
         {
             var content = GetAttributeValue( AttributeKeys.Content );
 
-            var mergeFields = new Dictionary<string, object>
-            {
-                { "Action", action },
-                { "Parameters", parameters }
-            };
+            var mergeFields = Lava.LavaHelper.GetCommonMergeFields( null );
+            mergeFields.Add( "Action", action );
+            mergeFields.Add( "Parameters", parameters );
 
-            return content.ResolveMergeFields( mergeFields );
+            return content.ResolveMergeFields( mergeFields, null, GetAttributeValue( AttributeKeys.EnabledLavaCommands ) );
         }
 
         #endregion
