@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using Rock;
 using Rock.Attribute;
 using Rock.Blocks;
+using Rock.Blocks.Types.Mobile;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
@@ -374,7 +375,7 @@ namespace RockWeb.BlockConfig
         public void WriteSettingsToEntity( IHasAttributes attributeEntity )
         {
             attributeEntity.SetAttributeValue( Rock.Blocks.Types.Mobile.ContentChannelItemList.AttributeKeys.FieldSettings, this.FieldSettings.ToJson() );
-            attributeEntity.SetAttributeValue( Rock.Blocks.Types.Mobile.ContentChannelItemList.AttributeKeys.ContentChannel, _contentChannelId );
+            attributeEntity.SetAttributeValue( Rock.Blocks.Types.Mobile.ContentChannelItemList.AttributeKeys.ContentChannel, ddlContentChannel.SelectedValue );
             attributeEntity.SetAttributeValue( Rock.Blocks.Types.Mobile.ContentChannelItemList.AttributeKeys.PageSize, nbPageSize.Text );
             attributeEntity.SetAttributeValue( Rock.Blocks.Types.Mobile.ContentChannelItemList.AttributeKeys.IncludeFollowing, cbIncludeFollowing.Checked.ToString() );
         }
@@ -401,99 +402,5 @@ namespace RockWeb.BlockConfig
         /// The type.
         /// </value>
         public string Type { get; set; }
-    }
-
-    public class FieldSetting
-    {
-        /// <summary>
-        /// Creates an identifier based off the key. This is used for grid operations.
-        /// </summary>
-        /// <value>
-        /// The identifier.
-        /// </value>
-        public int Id
-        {
-            get
-            {
-                return this.Key.GetHashCode();
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the field key.
-        /// </summary>
-        /// <value>
-        /// The key.
-        /// </value>
-        public string Key { get; set; }
-
-        /// <summary>
-        /// Gets or sets the field value.
-        /// </summary>
-        /// <value>
-        /// The value.
-        /// </value>
-        public string Value { get; set; }
-
-        /// <summary>
-        /// Gets or sets the name of the property.
-        /// </summary>
-        /// <value>
-        /// The name of the property.
-        /// </value>
-        public string FieldName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the field source.
-        /// </summary>
-        /// <value>
-        /// The field source.
-        /// </value>
-        public FieldSource FieldSource { get; set; }
-
-        /// <summary>
-        /// Gets or sets the attribute format.
-        /// </summary>
-        /// <value>
-        /// The attribute format.
-        /// </value>
-        public AttributeFormat AttributeFormat { get; set; }
-
-        /// <summary>
-        /// Gets or sets the field format.
-        /// </summary>
-        /// <value>
-        /// The field format.
-        /// </value>
-        public FieldFormat FieldFormat { get; set; }
-    }
-
-    /// <summary>
-    /// The source of the data for the field. The two types are properties on the item model and an attribute expression.
-    /// </summary>
-    public enum FieldSource
-    {
-        Property = 0,
-        Attribute = 1,
-        LavaExpression = 2
-    }
-
-    /// <summary>
-    /// The format to use for the attribute.
-    /// </summary>
-    public enum AttributeFormat
-    {
-        FriendlyValue = 0,
-        RawValue = 1
-    }
-
-    /// <summary>
-    /// Determines the field's format. This will be used to properly format the Json sent to the client.
-    /// </summary>
-    public enum FieldFormat
-    {
-        String = 0,
-        Number = 1,
-        Date = 2
     }
 }

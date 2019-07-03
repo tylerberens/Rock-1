@@ -81,6 +81,9 @@ namespace Rock.Lava.Blocks
                 return;
             }
 
+            // Make the format parameter case insensitive, because we're nice... or lazy... or both.
+            parms["format"] = parms["format"].ToLower();
+
             var parameterMarkup = string.Empty;
 
             using ( TextWriter twBody = new StringWriter() )
@@ -92,6 +95,7 @@ namespace Rock.Lava.Blocks
                 switch ( parms["format"] )
                 {
                     case "number":
+                    case "boolean":
                         {
                             parameterMarkup = string.Format( "\"{0}\": {1}", parms["name"], body.Trim() );
                             break;

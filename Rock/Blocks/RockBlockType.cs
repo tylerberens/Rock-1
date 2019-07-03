@@ -1,4 +1,6 @@
 ﻿using System;
+using Rock.Data;
+using Rock.Model;
 using Rock.Web.Cache;
 
 namespace Rock.Blocks
@@ -41,6 +43,22 @@ namespace Rock.Blocks
         public string GetAttributeValue( string key )
         {
             return BlockCache.GetAttributeValue( key );
+        }
+
+        /// <summary>
+        /// Gets the current person.
+        /// </summary>
+        /// <returns></returns>
+        protected Person GetCurrentPerson()
+        {
+            var user = UserLoginService.GetCurrentUser( false );
+
+            if ( user == null )
+            {
+                return null;
+            }
+
+            return new PersonService( new RockContext() ).Get( user.PersonId.Value );
         }
 
         #region Action Response Methods

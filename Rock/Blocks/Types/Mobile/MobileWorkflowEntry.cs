@@ -382,23 +382,6 @@ namespace Rock.Blocks.Types.Mobile
                 };
             }
         }
-
-        /// <summary>
-        /// Gets the current person.
-        /// </summary>
-        /// <returns></returns>
-        private Person GetCurrentPerson()
-        {
-            var user = UserLoginService.GetCurrentUser( false );
-
-            if ( user == null )
-            {
-                return null;
-            }
-
-            return new PersonService( new RockContext() ).Get( user.PersonId.Value );
-        }
-
         #endregion
 
         #region Action Methods
