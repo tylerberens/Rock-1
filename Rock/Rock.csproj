@@ -418,6 +418,7 @@
     <Compile Include="Field\Types\AssetFieldType.cs" />
     <Compile Include="Field\Types\AssetStorageProviderFieldType.cs" />
     <Compile Include="Jobs\SendGroupScheduleNotifications.cs" />
+    <Compile Include="Lava\Blocks\JsonProperty.cs" />
     <Compile Include="Model\CodeGenerated\GroupMemberAssignmentService.cs" />
     <Compile Include="Model\CodeGenerated\GroupMemberScheduleTemplateService.cs" />
     <Compile Include="Field\Types\ValueFilterFieldType.cs" />
