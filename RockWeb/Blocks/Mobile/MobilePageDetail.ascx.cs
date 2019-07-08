@@ -583,12 +583,19 @@ namespace RockWeb.Blocks.Mobile
         {
             var rockContext = new RockContext();
             var pageService = new PageService( rockContext );
+            int parentPageId = SiteCache.Get( PageParameter( "SiteId" ).AsInteger() ).DefaultPageId.Value;
 
             var page = pageService.Get( PageParameter( "Page" ).AsInteger() );
             if ( page == null )
             {
                 page = new Page();
                 pageService.Add( page );
+
+                var order = pageService.GetByParentPageId( parentPageId )
+                    .OrderByDescending( p => p.Order )
+                    .Select( p => p.Order )
+                    .FirstOrDefault();
+                page.Order = order + 1;
             }
 
             page.InternalName = tbName.Text;
@@ -597,7 +604,7 @@ namespace RockWeb.Blocks.Mobile
             page.Description = tbDescription.Text;
             page.LayoutId = ddlLayout.SelectedValueAsId().Value;
             page.DisplayInNavWhen = cbDisplayInNavigation.Checked ? DisplayInNavWhen.WhenAllowed : DisplayInNavWhen.Never;
-            page.ParentPageId = SiteCache.Get( PageParameter( "SiteId" ).AsInteger() ).DefaultPageId.Value;
+            page.ParentPageId = parentPageId;
 
             rockContext.SaveChanges();
 
