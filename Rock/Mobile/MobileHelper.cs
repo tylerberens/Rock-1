@@ -272,6 +272,30 @@ namespace Rock.Mobile
         /// The person attribute categories.
         /// </value>
         public List<int> PersonAttributeCategories { get; set; } = new List<int>();
+
+        /// <summary>
+        /// Gets or sets the color of the bar background.
+        /// </summary>
+        /// <value>
+        /// The color of the bar background.
+        /// </value>
+        public string BarBackgroundColor { get; set; }
+
+        /// <summary>
+        /// Gets or sets the color of the menu button.
+        /// </summary>
+        /// <value>
+        /// The color of the menu button.
+        /// </value>
+        public string MenuButtonColor { get; set; }
+
+        /// <summary>
+        /// Gets or sets the color of the activity indicator.
+        /// </summary>
+        /// <value>
+        /// The color of the activity indicator.
+        /// </value>
+        public string ActivityIndicatorColor { get; set; }
     }
 
     public enum TabLocation

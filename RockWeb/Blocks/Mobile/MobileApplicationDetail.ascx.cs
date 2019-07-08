@@ -15,6 +15,7 @@ using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Security;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace RockWeb.Blocks.Mobile
 {
@@ -336,6 +337,10 @@ namespace RockWeb.Blocks.Mobile
 
             rblEditAndroidTabLocation.Visible = rblEditApplicationType.SelectedValueAsInt() == ( int ) ShellType.Tabbed;
 
+            cpEditBarBackgroundColor.Value = additionalSettings.BarBackgroundColor;
+            cpEditMenuButtonColor.Value = additionalSettings.MenuButtonColor;
+            cpEditActivityIndicatorColor.Value = additionalSettings.ActivityIndicatorColor;
+
             ppEditLoginPage.SetValue( site.LoginPageId );
             ppEditProfilePage.SetValue( additionalSettings.ProfilePageId );
 
@@ -429,6 +434,49 @@ namespace RockWeb.Blocks.Mobile
             rockContext.SaveChanges();
 
             return userLogin.Id;
+        }
+
+        /// <summary>
+        /// Parses the color and returns a hex string.
+        /// </summary>
+        /// <param name="color">The color.</param>
+        /// <returns></returns>
+        private string ParseColor( string color )
+        {
+            //
+            // Match on rgb(r,g,b) format.
+            //
+            var match = Regex.Match( color, "rgb *\\( *([0-9]+) *, *([0-9]+) *, *([0-9]+) *\\)" );
+            if ( match.Success )
+            {
+                int red = match.Groups[1].Value.AsInteger();
+                int green = match.Groups[2].Value.AsInteger();
+                int blue = match.Groups[3].Value.AsInteger();
+                return string.Format( "#{0:x2}{1:x2}{2:x2}", red, green, blue );
+            }
+
+            //
+            // Match on rgba(r,g,b,a) format.
+            //
+            match = Regex.Match( color, "rgba *\\( *([0-9]+) *, *([0-9]+) *, *([0-9]+) *, *([\\.0-9]+) *\\)" );
+            if ( match.Success )
+            {
+                int red = match.Groups[1].Value.AsInteger();
+                int green = match.Groups[2].Value.AsInteger();
+                int blue = match.Groups[3].Value.AsInteger();
+                return string.Format( "#{0:x2}{1:x2}{2:x2}", red, green, blue );
+            }
+
+            //
+            // Match on #rrggbb format.
+            //
+            match = Regex.Match( color, "#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})" );
+            if ( match.Success )
+            {
+                return match.Value;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -548,6 +596,9 @@ namespace RockWeb.Blocks.Mobile
             additionalSettings.CssStyle = ceEditCssStyles.Text;
             additionalSettings.PersonAttributeCategories = cpEditPersonAttributeCategories.SelectedValues.AsIntegerList();
             additionalSettings.ProfilePageId = ppEditProfilePage.PageId;
+            additionalSettings.BarBackgroundColor = ParseColor( cpEditBarBackgroundColor.Value );
+            additionalSettings.MenuButtonColor = ParseColor( cpEditMenuButtonColor.Value );
+            additionalSettings.ActivityIndicatorColor = ParseColor( cpEditActivityIndicatorColor.Value );
 
             //
             // Save the API Key.

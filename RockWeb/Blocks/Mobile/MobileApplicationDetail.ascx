@@ -150,6 +150,18 @@
 
                     <div class="row">
                         <div class="col-md-4">
+                            <Rock:ColorPicker ID="cpEditBarBackgroundColor" runat="server" Label="Bar Background Color" Help="Override the default title bar background color provided by the mobile OS." />
+                        </div>
+                        <div class="col-md-4">
+                            <Rock:ColorPicker ID="cpEditMenuButtonColor" runat="server" Label="Menu Button Color" Help="The color of the menu button in the title bar." />
+                        </div>
+                        <div class="col-md-4">
+                            <Rock:ColorPicker ID="cpEditActivityIndicatorColor" runat="server" Label="Activity Indicator Color" Help="Defines the color that will be used when displaying an activity indicator, these alert the user that something is happening in the background." />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
                             <Rock:ImageUploader ID="imgEditTitleImage" runat="server" Label="Title Image" Help="The image to use in the top title bar." />
                         </div>
 

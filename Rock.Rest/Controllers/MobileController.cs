@@ -89,8 +89,9 @@ namespace Rock.Rest.Controllers
                 PhoneFormats = phoneFormats
             };
 
-            package.AppearanceSettings.BarTextColor = "#ffffff";
-            package.AppearanceSettings.BarBackgroundColor = "#ee7725";
+            package.AppearanceSettings.BarBackgroundColor = additionalSettings.BarBackgroundColor;
+            package.AppearanceSettings.MenuButtonColor = additionalSettings.MenuButtonColor;
+            package.AppearanceSettings.ActivityIndicatorColor = additionalSettings.ActivityIndicatorColor;
             package.AppearanceSettings.LogoUrl = $"{MobileHelper.GetBaseUrl()}/GetImage.ashx?Id={site.FavIconBinaryFileId.Value}";
 
             //
