@@ -504,6 +504,13 @@ namespace RockWeb.Blocks.Mobile
                 .Where( p => p.SiteId == siteId )
                 .OrderBy( p => p.Order )
                 .ThenBy( p => p.InternalName )
+                .Select( p => new
+                {
+                    p.Id,
+                    p.InternalName,
+                    LayoutName = p.Layout.Name,
+                    DisplayInNav = p.DisplayInNavWhen != DisplayInNavWhen.Never
+                } )
                 .ToList();
 
             gPages.DataSource = pages;
@@ -836,6 +843,27 @@ namespace RockWeb.Blocks.Mobile
             rockContext.SaveChanges();
 
             BindPages( hfSiteId.ValueAsInt() );
+        }
+
+        /// <summary>
+        /// Handles the GridReorder event of the gPages control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="Rock.Web.UI.Controls.GridReorderEventArgs"/> instance containing the event data.</param>
+        protected void gPages_GridReorder( object sender, Rock.Web.UI.Controls.GridReorderEventArgs e )
+        {
+            using ( var rockContext = new RockContext() )
+            {
+                PageService pageService = new PageService( rockContext );
+                var pages = pageService.GetBySiteId( hfSiteId.Value.AsInteger() )
+                    .OrderBy( p => p.Order )
+                    .ThenBy( p => p.InternalName )
+                    .ToList();
+                pageService.Reorder( pages, e.OldIndex, e.NewIndex );
+                rockContext.SaveChanges();
+            }
+
+            BindPages( hfSiteId.Value.AsInteger() );
         }
 
         #endregion

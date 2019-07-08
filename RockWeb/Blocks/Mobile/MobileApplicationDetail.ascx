@@ -73,11 +73,12 @@
                             </asp:Panel>
 
                             <asp:Panel ID="pnlPages" runat="server">
-                                <Rock:Grid ID="gPages" runat="server" RowItemText="Page" DisplayType="Light" OnGridRebind="gPages_GridRebind" OnRowSelected="gPages_RowSelected">
+                                <Rock:Grid ID="gPages" runat="server" RowItemText="Page" DisplayType="Light" OnGridRebind="gPages_GridRebind" OnRowSelected="gPages_RowSelected" OnGridReorder="gPages_GridReorder">
                                     <Columns>
+                                        <Rock:ReorderField />
                                         <Rock:RockBoundField DataField="InternalName" SortExpression="Name" HeaderText="Name" />
-                                        <Rock:RockBoundField DataField="Layout.Name" SortExpression="Layout.Name" HeaderText="Layout" />
-                                        <Rock:RockBoundField DataField="Description" SortExpression="Description" HeaderText="Description" />
+                                        <Rock:RockBoundField DataField="LayoutName" SortExpression="LayoutName" HeaderText="Layout" />
+                                        <Rock:BoolField DataField="DisplayInNav" SortExpression="DisplayInNav" HeaderText="Display In Nav" />
                                         <Rock:DeleteField OnClick="gPages_DeleteClick" />
                                     </Columns>
                                 </Rock:Grid>
