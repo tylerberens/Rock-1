@@ -2,8 +2,11 @@
 using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
+
 using Newtonsoft.Json;
+
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Lava;
@@ -120,13 +123,11 @@ namespace Rock.Blocks.Types.Mobile
         [BlockAction( "GetContentChannelItems" )]
         public dynamic GetContentChannelItems( int pageNumber = 0 )
         {
-
             var contentChannelId = GetAttributeValue( AttributeKeys.ContentChannel ).AsInteger();
             var pageSize = GetAttributeValue( AttributeKeys.PageSize ).AsInteger();
             var includeFollowing = GetAttributeValue( AttributeKeys.IncludeFollowing ).AsBoolean();
 
             var skipNumber = pageNumber * pageSize;
-
 
             var rockContext = new RockContext();
 
@@ -161,8 +162,10 @@ namespace Rock.Blocks.Types.Mobile
 
             var lavaTemplate = CreateLavaTemplate( followedItemIds );
 
-            var commonMergeFields = new CommonMergeFieldsOptions();
-            commonMergeFields.GetLegacyGlobalMergeFields = false;
+            var commonMergeFields = new CommonMergeFieldsOptions
+            {
+                GetLegacyGlobalMergeFields = false
+            };
 
             var mergeFields = LavaHelper.GetCommonMergeFields( null, null, commonMergeFields );
             mergeFields.Add( "Items", results );
@@ -170,8 +173,9 @@ namespace Rock.Blocks.Types.Mobile
 
             var output = lavaTemplate.ResolveMergeFields( mergeFields );
 
-            return output;
+            return ActionOk( new StringContent( output, Encoding.UTF8, "application/json" ) );
         }
+
         #endregion
 
         #region Private Methods

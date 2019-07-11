@@ -1,5 +1,4 @@
-﻿using System;
-using Rock.Data;
+﻿using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
 
@@ -118,7 +117,10 @@ namespace Rock.Blocks
             }
             else
             {
-                return new BlockActionResult( System.Net.HttpStatusCode.BadRequest, message );
+                return new BlockActionResult( System.Net.HttpStatusCode.BadRequest )
+                {
+                    Error = message
+                };
             }
         }
 
@@ -138,7 +140,10 @@ namespace Rock.Blocks
         /// <returns>A BlockActionResult instance.</returns>
         protected virtual BlockActionResult ActionInternalServerError( string message = null)
         {
-            return new BlockActionResult( System.Net.HttpStatusCode.InternalServerError, message );
+            return new BlockActionResult( System.Net.HttpStatusCode.InternalServerError )
+            {
+                Error = message
+            };
         }
 
         #endregion

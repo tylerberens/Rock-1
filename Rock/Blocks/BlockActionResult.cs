@@ -32,7 +32,7 @@ namespace Rock.Blocks
         /// <value>
         /// The content to be sent back in the response body.
         /// </value>
-        public object Content { get; private set; }
+        public object Content { get; set; }
 
         /// <summary>
         /// Gets the error message to be sent back.
@@ -40,7 +40,7 @@ namespace Rock.Blocks
         /// <value>
         /// The error message to be sent back.
         /// </value>
-        public string Error { get; private set; }
+        public string Error { get; set; }
 
         #endregion
 
@@ -53,17 +53,6 @@ namespace Rock.Blocks
         public BlockActionResult( HttpStatusCode statusCode )
         {
             StatusCode = statusCode;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="BlockActionResult"/> class.
-        /// </summary>
-        /// <param name="statusCode">The status code.</param>
-        /// <param name="error">The error.</param>
-        public BlockActionResult( HttpStatusCode statusCode, string error )
-        {
-            StatusCode = statusCode;
-            Error = error;
         }
 
         /// <summary>

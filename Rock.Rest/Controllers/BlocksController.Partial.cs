@@ -336,6 +336,12 @@ namespace Rock.Rest.Controllers
                 {
                     return Content( actionResult.StatusCode, new HttpError( actionResult.Error ) );
                 }
+                else if ( actionResult.Content is HttpContent httpContent )
+                {
+                    var response = Request.CreateResponse( actionResult.StatusCode );
+                    response.Content = httpContent;
+                    return new System.Web.Http.Results.ResponseMessageResult( response );
+                }
                 else if ( actionResult.ContentClrType != null )
                 {
                     var genericType = typeof( System.Web.Http.Results.NegotiatedContentResult<> ).MakeGenericType( actionResult.ContentClrType );
