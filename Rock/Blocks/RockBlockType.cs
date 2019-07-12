@@ -32,6 +32,14 @@ namespace Rock.Blocks
         /// </value>
         public PageCache PageCache { get; set; }
 
+        /// <summary>
+        /// Gets or sets the request context.
+        /// </summary>
+        /// <value>
+        /// The request context.
+        /// </value>
+        public RockRequestContext RequestContext { get; set; }
+
         #endregion
 
         /// <summary>
@@ -50,14 +58,7 @@ namespace Rock.Blocks
         /// <returns></returns>
         protected Person GetCurrentPerson()
         {
-            var user = UserLoginService.GetCurrentUser( false );
-
-            if ( user == null )
-            {
-                return null;
-            }
-
-            return new PersonService( new RockContext() ).Get( user.PersonId.Value );
+            return RequestContext.CurrentPerson;
         }
 
         #region Action Response Methods

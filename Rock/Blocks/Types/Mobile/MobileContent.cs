@@ -115,8 +115,7 @@ namespace Rock.Blocks.Types.Mobile
             //
             if ( GetAttributeValue( AttributeKeys.LavaRenderLocation ) != "On Device" )
             {
-                // TODO: We need a GetCommonMergeFields() method that does not rely on WebForms. -dsh
-                var mergeFields = Lava.LavaHelper.GetCommonMergeFields( null );
+                var mergeFields = RequestContext.GetCommonMergeFields();
 
                 content = content.ResolveMergeFields( mergeFields, null, GetAttributeValue( AttributeKeys.EnabledLavaCommands ) );
             }

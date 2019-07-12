@@ -27,7 +27,7 @@ namespace Rock.Blocks.Types.Mobile
 
         public object GetMobileConfigurationValues()
         {
-            var mergeFields = new Dictionary<string, object>();
+            var mergeFields = RequestContext.GetCommonMergeFields();
 
             return new Dictionary<string, object>
             {

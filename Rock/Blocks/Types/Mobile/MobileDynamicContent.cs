@@ -91,7 +91,7 @@ namespace Rock.Blocks.Types.Mobile
         {
             var content = GetAttributeValue( AttributeKeys.Content );
 
-            var mergeFields = Lava.LavaHelper.GetCommonMergeFields( null );
+            var mergeFields = RequestContext.GetCommonMergeFields();
             mergeFields.Add( "Action", string.Empty );
             mergeFields.Add( "Parameters", new Dictionary<string, object>() );
 
@@ -109,7 +109,7 @@ namespace Rock.Blocks.Types.Mobile
         {
             var content = GetAttributeValue( AttributeKeys.Content );
 
-            var mergeFields = Lava.LavaHelper.GetCommonMergeFields( null );
+            var mergeFields = RequestContext.GetCommonMergeFields();
             mergeFields.Add( "Action", action );
             mergeFields.Add( "Parameters", parameters );
 

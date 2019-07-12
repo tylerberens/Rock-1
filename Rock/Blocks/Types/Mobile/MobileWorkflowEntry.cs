@@ -223,7 +223,7 @@ namespace Rock.Blocks.Types.Mobile
             var activity = action.Activity;
             var workflow = activity.Workflow;
 
-            var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null, currentPerson );
+            var mergeFields = RequestContext.GetCommonMergeFields( null, currentPerson );
             mergeFields.Add( "Action", action );
             mergeFields.Add( "Activity", activity );
             mergeFields.Add( "Workflow", workflow );
@@ -353,7 +353,7 @@ namespace Rock.Blocks.Types.Mobile
             }
             else if ( completionAction == 1 && !string.IsNullOrWhiteSpace( xaml ) )
             {
-                var mergeFields = Lava.LavaHelper.GetCommonMergeFields( null, GetCurrentPerson() );
+                var mergeFields = RequestContext.GetCommonMergeFields();
 
                 mergeFields.Add( "Workflow", workflow );
 
@@ -368,7 +368,7 @@ namespace Rock.Blocks.Types.Mobile
                 if ( string.IsNullOrWhiteSpace( responseText ) )
                 {
                     var message = workflow.WorkflowTypeCache.NoActionMessage;
-                    var mergeFields = Lava.LavaHelper.GetCommonMergeFields( null, GetCurrentPerson() );
+                    var mergeFields = RequestContext.GetCommonMergeFields();
 
                     mergeFields.Add( "Workflow", workflow );
 

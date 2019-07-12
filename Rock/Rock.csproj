@@ -398,6 +398,7 @@
     <Compile Include="Blocks\RockBlockType.cs" />
     <Compile Include="Blocks\BlockActionResult.cs" />
     <Compile Include="Blocks\RockCustomSettingsUserControlProvider.cs" />
+    <Compile Include="Blocks\RockRequestContext.cs" />
     <Compile Include="Blocks\TargetTypeAttribute.cs" />
     <Compile Include="Blocks\Types\Mobile\ContentChannelItemList.cs" />
     <Compile Include="Blocks\Types\Mobile\MobileContent.cs" />

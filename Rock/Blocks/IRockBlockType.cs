@@ -30,5 +30,13 @@ namespace Rock.Blocks
         /// The page cache.
         /// </value>
         PageCache PageCache { get; set; }
+
+        /// <summary>
+        /// Gets or sets the request context.
+        /// </summary>
+        /// <value>
+        /// The request context.
+        /// </value>
+        RockRequestContext RequestContext { get; set; }
     }
 }

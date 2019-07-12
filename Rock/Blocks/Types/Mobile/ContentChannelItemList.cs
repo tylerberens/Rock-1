@@ -102,7 +102,7 @@ namespace Rock.Blocks.Types.Mobile
         /// <value>
         /// The class name of the mobile block to use during rendering on the device
         /// </value>
-        public string MobileBlockType => "Rock.Mobile.Blocks.ContentChannelItemList";
+        public string MobileBlockType => "Rock.Mobile.Blocks.ItemList";
 
         public int RequiredMobileAbiVersion => 1;
 
@@ -120,8 +120,9 @@ namespace Rock.Blocks.Types.Mobile
         }
 
         #region Actions
-        [BlockAction( "GetContentChannelItems" )]
-        public dynamic GetContentChannelItems( int pageNumber = 0 )
+
+        [BlockAction]
+        public object GetItems( int pageNumber = 0 )
         {
             var contentChannelId = GetAttributeValue( AttributeKeys.ContentChannel ).AsInteger();
             var pageSize = GetAttributeValue( AttributeKeys.PageSize ).AsInteger();
@@ -167,7 +168,7 @@ namespace Rock.Blocks.Types.Mobile
                 GetLegacyGlobalMergeFields = false
             };
 
-            var mergeFields = LavaHelper.GetCommonMergeFields( null, null, commonMergeFields );
+            var mergeFields = RequestContext.GetCommonMergeFields( commonMergeFields );
             mergeFields.Add( "Items", results );
             mergeFields.Add( "FollowedItemIds", followedItemIds );
 
