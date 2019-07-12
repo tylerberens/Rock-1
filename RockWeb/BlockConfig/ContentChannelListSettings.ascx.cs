@@ -358,6 +358,7 @@ namespace RockWeb.BlockConfig
         #endregion
 
         #region IRockCustomSettingsUserControl implementation
+
         public void ReadSettingsFromEntity( IHasAttributes attributeEntity )
         {
             var fieldSettings = attributeEntity.GetAttributeValue( Rock.Blocks.Types.Mobile.ContentChannelItemList.AttributeKeys.FieldSettings );
@@ -370,6 +371,8 @@ namespace RockWeb.BlockConfig
             _contentChannelId = attributeEntity.GetAttributeValue( Rock.Blocks.Types.Mobile.ContentChannelItemList.AttributeKeys.ContentChannel ).AsInteger();
             nbPageSize.Text = attributeEntity.GetAttributeValue( Rock.Blocks.Types.Mobile.ContentChannelItemList.AttributeKeys.PageSize );
             cbIncludeFollowing.Checked = attributeEntity.GetAttributeValue( Rock.Blocks.Types.Mobile.ContentChannelItemList.AttributeKeys.IncludeFollowing ).AsBoolean();
+            var pageCache = PageCache.Get( attributeEntity.GetAttributeValue( Rock.Blocks.Types.Mobile.ContentChannelItemList.AttributeKeys.DetailPage ).AsGuid() );
+            ppDetailPage.SetValue( pageCache != null ? ( int? ) pageCache.Id : null );
         }
 
         public void WriteSettingsToEntity( IHasAttributes attributeEntity )
@@ -378,7 +381,15 @@ namespace RockWeb.BlockConfig
             attributeEntity.SetAttributeValue( Rock.Blocks.Types.Mobile.ContentChannelItemList.AttributeKeys.ContentChannel, ddlContentChannel.SelectedValue );
             attributeEntity.SetAttributeValue( Rock.Blocks.Types.Mobile.ContentChannelItemList.AttributeKeys.PageSize, nbPageSize.Text );
             attributeEntity.SetAttributeValue( Rock.Blocks.Types.Mobile.ContentChannelItemList.AttributeKeys.IncludeFollowing, cbIncludeFollowing.Checked.ToString() );
+
+            string detailPage = string.Empty;
+            if ( ppDetailPage.SelectedValueAsId().HasValue )
+            {
+                detailPage = PageCache.Get( ppDetailPage.SelectedValueAsId().Value ).Guid.ToString();
+            }
+            attributeEntity.SetAttributeValue( Rock.Blocks.Types.Mobile.ContentChannelItemList.AttributeKeys.DetailPage, detailPage );
         }
+
         #endregion
     }
 

@@ -44,11 +44,18 @@ namespace Rock.Blocks.Types.Mobile
         Order = 3,
         Category = "CustomSetting" )]
 
+    [LinkedPage( "Detail Page",
+        Description = "The page to redirect to when selecting an item.",
+        Key = AttributeKeys.DetailPage,
+        IsRequired = false,
+        Order = 4,
+        Category = "CustomSetting" )]
+
     [TextField(
         "Field Settings",
         Description = "JSON object of the configured fields to show.",
         Key = AttributeKeys.FieldSettings,
-        Order = 4,
+        Order = 5,
         Category = "CustomSetting" )]
 
     [CodeEditorField(
@@ -86,12 +93,16 @@ namespace Rock.Blocks.Types.Mobile
             public const string ListDataTemplate = "ListDataTemplate";
 
             public const string CacheDuration = "CacheDuration";
+
+            public const string DetailPage = "DetailPage";
         }
 
         #region Constants
+
         private const string defaultDataTemplate = @"<StackLayout HeightRequest=""50"" WidthRequest=""200"" Orientation=""Horizontal"" Padding=""0,5,0,5"">
     <Label Text=""{Binding Content}"" />
 </StackLayout>";
+
         #endregion
 
         #region IRockMobileBlockType Implementation
@@ -102,11 +113,15 @@ namespace Rock.Blocks.Types.Mobile
         /// <value>
         /// The class name of the mobile block to use during rendering on the device
         /// </value>
-        public string MobileBlockType => "Rock.Mobile.Blocks.ItemList";
+        public string MobileBlockType => "Rock.Mobile.Blocks.CollectionViewList";
 
+        /// <summary>
+        /// Gets the required mobile application binary interface version.
+        /// </summary>
+        /// <value>
+        /// The required mobile application binary interface version.
+        /// </value>
         public int RequiredMobileAbiVersion => 1;
-
-        #endregion
 
         /// <summary>
         /// Gets the property values that will be sent to the device in the application bundle.
@@ -116,8 +131,15 @@ namespace Rock.Blocks.Types.Mobile
         /// </returns>
         public object GetMobileConfigurationValues()
         {
-            return new Dictionary<string, object>();
+            return new Dictionary<string, object>
+            {
+                { "ItemSelectedPage", GetAttributeValue( AttributeKeys.DetailPage ) },
+                { "ItemSelectedParameter", "ContentChannelItemId" },
+                { "ItemSelectedKey", "Id" }
+            };
         }
+
+        #endregion
 
         #region Actions
 

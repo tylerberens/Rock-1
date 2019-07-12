@@ -1,6 +1,13 @@
 ﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="ContentChannelListSettings.ascx.cs" Inherits="RockWeb.BlockConfig.ContentChannelListSettings" %>
 
-<Rock:RockDropDownList ID="ddlContentChannel" runat="server" Label="Content Channel" EnhanceForLongLists="true" OnSelectedIndexChanged="ddlContentChannel_SelectedIndexChanged" AutoPostBack="true" />
+<div class="row">
+    <div class="col-md-6">
+        <Rock:RockDropDownList ID="ddlContentChannel" runat="server" Label="Content Channel" EnhanceForLongLists="true" OnSelectedIndexChanged="ddlContentChannel_SelectedIndexChanged" AutoPostBack="true" />
+    </div>
+    <div class="col-md-6">
+        <Rock:PagePicker ID="ppDetailPage" runat="server" Label="Detail Page" Help="The page to redirect to when selecting an item." />
+    </div>
+</div>
 
 <div class="row">
     <div class="col-md-6"><Rock:NumberBox ID="nbPageSize" runat="server" Label="Page Size" Help="The number of results to return per page." /></div>

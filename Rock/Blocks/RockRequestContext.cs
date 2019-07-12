@@ -32,6 +32,12 @@ namespace Rock.Blocks
 
         #region Constructors
 
+        internal RockRequestContext()
+        {
+            PageParameters = new Dictionary<string, string>();
+            ContextEntities = new Dictionary<Type, Lazy<IEntity>>();
+        }
+
         internal RockRequestContext( HttpRequest request )
         {
             CurrentUser = UserLoginService.GetCurrentUser( false );

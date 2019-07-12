@@ -141,6 +141,7 @@ namespace Rock.Rest.Controllers
                     var mobileBlockEntity = ( Rock.Blocks.IRockMobileBlockType ) Activator.CreateInstance( blockEntityType );
                     mobileBlockEntity.BlockCache = block;
                     mobileBlockEntity.PageCache = block.Page;
+                    mobileBlockEntity.RequestContext = new Blocks.RockRequestContext();
 
                     var attributes = block.Attributes
                         .Select( a => a.Value )
