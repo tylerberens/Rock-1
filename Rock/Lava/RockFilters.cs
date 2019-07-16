@@ -1876,6 +1876,72 @@ namespace Rock.Lava
             }
         }
 
+        /// <summary>
+        /// Limits a number to a maximum value.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="operand"></param>
+        /// <returns></returns>
+        public static object AtMost( object input, object operand )
+        {
+            if ( input == null || operand == null )
+            {
+                return input;
+            }
+
+            int intInput = -1;
+            int intOperand = -1;
+            decimal iInput = -1;
+            decimal iOperand = -1;
+
+            // If both input and operand are INTs keep the return an int.
+            if ( int.TryParse( input.ToString(), out intInput ) && int.TryParse( operand.ToString(), out intOperand ) )
+            {
+                return intInput > intOperand ? intOperand : input;
+            }
+            else if ( decimal.TryParse( input.ToString(), out iInput ) && decimal.TryParse( operand.ToString(), out iOperand ) )
+            {
+                return iInput > iOperand ? iOperand : iInput;
+            }
+            else
+            {
+                return "Could not convert input to number";
+            }
+        }
+
+        /// <summary>
+        /// Limits a number to a minimum value.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="operand"></param>
+        /// <returns></returns>
+        public static object AtLeast( object input, object operand )
+        {
+            if ( input == null || operand == null )
+            {
+                return input;
+            }
+
+            int intInput = -1;
+            int intOperand = -1;
+            decimal iInput = -1;
+            decimal iOperand = -1;
+
+            // If both input and operand are INTs keep the return an int.
+            if ( int.TryParse( input.ToString(), out intInput ) && int.TryParse( operand.ToString(), out intOperand ) )
+            {
+                return intInput < intOperand ? intOperand : input;
+            }
+            else if ( decimal.TryParse( input.ToString(), out iInput ) && decimal.TryParse( operand.ToString(), out iOperand ) )
+            {
+                return iInput < iOperand ? iOperand : iInput;
+            }
+            else
+            {
+                return "Could not convert input to number";
+            }
+        }
+
         #endregion
 
         #region Attribute Filters
@@ -3833,31 +3899,51 @@ namespace Rock.Lava
         }
 
         /// <summary>
+        /// Set the page and browser title
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <returns></returns>
+        public static string SetPageTitle( string input )
+        {
+            return SetPageTitle( input, "All" );
+        }
+
+        /// <summary>
         /// adds a link tag to the head of the document
         /// </summary>
         /// <param name="input">The input to use for the href of the tag.</param>
+        /// <param name="titleLocation">The title location. "BrowserTitle", "PageTitle" or "All"</param>
         /// <returns></returns>
-        public static string SetPageTitle( string input )
+        public static string SetPageTitle( string input, string titleLocation )
         {
             RockPage page = HttpContext.Current.Handler as RockPage;
 
             if ( page != null )
             {
-                // attempt to correct breadcrumbs
-                if ( page.BreadCrumbs != null && page.BreadCrumbs.Count != 0 )
-                {
-                    var lastBookMark = page.BreadCrumbs.Last();
 
-                    if ( lastBookMark != null && lastBookMark.Name == page.PageTitle )
-                    {
-                        lastBookMark.Name = input;
-                    }
+
+                if ( titleLocation.Equals("BrowserTitle", StringComparison.InvariantCultureIgnoreCase) || titleLocation.Equals( "All", StringComparison.InvariantCultureIgnoreCase ) )
+                {
+                    page.BrowserTitle = input;
+                    page.Header.Title = input;
                 }
 
-                page.BrowserTitle = input;
-                page.PageTitle = input;
-                page.Title = input;
-                page.Header.Title = input;
+                if ( titleLocation.Equals( "PageTitle", StringComparison.InvariantCultureIgnoreCase ) || titleLocation.Equals( "All", StringComparison.InvariantCultureIgnoreCase ) )
+                {
+                    // attempt to correct breadcrumbs
+                    if ( page.BreadCrumbs != null && page.BreadCrumbs.Count != 0 )
+                    {
+                        var lastBookMark = page.BreadCrumbs.Last();
+
+                        if ( lastBookMark != null && lastBookMark.Name == page.PageTitle )
+                        {
+                            lastBookMark.Name = input;
+                        }
+                    }
+
+                    page.PageTitle = input;
+                    page.Title = input;
+                }
             }
 
             return null;
@@ -3999,6 +4085,11 @@ namespace Rock.Lava
                 switch ( parm )
                 {
                     case "Title":
+                        {
+                            return page.PageTitle;
+                        }
+
+                    case "BrowserTitle":
                         {
                             return page.BrowserTitle;
                         }
@@ -5004,7 +5095,7 @@ namespace Rock.Lava
 
             // They didn't provide a valid amount so give back the original color
             return input;
-            
+
         }
 
         /// <summary>

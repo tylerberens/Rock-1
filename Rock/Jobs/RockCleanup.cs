@@ -221,13 +221,14 @@ namespace Rock.Jobs
                 rockCleanupExceptions.Add( new Exception( "Exception in GroupMembershipCleanup", ex ) );
             }
 
-            if ( databaseRowsCleanedUp.Any( a => a.Value > 0 ) )
+            try
             {
-                context.Result = string.Format( "Rock Cleanup cleaned up {0}", databaseRowsCleanedUp.Where( a => a.Value > 0 ).Select( a => $"{a.Value} {a.Key.PluralizeIf( a.Value != 1 )}" ).ToList().AsDelimited( ", ", " and " ) );
+                var rowsDeleted = AttendanceDataCleanup( dataMap );
+                databaseRowsCleanedUp.Add( "Attendance Data (old label data)", rowsDeleted );
             }
-            else
+            catch ( Exception ex )
             {
-                context.Result = "Rock Cleanup completed";
+                rockCleanupExceptions.Add( new Exception( "Exception in AttendanceDataCleanup", ex ) );
             }
 
             try
@@ -238,6 +239,18 @@ namespace Rock.Jobs
             catch ( Exception ex )
             {
                 rockCleanupExceptions.Add( new Exception( "Exception in LocationCleanup", ex ) );
+            }
+
+            // ***********************
+            //  Final count and report
+            // ***********************
+            if ( databaseRowsCleanedUp.Any( a => a.Value > 0 ) )
+            {
+                context.Result = string.Format( "Rock Cleanup cleaned up {0}", databaseRowsCleanedUp.Where( a => a.Value > 0 ).Select( a => $"{a.Value} {a.Key.PluralizeIf( a.Value != 1 )}" ).ToList().AsDelimited( ", ", " and " ) );
+            }
+            else
+            {
+                context.Result = "Rock Cleanup completed";
             }
 
             if ( rockCleanupExceptions.Count > 0 )
@@ -1110,6 +1123,59 @@ WHERE ExpireDateTime IS NOT NULL
         }
 
         /// <summary>
+        /// Delete old attendance data (as of today, this is just label data) and
+        /// return the number of records deleted.
+        /// </summary>
+        /// <param name="dataMap">The data map.</param>
+        /// <returns>The number of records deleted</returns>
+        private int AttendanceDataCleanup( JobDataMap dataMap )
+        {
+            int totalRowsDeleted = 0;
+            int? batchAmount = dataMap.GetString( "BatchCleanupAmount" ).AsIntegerOrNull() ?? 1000;
+
+            using ( var rockContext = new RockContext() )
+            {
+                var attendanceService = new AttendanceService( rockContext );
+
+                // 1 day (24 hrs) ago
+                DateTime olderThanDate = RockDateTime.Now.Add( new TimeSpan( -1, 0, 0, 0 ) );
+
+                var totalPossibleItemsToDelete = attendanceService.Queryable()
+                    .Where( a => a.CreatedDateTime <= olderThanDate && a.AttendanceData != null && a.AttendanceData.LabelData != null )
+                    .Take( batchAmount.Value )
+                    .Count();
+
+                if ( totalPossibleItemsToDelete > 0 )
+                {
+                    bool keepDeleting = true;
+                    while ( keepDeleting )
+                    {
+                        var dbTransaction = rockContext.Database.BeginTransaction();
+                        try
+                        {
+                            string sqlCommand = @"
+DELETE TOP (@batchAmount)
+FROM ad
+FROM [AttendanceData] ad
+INNER JOIN [Attendance] a ON ad.[Id] = a.[Id]
+WHERE a.[CreatedDateTime] <= @olderThanDate
+";
+                            int rowsDeleted = rockContext.Database.ExecuteSqlCommand( sqlCommand, new SqlParameter( "batchAmount", batchAmount ), new SqlParameter( "olderThanDate", olderThanDate ) );
+                            keepDeleting = rowsDeleted > 0;
+                            totalRowsDeleted += rowsDeleted;
+                        }
+                        finally
+                        {
+                            dbTransaction.Commit();
+                        }
+                    }
+                }
+            }
+
+            return totalRowsDeleted;
+        }
+
+        /// <summary>
         /// Does cleanup of Locations
         /// </summary>
         /// <param name="dataMap">The data map.</param>
@@ -1199,7 +1265,7 @@ WHERE ExpireDateTime IS NOT NULL
             var duplicateQuery = groupMemberService.Queryable()
                 // Duplicates are the same person, group, and role occuring more than once
                 .GroupBy( m => new { m.PersonId, m.GroupId, m.GroupRoleId } )
-                // Filter out sets with only one occurence because those are not duplicates
+                // Filter out sets with only one occurrence because those are not duplicates
                 .Where( g => g.Count() > 1 )
                 // Leave the oldest membership and delete the others
                 .SelectMany( g => g.OrderBy( gm => gm.CreatedDateTime ).Skip( 1 ) );

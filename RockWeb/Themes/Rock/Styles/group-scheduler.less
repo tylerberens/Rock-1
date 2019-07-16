@@ -2,6 +2,8 @@
     This is loaded at runtime by the GroupScheduler block
 */
 
+@import (reference) "../../../Styles/FontAwesome/_rock-upgrade-map-variables.less";
+@import (reference) "../../../Styles/FontAwesome/_rock-fa-mixins.less";
 @import (reference) "../../../Styles/FontAwesome/fontawesome.less";
 @import "../../../Styles/Bootstrap/variables.less";
 @import "../../../Styles/_rock-variables.less";
@@ -12,22 +14,58 @@
 @pending-icon-color: @brand-warning;
 @declined-icon-color: @brand-danger;
 
-.viewport {
-  max-height: 50vh;
-  overflow-y: scroll;
+.group-scheduler-resourcelist {
+  height: 100%;
+}
 
-  &::-webkit-scrollbar {
-    width: 6px;
-    background-color: fade(@panel-heading-bg, 40%);
+.resource-list {
+  position: sticky !important;
+  top: 16px;
+  max-height: ~"calc(100vh - 32px)";
+
+  @media (min-width: @screen-md-min) {
+    top: @navbar-top-height + 16px;
+    max-height: ~"calc(100vh - 112px)";
   }
 
-  &::-webkit-scrollbar-thumb {
-    width: 6px;
-    background-color: rgba(0,0,0, .2);
-    border-radius: 3px;
+  .is-fullscreen & {
+    top: 16px;
+    max-height: ~"calc(100vh - 100px)";
+  }
 
-    &:hover {
-      background-color: rgba(0,0,0, .3);
+  .panel-body {
+    position: relative;
+    display: -ms-flexbox !important;
+    display: flex !important;
+    flex: 0 1 auto !important;
+    -ms-flex-direction: column !important;
+    flex-direction: column !important;
+  }
+
+  .viewport {
+    flex-shrink: 1 !important;
+    flex-grow: 1 !important;
+    height: 100%;
+    min-height: 0;
+    padding: 12px;
+    overflow-y: scroll;
+    background-color: fade(@panel-heading-bg, 40%);
+    -ms-flex-positive: 1 !important;
+    -ms-flex-negative: 1 !important;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+      background-color: fade(@panel-heading-bg, 40%);
+    }
+
+    &::-webkit-scrollbar-thumb {
+      width: 6px;
+      background-color: rgba(0,0,0, .2);
+      border-radius: 3px;
+
+      &:hover {
+        background-color: rgba(0,0,0, .3);
+      }
     }
   }
 }
@@ -38,7 +76,6 @@
   margin-bottom: 12px;
   font-family: @font-family-sans-serif;
   color: @btn-default-color;
-  //overflow: auto;
   cursor: move;
   cursor: -webkit-grab;
   cursor: grab;
@@ -68,17 +105,21 @@
     }
   }
 
+  .resource-meta {
+    margin-left: auto;
+  }
+
   .btn {
     height: 16px;
     padding: 0;
     line-height: 16px;
     color: #d8d8d8;
 
-
     &:hover,
-    &:focus {
+    &:focus,
+    &:active:focus {
       color: #767676;
-      outline: 0;
+      outline: none;
     }
   }
 
@@ -86,17 +127,12 @@
     background: rgba(85,150,230,.1);
   }
 
-
   &[data-state="unscheduled"][data-is-scheduled="true"] {
     background-color: @state-danger-bg;
   }
 
   &[data-has-scheduling-conflict="true"] {
     background-color: @state-warning-bg;
-
-    .resource-scheduling-conflict {
-      display: block;
-    }
   }
 
   &[data-has-blackout-conflict="true"] {
@@ -133,17 +169,14 @@
   }
 
   .resource-blackout-status {
-    display: none;
     margin-left: 5px;
   }
 
   .resource-requirements-conflict {
-    display: none;
     margin-left: 5px;
   }
 
   .resource-scheduling-conflict {
-    display: none;
     margin-left: 5px;
   }
 
@@ -168,6 +201,7 @@
 
 
 .panel-groupscheduler .resource-area {
+  height: 100%;
   padding-top: 15px;
   padding-bottom: 15px;
 
@@ -177,6 +211,7 @@
 }
 
 .panel-groupscheduler .filter-options {
+  min-width: 160px;
   padding-top: 15px;
   padding-bottom: 15px;
   background-color: #f3f3f3;
@@ -202,7 +237,7 @@
       font-size: 14px;
       color: rgba(0, 0, 0, .4);
       text-align: center;
-      content: "No Resources Available";
+      content: "No People Available";
       -webkit-transform: translateY(-50%);
       -moz-transform: translateY(-50%);
       -ms-transform: translateY(-50%);
@@ -236,7 +271,7 @@
     outline: 2px dashed rgba(0, 0, 0, .1);
 
     &::after {
-      content: "Drag and Drop Resources Here";
+      content: "Drag and Drop Here";
     }
   }
 
@@ -248,25 +283,6 @@
       display: none;
     }
   }
-}
-
-.resource-container {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  padding: 12px 12px 0 12px;
-  overflow: auto;
-  font-family: @font-family-sans-serif;
-  color: @text-color;
-  color: var(--text-color);
-  background-color: fade(@panel-heading-bg, 40%);
-
-  &::after {
-    display: table;
-    clear: both;
-    content: "";
-  }
-
 }
 
 .resource-search {
@@ -293,14 +309,20 @@
 
   .resource {
     .flex {
-      -ms-flex-direction: column !important;
-      flex-direction: column !important;
 
-      &::before {
+      &::before,
+      .btn {
         display: none;
       }
     }
+
+    &.has-note .flex {
+      -ms-flex-direction: column !important;
+      flex-direction: column !important;
+    }
   }
+
+
 }
 
 /* Location (Attendance Occurrence) */
@@ -367,47 +389,6 @@
   }
 }
 
-/*
--=-=- Dragula Classes
-*/
-
-/* Is added to the mirror image. It handles fixed positioning and z-index (and removes any prior margins on the element). Note
-that the mirror image is appended to the mirrorContainer, not to its initial container. Keep that in mind when styling your
-elements with nested rules, like .list .item { padding: 10px; }. */
-.gu-mirror {
-  position: fixed !important;
-  z-index: 9999 !important;
-  max-width: 560px;
-  margin: 0 !important;
-  font-family: Arial, Helvetica, sans-serif;
-  cursor: move !important;
-  cursor: -webkit-grabbing !important;
-  cursor: grabbing !important;
-  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
-  filter: alpha(opacity=80);
-  opacity: .8;
-}
-
-/* Is a helper class to apply display: none to an element. */
-.gu-hide {
-  display: none !important;
-}
-
-/* Is added to the mirrorContainer element when dragging. You can use it to style the mirrorContainer while something is being dragged. */
-.gu-unselectable {
-  -webkit-user-select: none !important;
-  -moz-user-select: none !important;
-  -ms-user-select: none !important;
-  user-select: none !important;
-}
-
-/* Is added to the source element when its mirror image is dragged. It just adds opacity to it. */
-.gu-transit {
-  box-sizing: border-box;
-  float: none !important;
-  opacity: .5;
-}
-
 /* MP: workaround for https://github.com/bevacqua/dragula/issues/421 */
 .gu-transit .container {
   display: none;
@@ -420,7 +401,7 @@ elements with nested rules, like .list .item { padding: 10px; }. */
 }
 
 .schedule-status-board {
-  width: inherit;
+  width: inherit !important;
   min-width: 100%;
   table-layout: fixed;
 
@@ -521,11 +502,13 @@ elements with nested rules, like .list .item { padding: 10px; }. */
 .resource.gu-mirror {
   max-height: 38px;
 
-  // .resource-name {
-  //   margin-right: 50px;
-  // }
-
   .hide-transit {
     display: none;
   }
+}
+
+.resource.gu-mirror {
+  background: rgba(255,255,255,.8);
+  box-shadow: 0 5px 20px 0 rgba(21,27,38,.08);
+  opacity: 1;
 }

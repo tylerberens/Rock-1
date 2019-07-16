@@ -172,9 +172,6 @@ namespace RockWeb.Blocks.Connection
                 tglShowActive.Checked = GetUserPreference( TOGGLE_ACTIVE_SETTING ).AsBoolean( true );
                 SelectedOpportunityId = GetUserPreference( SELECTED_OPPORTUNITY_SETTING ).AsIntegerOrNull();
 
-                // Reset the state filter on every initial request to be Active and Past Due future follow up
-                rFilter.SaveUserPreference( "State", "State", "0;-2" );
-
                 // NOTE: Don't include Inactive Campuses for the "Campus Filter for Page"
                 cpCampusFilterForPage.Campuses = CampusCache.All( false );
                 cpCampusFilterForPage.Items[0].Text = "All";
@@ -1064,6 +1061,10 @@ namespace RockWeb.Blocks.Connection
                             connectionRequests = connectionRequests.OrderBy( a => a.LastActivityDateTime ).ToList();
                         }
                     }
+
+                    // Hide the campus column if the campus filter is not visible.
+                    gRequests.ColumnsOfType<RockBoundField>().First( c => c.DataField == "Campus" ).Visible = cpCampusFilterForPage.Visible;
+
                     gRequests.DataSource = connectionRequests;
                     gRequests.DataBind();
 
