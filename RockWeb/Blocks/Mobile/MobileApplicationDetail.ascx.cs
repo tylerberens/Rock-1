@@ -109,8 +109,7 @@ namespace RockWeb.Blocks.Mobile
         /// </summary>
         private void ConfigureControls()
         {
-            imgEditTitleImage.BinaryFileTypeGuid = Rock.SystemGuid.BinaryFiletype.DEFAULT.AsGuid();
-            imgEditIcon.BinaryFileTypeGuid = Rock.SystemGuid.BinaryFiletype.DEFAULT.AsGuid();
+            imgEditHeaderImage.BinaryFileTypeGuid = Rock.SystemGuid.BinaryFiletype.DEFAULT.AsGuid();
             imgEditPreviewThumbnail.BinaryFileTypeGuid = Rock.SystemGuid.BinaryFiletype.DEFAULT.AsGuid();
 
             rblEditApplicationType.BindToEnum<ShellType>();
@@ -353,8 +352,7 @@ namespace RockWeb.Blocks.Mobile
             //
             // Set image UI fields.
             //
-            imgEditTitleImage.BinaryFileId = site.FavIconBinaryFileId;
-            imgEditIcon.BinaryFileId = site.SiteLogoBinaryFileId;
+            imgEditHeaderImage.BinaryFileId = site.FavIconBinaryFileId;
             imgEditPreviewThumbnail.BinaryFileId = site.ThumbnailFileId;
 
             pnlContent.Visible = false;
@@ -617,8 +615,7 @@ namespace RockWeb.Blocks.Mobile
             //
             // Save the images.
             //
-            site.FavIconBinaryFileId = imgEditTitleImage.BinaryFileId;
-            site.SiteLogoBinaryFileId = imgEditIcon.BinaryFileId;
+            site.FavIconBinaryFileId = imgEditHeaderImage.BinaryFileId;
             site.ThumbnailFileId = imgEditPreviewThumbnail.BinaryFileId;
 
             //
