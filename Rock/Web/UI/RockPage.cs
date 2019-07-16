@@ -1251,6 +1251,12 @@ namespace Rock.Web.UI
                                     // If the blocktype's security actions have not yet been loaded, load them now
                                     block.BlockType.SetSecurityActions( blockControl );
                                 }
+
+                                if ( control is RockBlockTypeWrapper wrapper )
+                                {
+                                    // If the blocktype's security actions have not yet been loaded, load them now
+                                    block.BlockType.SetSecurityActions( wrapper.Block.GetType() );
+                                }
                             }
 
                             zone.Controls.Add( control );

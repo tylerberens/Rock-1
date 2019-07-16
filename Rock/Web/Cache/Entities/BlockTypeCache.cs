@@ -166,6 +166,35 @@ namespace Rock.Web.Cache
         }
 
         /// <summary>
+        /// Sets the security actions.
+        /// </summary>
+        /// <param name="blockType">The block type.</param>
+        public void SetSecurityActions( Type blockType )
+        {
+            lock ( _obj )
+            {
+                if ( CheckedSecurityActions )
+                {
+                    return;
+                }
+
+                SecurityActions = new ConcurrentDictionary<string, string>();
+
+                object[] customAttributes = blockType.GetCustomAttributes( typeof( Security.SecurityActionAttribute ), true );
+                foreach ( var customAttribute in customAttributes )
+                {
+                    var securityActionAttribute = customAttribute as Security.SecurityActionAttribute;
+                    if ( securityActionAttribute != null )
+                    {
+                        SecurityActions.TryAdd( securityActionAttribute.Action, securityActionAttribute.Description );
+                    }
+                }
+
+                CheckedSecurityActions = true;
+            }
+        }
+
+        /// <summary>
         /// Copies from model.
         /// </summary>
         /// <param name="entity">The entity.</param>
