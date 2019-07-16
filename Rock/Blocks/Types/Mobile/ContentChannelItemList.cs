@@ -248,7 +248,7 @@ namespace Rock.Blocks.Types.Mobile
         [TargetType( typeof( ContentChannelItemList ) )]
         public class MobileContentCustomSettingsProvider : RockCustomSettingsUserControlProvider
         {
-            protected override string UserControlPath => "~/BlockConfig/ContentChannelListSettings.ascx";
+            protected override string UserControlPath => "~/Blocks/Mobile/ContentChannelListSettings.ascx";
 
             public override string CustomSettingsTitle => "Basic Settings";
         }

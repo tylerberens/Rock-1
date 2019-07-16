@@ -1,4 +1,4 @@
-﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="ContentChannelListSettings.ascx.cs" Inherits="RockWeb.BlockConfig.ContentChannelListSettings" %>
+﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="ContentChannelListSettings.ascx.cs" Inherits="RockWeb.Blocks.Mobile.ContentChannelListSettings" %>
 
 <div class="row">
     <div class="col-md-6">

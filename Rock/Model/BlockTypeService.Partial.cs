@@ -181,7 +181,7 @@ namespace Rock.Model
                     try
                     {
                         var blockCompiledType = System.Web.Compilation.BuildManager.GetCompiledType( path );
-                        if ( blockCompiledType != null )
+                        if ( blockCompiledType != null && typeof( Web.UI.RockBlock ).IsAssignableFrom( blockCompiledType ) )
                         {
                             using ( var rockContext = new RockContext() )
                             {

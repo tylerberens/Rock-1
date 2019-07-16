@@ -2,20 +2,20 @@
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
-using System.Reflection;
-using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+
 using Newtonsoft.Json;
+
 using Rock;
 using Rock.Attribute;
-using Rock.Blocks;
 using Rock.Blocks.Types.Mobile;
 using Rock.Data;
 using Rock.Model;
+using Rock.Web;
 using Rock.Web.Cache;
 
-namespace RockWeb.BlockConfig
+namespace RockWeb.Blocks.Mobile
 {
     public partial class ContentChannelListSettings : System.Web.UI.UserControl, IRockCustomSettingsUserControl
     {
