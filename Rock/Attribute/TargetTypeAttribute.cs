@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Rock.Blocks
+namespace Rock.Attribute
 {
     /// <summary>
     /// Defines the target type for the <see cref="Rock.Blocks.RockCustomSettingsProvider"/> implementation.

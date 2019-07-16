@@ -1,6 +1,6 @@
 ﻿using Rock.Attribute;
 
-namespace Rock.Blocks
+namespace Rock.Web
 {
     /// <summary>
     /// Defines the methods that an ASCX based user control which provides custom

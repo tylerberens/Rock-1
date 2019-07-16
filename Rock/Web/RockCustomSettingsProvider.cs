@@ -5,7 +5,7 @@ using System.Web.UI;
 
 using Rock.Attribute;
 
-namespace Rock.Blocks
+namespace Rock.Web
 {
     /// <summary>
     /// Defines a UI provider for custom settings. Subclasses of this should also tag their implementation
@@ -94,7 +94,7 @@ namespace Rock.Blocks
         {
             var providers = new Dictionary<Type, List<Type>>();
 
-            var types = Rock.Reflection.FindTypes( typeof( Rock.Blocks.RockCustomSettingsProvider ) );
+            var types = Rock.Reflection.FindTypes( typeof( RockCustomSettingsProvider ) );
             foreach ( var kvp in types )
             {
                 var targetType = kvp.Value.GetCustomAttribute<TargetTypeAttribute>()?.TargetType;

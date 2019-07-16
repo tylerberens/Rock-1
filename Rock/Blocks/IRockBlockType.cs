@@ -1,4 +1,5 @@
-﻿using Rock.Web.Cache;
+﻿using Rock.Net;
+using Rock.Web.Cache;
 
 namespace Rock.Blocks
 {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Rock.Blocks
+namespace Rock.Attribute
 {
     /// <summary>
     /// Defines a CSS icon that will be used in conjunction with this item.

@@ -2,7 +2,7 @@
 using System.Web.UI;
 using Rock.Attribute;
 
-namespace Rock.Blocks
+namespace Rock.Web
 {
     /// <summary>
     /// Defines a UI provider that uses a User Control (ascx) to provide the UI.
