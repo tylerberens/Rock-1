@@ -72,6 +72,9 @@ namespace Rock.Migrations
             RockMigrationHelper.AddPage( true, "A4B0BCBB-721D-439C-8566-24F604DD4A1C", "D65F783D-87A9-4CC9-8110-E83466A0EADB", "Layouts", "", "5583A55D-7398-48E9-971F-6A1EF8158943", "" ); // Site:Rock RMS
             RockMigrationHelper.AddPage( true, "A4B0BCBB-721D-439C-8566-24F604DD4A1C", "D65F783D-87A9-4CC9-8110-E83466A0EADB", "Pages", "", "37E21200-DF91-4426-89CC-7D067237A037", "" ); // Site:Rock RMS
 
+            // Hide the page from navigation.
+            Sql( "UPDATE [Page] SET DisplayInNavWhen = 2 WHERE [Guid] = '784259EC-46B7-4DE3-AC37-E8BFDB0B90A6'" );
+
             RockMigrationHelper.UpdateBlockType( "Mobile Application Detail", "Edits and configures the settings of a mobile application.", "~/Blocks/Mobile/MobileApplicationDetail.ascx", "Mobile", "1D001ED9-F711-4820-BED0-92150D069BA2" );
             RockMigrationHelper.UpdateBlockType( "Mobile Layout Detail", "Edits and configures the settings of a mobile layout.", "~/Blocks/Mobile/MobileLayoutDetail.ascx", "Mobile", "74B6C64A-9617-4745-9928-ABAC7948A95D" );
             RockMigrationHelper.UpdateBlockType( "Mobile Page Detail", "Edits and configures the settings of a mobile page.", "~/Blocks/Mobile/MobilePageDetail.ascx", "Mobile", "E3C4547A-E29B-4CBA-9610-6C19D939183B" );
