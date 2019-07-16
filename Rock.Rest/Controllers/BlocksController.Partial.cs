@@ -216,7 +216,7 @@ namespace Rock.Rest.Controllers
                 //
                 rockBlock.BlockCache = blockCache;
                 rockBlock.PageCache = pageCache;
-                rockBlock.RequestContext = new Blocks.RockRequestContext( Request );
+                rockBlock.RequestContext = new Net.RockRequestContext( Request );
 
                 var actionParameters = new Dictionary<string, JToken>();
 

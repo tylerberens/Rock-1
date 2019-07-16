@@ -31,6 +31,7 @@ using Rock.Data;
 using System.Web;
 using Rock.Web.UI.Controls;
 using System.Text;
+using Rock.Web;
 
 namespace RockWeb.Blocks.Core
 {
@@ -107,7 +108,7 @@ namespace RockWeb.Blocks.Core
         /// <value>
         /// The custom settings providers.
         /// </value>
-        protected Dictionary<Rock.Blocks.RockCustomSettingsProvider, Control> CustomSettingsProviders { get; set; }
+        protected Dictionary<RockCustomSettingsProvider, Control> CustomSettingsProviders { get; set; }
 
         #endregion
 
@@ -435,9 +436,9 @@ namespace RockWeb.Blocks.Core
             int blockId = PageParameter( "BlockId" ).AsInteger();
             var block = BlockCache.Get( blockId );
 
-            CustomSettingsProviders = new Dictionary<Rock.Blocks.RockCustomSettingsProvider, Control>();
+            CustomSettingsProviders = new Dictionary<RockCustomSettingsProvider, Control>();
 
-            var providers = Rock.Blocks.RockCustomSettingsProvider.GetProvidersForType( block.BlockType.GetCompiledType() );
+            var providers = RockCustomSettingsProvider.GetProvidersForType( block.BlockType.GetCompiledType() );
             foreach ( var provider in providers )
             {
                 var control = provider.GetCustomSettingsControl( block, phCustomSettings );

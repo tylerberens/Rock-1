@@ -7,7 +7,7 @@ namespace Rock.Mobile
     /// This class is used to store and retrieve
     /// Additional Setting for Mobile against the Site Entity
     /// </summary>
-    internal class AdditionalSettings
+    public class AdditionalSettings
     {
         /// <summary>
         /// Gets or sets the type of the shell.

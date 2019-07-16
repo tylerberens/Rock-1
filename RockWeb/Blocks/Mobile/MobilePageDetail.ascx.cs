@@ -7,6 +7,7 @@ using System.Web.UI.WebControls;
 using System.Xml.Linq;
 
 using Rock;
+using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
 using Rock.Security;
@@ -309,7 +310,7 @@ namespace RockWeb.Blocks.Mobile
                     }
                 }
 
-                var iconCssClassAttribute = ( Rock.Blocks.IconCssClassAttribute ) blockCompiledType.GetCustomAttribute( typeof( Rock.Blocks.IconCssClassAttribute ) );
+                var iconCssClassAttribute = ( IconCssClassAttribute ) blockCompiledType.GetCustomAttribute( typeof( IconCssClassAttribute ) );
 
                 zone.Components.Add( new BlockInstance
                 {
@@ -350,7 +351,7 @@ namespace RockWeb.Blocks.Mobile
                         continue;
                     }
 
-                    var iconCssClassAttribute = ( Rock.Blocks.IconCssClassAttribute ) blockCompiledType.GetCustomAttribute( typeof( Rock.Blocks.IconCssClassAttribute ) );
+                    var iconCssClassAttribute = ( IconCssClassAttribute ) blockCompiledType.GetCustomAttribute( typeof( IconCssClassAttribute ) );
 
                     var item = new ComponentItem
                     {
