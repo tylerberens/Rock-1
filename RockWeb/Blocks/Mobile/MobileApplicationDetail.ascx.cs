@@ -403,11 +403,12 @@ namespace RockWeb.Blocks.Mobile
         /// <param name="apiKey">The API key.</param>
         /// <param name="userName">Name of the user.</param>
         /// <returns></returns>
-        private int SaveApiKey( int? restLoginId, string apiKey, string userName )
+        private int SaveApiKey( int? restLoginId, string apiKey, string userName, RockContext rockContext )
         {
-            var rockContext = new RockContext();
             var userLoginService = new UserLoginService( rockContext );
+            var personService = new PersonService( rockContext );
             UserLogin userLogin = null;
+            Person restPerson = null;
 
             // the key gets saved in the api key field of a user login (which you have to create if needed)
             var entityType = new EntityTypeService( rockContext )
@@ -416,7 +417,20 @@ namespace RockWeb.Blocks.Mobile
             if ( restLoginId.HasValue )
             {
                 userLogin = userLoginService.Get( restLoginId.Value );
+                restPerson = userLogin.Person;
             }
+            else
+            {
+                restPerson = new Person();
+                personService.Add( restPerson );
+            }
+
+            // the rest user name gets saved as the last name on a person
+            restPerson.LastName = tbEditName.Text;
+            restPerson.RecordTypeValueId = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_RESTUSER.AsGuid() ).Id;
+            restPerson.RecordStatusValueId = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE.AsGuid() ).Id;
+
+            rockContext.SaveChanges();
 
             if ( userLogin == null )
             {
@@ -428,6 +442,7 @@ namespace RockWeb.Blocks.Mobile
             userLogin.IsConfirmed = true;
             userLogin.ApiKey = apiKey;
             userLogin.EntityTypeId = entityType.Id;
+            userLogin.PersonId = restPerson.Id;
 
             rockContext.SaveChanges();
 
@@ -606,13 +621,6 @@ namespace RockWeb.Blocks.Mobile
             additionalSettings.ActivityIndicatorColor = ParseColor( cpEditActivityIndicatorColor.Value );
 
             //
-            // Save the API Key.
-            //
-            additionalSettings.ApiKeyId = SaveApiKey( additionalSettings.ApiKeyId, tbEditApiKey.Text, string.Format( "mobile_application_{0}", site.Id ) );
-            
-            site.AdditionalSettings = additionalSettings.ToJson();
-
-            //
             // Save the images.
             //
             site.FavIconBinaryFileId = imgEditHeaderImage.BinaryFileId;
@@ -638,6 +646,14 @@ namespace RockWeb.Blocks.Mobile
             {
                 rockContext.WrapTransaction( () =>
                 {
+                    rockContext.SaveChanges();
+
+                    //
+                    // Save the API Key.
+                    //
+                    additionalSettings.ApiKeyId = SaveApiKey( additionalSettings.ApiKeyId, tbEditApiKey.Text, string.Format( "mobile_application_{0}", site.Id ), rockContext );
+                    site.AdditionalSettings = additionalSettings.ToJson();
+
                     var pageService = new PageService( rockContext );
                     var layoutService = new LayoutService( rockContext );
                     var pageName = string.Format( "{0} Homepage", site.Name );
@@ -648,7 +664,8 @@ namespace RockWeb.Blocks.Mobile
                         FileName = "Homepage.xaml",
                         Description = string.Empty,
                         LayoutMobilePhone = _defaultLayoutXaml,
-                        LayoutMobileTablet = _defaultLayoutXaml
+                        LayoutMobileTablet = _defaultLayoutXaml,
+                        SiteId = site.Id
                     };
 
                     layoutService.Add( layout );
