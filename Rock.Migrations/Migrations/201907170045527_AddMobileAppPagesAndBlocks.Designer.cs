@@ -13,7 +13,7 @@ namespace Rock.Migrations
         
         string IMigrationMetadata.Id
         {
-            get { return "201905131601409_AddMobileAppPagesAndBlocks"; }
+            get { return "201907170045527_AddMobileAppPagesAndBlocks"; }
         }
         
         string IMigrationMetadata.Source

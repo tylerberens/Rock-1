@@ -92,7 +92,11 @@ namespace Rock.Rest.Controllers
             package.AppearanceSettings.BarBackgroundColor = additionalSettings.BarBackgroundColor;
             package.AppearanceSettings.MenuButtonColor = additionalSettings.MenuButtonColor;
             package.AppearanceSettings.ActivityIndicatorColor = additionalSettings.ActivityIndicatorColor;
-            package.AppearanceSettings.LogoUrl = $"{MobileHelper.GetBaseUrl()}/GetImage.ashx?Id={site.FavIconBinaryFileId.Value}";
+
+            if ( site.FavIconBinaryFileId.HasValue )
+            {
+                package.AppearanceSettings.LogoUrl = $"{MobileHelper.GetBaseUrl()}/GetImage.ashx?Id={site.FavIconBinaryFileId.Value}";
+            }
 
             //
             // Load all the layouts.
