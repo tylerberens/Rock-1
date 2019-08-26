@@ -193,7 +193,7 @@ namespace RockWeb.Blocks.Crm.PersonDetail
         "Address",
         Key = AttributeKey.Address,
         Description = "Should an address be required for the family?",
-        ListSource = "REQUIRE^Require an address,HOMELESS^Require an address unless family is homeless,NOTREQUIRED^Don't require",
+        ListSource = "REQUIRED^Require an address,HOMELESS^Require an address unless family is homeless,NOTREQUIRED^Don't require",
         IsRequired = false,
         DefaultValue = "NOTREQUIRED",
         Order = 18 )]
