@@ -477,10 +477,7 @@ namespace Rock.Web.UI.Controls
                 this.CssClass = cssClass;
             }
 
-            if ( _regexValidator != null )
-            {
-                RenderDataValidator( writer );
-            }
+            RenderDataValidator( writer );
 
             if ( this.MaxLength != 0 && this.ShowCountDown )
             {
@@ -501,7 +498,8 @@ namespace Rock.Web.UI.Controls
         /// <param name="writer">The writer.</param>
         protected virtual void RenderDataValidator( HtmlTextWriter writer )
         {
-            if ( this.MaxLength != 0 && this.TextMode == TextBoxMode.MultiLine )
+            if ( _regexValidator != null
+                 && this.MaxLength != 0 && this.TextMode == TextBoxMode.MultiLine )
             {
                 _regexValidator.Enabled = true;
                 _regexValidator.ValidationExpression = @"^((.|\n){0," + this.MaxLength.ToString() + "})$";
