@@ -928,7 +928,6 @@ namespace Rock.Web.UI.Controls
                 {
                     ID = RepeaterControlIds.ID_nbAccountAmountMulti,
                     CssClass = "amount-input account-amount-multi",
-                    NumberType = ValidationDataType.Currency,
                     MaximumValue = int.MaxValue.ToString(),
                     MinimumValue = "0"
                 };
