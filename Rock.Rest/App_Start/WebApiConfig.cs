@@ -23,9 +23,11 @@ using System.Web.Http;
 using System.Web.Http.ExceptionHandling;
 using System.Web.Http.OData.Builder;
 using System.Web.Http.OData.Extensions;
+using System.Web.Http.Validation;
 using System.Web.Routing;
 
 using Rock;
+using Rock.Rest.Filters;
 
 namespace Rock.Rest
 {
@@ -45,6 +47,8 @@ namespace Rock.Rest
             config.Services.Replace( typeof( IExceptionLogger ), new RockApiExceptionLogger() );
             config.Services.Replace( typeof( IExceptionHandler ), new RockApiExceptionHandler() );
             config.Formatters.Insert( 0, new Rock.Utility.RockJsonMediaTypeFormatter() );
+
+            config.Services.Replace( typeof( IBodyModelValidator ), new RockRestBodyModelValidator() );
 
             // Change DateTimeZoneHandling to Unspecified instead of the default of RoundTripKind since Rock doesn't store dates in a timezone aware format
             // So, since Rock doesn't do TimeZones, we don't want Transmission of DateTimes to specify TimeZone either.
