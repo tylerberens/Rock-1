@@ -385,7 +385,25 @@ namespace Rock.Model
                         !( typeof( Rock.Extension.Component ).IsAssignableFrom( type ) )
                     )
                     {
-                        return ( ISecured ) Activator.CreateInstance( type );
+                        var parentAuthEntity = ( ISecured ) Activator.CreateInstance( type );
+                        if ( this.EntityTypeQualifierColumn.IsNotNullOrWhiteSpace() && this.EntityTypeQualifierValue.IsNotNullOrWhiteSpace() )
+                        {
+                            try
+                            {
+                                var qualifierProperty = type.GetProperty( this.EntityTypeQualifierColumn );
+                                if ( qualifierProperty != null && qualifierProperty.CanWrite )
+                                {
+                                    qualifierProperty.SetValue( parentAuthEntity, Convert.ChangeType( this.EntityTypeQualifierValue, qualifierProperty.PropertyType ) );
+                                }
+                            }
+                            catch ( Exception ex )
+                            {
+                                // if we can't set the Qualifier Property, just ignore it, but let's output a debug message
+                                System.Diagnostics.Debug.WriteLine( $"Error setting ParentAuthority on Attribute: {ex.Message}" );
+                            }
+                        }
+
+                        return parentAuthEntity;
                     }
                 }
 

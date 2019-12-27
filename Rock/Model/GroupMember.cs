@@ -601,6 +601,28 @@ namespace Rock.Model
             }
         }
 
+        public override Security.ISecured ParentAuthority
+        {
+            get
+            {
+                if ( this.GroupId > 0 )
+                {
+                    if ( this.Group != null )
+                    {
+                        return this.Group;
+                    }
+                    else
+                    {
+                        return new GroupService( new RockContext() ).Get( this.GroupId );
+                    }
+                }
+                else
+                {
+                    return base.ParentAuthority;
+                }
+            }
+        }
+
         /// <summary>
         /// Calls IsValid with the specified context (to avoid deadlocks)
         /// Try to call this instead of IsValid when possible.
