@@ -459,6 +459,7 @@
     <Compile Include="Data\ICampusFilterable.cs" />
     <Compile Include="Field\Types\BlockTemplateFieldType.cs" />
     <Compile Include="Field\Types\ContentChannelsFieldType.cs" />
+    <Compile Include="Field\Types\DataEntryRequirementLevelFieldType.cs" />
     <Compile Include="Field\Types\MetricFieldType.cs" />
     <Compile Include="Field\Types\PersistedDatasetFieldType.cs" />
     <Compile Include="Field\Types\StepProgramStepStatusFieldType.cs" />
@@ -527,6 +528,7 @@
     <Compile Include="Storage\Provider\GoogleCloudStorageProvider.cs" />
     <Compile Include="SystemGuid\Person.cs" />
     <Compile Include="SystemGuid\SystemCommunication.cs" />
+    <Compile Include="SystemKey\CountryAttributeKey.cs" />
     <Compile Include="Transactions\ITransactionWithProgress.cs" />
     <Compile Include="Transactions\RegisterControllersTransaction.cs" />
     <Compile Include="Transactions\StreakTypeRebuildTransaction.cs" />
