@@ -1109,8 +1109,8 @@ function(item) {
                 dateRange.Start.Value.Date.AddDays( 0 - ( dateRange.Start.Value.DayOfWeek == DayOfWeek.Sunday ? 6 : (int)dateRange.Start.Value.DayOfWeek - 1 ) ) :
                 new DateTime( 1900, 1, 1 );
 
-            DateTime end = dateRange.End.HasValue ?
-                dateRange.End.Value.AddDays( 0 - (int)dateRange.End.Value.DayOfWeek ) :
+            DateTime end = dateRange.ActualEnd.HasValue ?
+                dateRange.ActualEnd.Value.AddDays( 0 - (int)dateRange.ActualEnd.Value.DayOfWeek ) :
                 new DateTime( 2100, 1, 1, 23, 59, 59 );
 
             if ( end < start )
