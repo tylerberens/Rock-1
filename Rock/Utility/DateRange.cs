@@ -45,15 +45,36 @@ namespace Rock
         /// </value>
         public DateTime? End { get; set; }
 
+
         /// <summary>
-        /// Gets the actual end.
-        /// Since the End property should always be the zero hour of the next day this property returns the last second of the previous day.
-        /// For Example if End is Nov 8th this will return Nov 7th 23:59:59.
+        /// Gets the user input end date.
+        /// Since the End property should always be the zero hour of the next day this property returns the previous day.
+        /// For Example if End is Nov 8th this will return Nov 7th 00:00:00.
         /// </summary>
         /// <value>
-        /// The actual end.
+        /// The user input end date.
         /// </value>
-        public DateTime? ActualEnd => End == null ? End : End.Value.Date.AddSeconds( -1 );
+        public DateTime? UserInputEndDate => End == null ? End : End.Value.Date.AddDays( -1 );
+
+        /// <summary>
+        /// Gets the user input end date time.
+        /// Since the End property should always be the zero hour of the next day this property returns the previous day.
+        /// For Example if End is Nov 8th this will return Nov 7th 23:59:59.999
+        /// </summary>
+        /// <value>
+        /// The user input end date time.
+        /// </value>
+        public DateTime? UserInputEndDateTime => End == null ? End : End.Value.Date.AddMilliseconds( -1 );
+
+        /// <summary>
+        /// Gets the user input end date day of week.
+        /// Since the End property should always be the zero hour of the next day this property returns the day of week of the previous day.
+        /// For Example if End is Nov 8th this will return the day of week for Nov 7th.
+        /// </summary>
+        /// <value>
+        /// The user input end date day of week.
+        /// </value>
+        public DayOfWeek? UserInputEndDateDayOfWeek => UserInputEndDate == null ? ( DayOfWeek? ) null : UserInputEndDate.Value.DayOfWeek;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DateRange"/> class.
