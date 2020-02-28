@@ -53,7 +53,7 @@ namespace Rock
         /// <value>
         /// The actual end.
         /// </value>
-        public DateTime? ActualEnd { get => End == null ? End : End.Value.Date.AddSeconds( -1 ); }
+        public DateTime? ActualEnd => End == null ? End : End.Value.Date.AddSeconds( -1 );
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DateRange"/> class.
