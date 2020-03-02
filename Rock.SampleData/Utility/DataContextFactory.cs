@@ -1,0 +1,76 @@
+﻿// <copyright>
+// Copyright by the Spark Development Network
+//
+// Licensed under the Rock Community License (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.rockrms.com/license
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// </copyright>
+//
+using Rock.Data;
+
+namespace Rock.SampleData.Utility
+{
+    public class DataContextFactory
+    {
+        private RockContext _Context = null;
+
+        private int _AccessCount = 0;
+
+        public int RecycleLimit = 0;
+
+        /// <summary>
+        /// Returns a new context.
+        /// </summary>
+        /// <returns></returns>
+        public RockContext GetSingletonContext()
+        {
+            return new RockContext();
+        }
+
+        public RockContext GetContext()
+        {
+            if ( this.RecycleLimit > 0
+                 && _AccessCount >= this.RecycleLimit )
+            {
+                this.Recycle();
+            }
+
+            if ( _Context == null )
+            {
+                _Context = new RockContext();
+            }
+
+            _AccessCount++;
+
+            return _Context;
+        }
+
+        public int CurrentAccessCount
+        {
+            get
+            {
+                return _AccessCount;
+            }
+        }
+
+        public void Recycle()
+        {
+            if ( _Context != null )
+            {
+                _Context.SaveChanges();
+            }
+
+            _Context = null;
+
+            _AccessCount = 0;
+        }
+    }
+}
