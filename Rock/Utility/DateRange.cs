@@ -37,7 +37,7 @@ namespace Rock
         /// Gets or sets the ending DateTime of the date Range
         /// NOTE: This is the DateTime that the date range ends, which will be a day *later* than what the user sees displayed.
         /// For example, if your date range is Nov 1st to November 7th, you'll want to set this Nov 8th 12:00AM when using a LessThan EndDate expression, since we want into include all the data that happened on Nov 7th
-        /// If you need the actual date then use the ActualEnd property
+        /// If you need the end date that the user entered then use the UserInputEndDate property
         /// You normally want to do a '&lt; DateRange.End' when using this in a query
         /// </summary>
         /// <value>
@@ -59,7 +59,8 @@ namespace Rock
         /// <summary>
         /// Gets the user input end date time.
         /// Since the End property should always be the zero hour of the next day this property returns the previous day.
-        /// For Example if End is Nov 8th this will return Nov 7th 23:59:59.999
+        /// For Example if End is Nov 8th this will return Nov 7th 23:59:59.999, however keep in mind that this will get rounded up to Nov 8th
+        /// if you are passing the value to a SQL Server DateTime parameter. If you don't want it to round then use DateTime2.
         /// </summary>
         /// <value>
         /// The user input end date time.
