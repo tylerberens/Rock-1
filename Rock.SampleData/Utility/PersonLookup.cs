@@ -41,6 +41,9 @@ namespace Rock.SampleData
         public static Guid BenJonesPersonGuid = new Guid( "3C402382-3BD2-4337-A996-9E62F1BAB09D" );
         public static Guid BrianJonesPersonGuid = new Guid( "3D7F6605-3666-4AB5-9F4E-D7FEBF93278E" );
 
+        public static Guid HelenEvansPersonGuid = new Guid( "89b175ad-6bf1-4590-b936-1cf42014a337" );
+        public static Guid HelenaEvansPersonGuid = new Guid( "39B80794-BAE1-4057-B843-CD7B56D005D0" );
+
         #endregion
 
         private Dictionary<Guid, int> _PersonGuidToAliasIdMap = null;

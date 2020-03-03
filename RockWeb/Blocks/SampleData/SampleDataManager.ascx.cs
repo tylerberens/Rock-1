@@ -414,7 +414,7 @@ namespace RockWeb.Blocks.SampleData
             {
                 //taskInfo.StatusMessage = message.Message;
 
-                if ( message.EventType == ProcessLogEventTypeSpecifier.ResultSuccess )
+                if ( message.EventType == TaskLogEventTypeSpecifier.ResultSuccess )
                 {
                     nbResult.NotificationBoxType = NotificationBoxType.Success;
                     nbResult.Text = "<strong>Import completed.</strong><p>" + message.Message + "</p>";
@@ -629,7 +629,7 @@ namespace RockWeb.Blocks.SampleData
                 var processor = factory.GetProcessorForAction( selectedAction.Key );
 
                 // Force log a message to indicate the current user interface log level.
-                _Monitor.LogMessage( new ProcessMessage { EventLevel = ProcessLogEventLevelSpecifier.Critical, EventType = ProcessLogEventTypeSpecifier.Information, Message = string.Format( "Log Message Level: {0}.", _ClientNotificationLevel ) } );
+                _Monitor.LogMessage( new TaskMessage { EventLevel = TaskLogEventLevelSpecifier.Critical, EventType = TaskLogEventTypeSpecifier.Information, Message = string.Format( "Log Message Level: {0}.", _ClientNotificationLevel ) } );
 
                 // Execute Action
                 using ( var activity = _Monitor.AddActivity( selectedAction.Name ) )
@@ -680,11 +680,11 @@ namespace RockWeb.Blocks.SampleData
 
         #region Task Log
 
-        private const ProcessLogEventLevelSpecifier _LogNotificationLevel = ProcessLogEventLevelSpecifier.Low;
-        private const ProcessLogEventLevelSpecifier _ClientNotificationLevel = ProcessLogEventLevelSpecifier.Low;
+        private const TaskLogEventLevelSpecifier _LogNotificationLevel = TaskLogEventLevelSpecifier.Low;
+        private const TaskLogEventLevelSpecifier _ClientNotificationLevel = TaskLogEventLevelSpecifier.Low;
 
         private readonly IHubContext<ITaskMonitorMessageHub> _MessageHub = GlobalHost.ConnectionManager.GetHubContext<TaskMonitorMessageHub, ITaskMonitorMessageHub>();
-        private readonly List<ProcessMessage> _NewMessages = new List<ProcessMessage>();
+        private readonly List<TaskMessage> _NewMessages = new List<TaskMessage>();
         private TaskActivityMessage _LastClientReport = null;
         private TaskMonitor _Monitor;
 
@@ -749,7 +749,7 @@ namespace RockWeb.Blocks.SampleData
             {
                 taskInfo.StatusMessage = message.Message;
 
-                if ( message.EventType == ProcessLogEventTypeSpecifier.ResultSuccess )
+                if ( message.EventType == TaskLogEventTypeSpecifier.ResultSuccess )
                 {
                     taskInfo.StatusMessage = "<strong>Import completed.</strong><p>" + message.Message + "</p>";
                 }
@@ -774,7 +774,7 @@ namespace RockWeb.Blocks.SampleData
 
             const int maxVisibleMessages = 50;
 
-            List<ProcessMessage> showMessages;
+            List<TaskMessage> showMessages;
 
             if ( count > maxVisibleMessages )
             {
@@ -806,17 +806,17 @@ namespace RockWeb.Blocks.SampleData
 
                 switch ( message.EventType )
                 {
-                    case ProcessLogEventTypeSpecifier.Error:
+                    case TaskLogEventTypeSpecifier.Error:
                         style = "color: red";
                         break;
-                    case ProcessLogEventTypeSpecifier.Warning:
+                    case TaskLogEventTypeSpecifier.Warning:
                         style = "color: orange";
                         break;
-                    case ProcessLogEventTypeSpecifier.ResultSuccess:
+                    case TaskLogEventTypeSpecifier.ResultSuccess:
                         style = "color: green; font-weight: bold";
                         break;
 
-                    case ProcessLogEventTypeSpecifier.ResultFailure:
+                    case TaskLogEventTypeSpecifier.ResultFailure:
                         style = "color: red; font-weight: bold";
                         break;
                     default:

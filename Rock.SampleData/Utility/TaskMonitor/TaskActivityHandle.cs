@@ -18,13 +18,17 @@ namespace System.Diagnostics
         public TaskActivityHandle( TaskMonitor monitor, int activityId )
         {
             if ( monitor == null )
+            {
                 throw new ArgumentNullException( "monitor" );
+            }
 
             _TaskMonitor = monitor;
 
             _TaskMonitor.LogUpdated += _TaskMonitor_LogUpdated;
-
+            
             _ActivityId = activityId;
+
+            var activity = this.Activity;
         }
 
         private void _TaskMonitor_LogUpdated( object sender, TaskLogUpdatedEventArgs e )
@@ -60,14 +64,36 @@ namespace System.Diagnostics
             }
         }
 
-        public ITaskActivity Activity
+        private ITaskActivity GetActivity()
         {
-            get
+            if ( _ActivityId == 1 )
+            {
+                return _TaskMonitor.Activity;
+            }
+            else
             {
                 return _TaskMonitor.Activities.Flatten().FirstOrDefault( x => x.ID == _ActivityId );
             }
         }
 
+        public ITaskActivity Activity
+        {
+            get
+            {
+                return GetActivity();
+            }
+        }
+
+        /// <summary>
+        /// A flag indicating if this handle points to a valid activity.
+        /// </summary>
+        public bool IsValid
+        {
+            get
+            {
+                return GetActivity() != null;
+            }
+        }
         public override string ToString()
         {
             if ( this.Activity == null || string.IsNullOrWhiteSpace( this.Activity.Name ) )
@@ -385,7 +411,7 @@ namespace System.Diagnostics
             activity.BeginActivity();
         }
 
-        TaskActivityHandle ITaskMonitorHandle.GetCurrentActivity()
+        TaskActivityHandle ITaskMonitorHandle.GetCurrentActivityHandle()
         {
             if ( this.Activities.Any() )
             {

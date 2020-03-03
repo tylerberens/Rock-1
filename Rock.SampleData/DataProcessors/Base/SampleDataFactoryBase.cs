@@ -53,7 +53,7 @@ namespace Rock.SampleData
                 _ActiveTaskMonitor = new TaskMonitor();
             }
             
-            return _ActiveTaskMonitor.GetCurrentActivity();
+            return _ActiveTaskMonitor.GetCurrentActivityHandle();
         }
     }
 }

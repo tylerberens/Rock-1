@@ -96,49 +96,41 @@ namespace System.Diagnostics
 
         /// <summary>
         /// Returns the collection of top-level activities associated with this Task Monitor.
-        /// Each of these activities may contain child activities.
+        /// Each of these activities may itself contain child activities.
         /// </summary>
         public TaskActivityCollection Activities
         {
             get { return _RootActivity.ChildActivities; }
         }
 
-        public TaskActivityHandle GetCurrentActivity()
+        /// <summary>
+        /// Returns the top-level activity for the task monitor.
+        /// </summary>
+        public ITaskActivity Activity
         {
-            return new TaskActivityHandle( this, _LastActivityId );
-
-            //return this.Activities.Flatten().FirstOrDefault( x => x.ID == _ActivityId );
-
-            //var currentActivity = FindChildActivity( _LastActivityId, rootActivity );
-
-            //return currentActivity;
-
+            get
+            {
+                return _RootActivity;
+            }
         }
 
-        //private TaskActivity FindChildActivity( int activityId, TaskActivity rootActivity )
-        //{
-        //    if ( rootActivity == null )
-        //    {
-        //        rootActivity = _RootActivity;
-        //    }
+        public TaskActivityHandle GetCurrentActivityHandle()
+        {
+            var activities = this.Activities.Flatten();
 
-        //    if ( rootActivity.ID == activityId )
-        //    {
-        //        return rootActivity;
-        //    }
+            int maxActivityId;
 
-        //    foreach ( var childActivity in rootActivity.ChildActivities )
-        //    {
-        //        var foundActivity = FindActivity( activityId, mbox childActivity );
+            if ( activities.Any() )
+            {
+                maxActivityId = activities.Select( x => x.ID ).Max();
+            }
+            else
+            {
+                maxActivityId = 1;
+            }
 
-        //        if ( foundActivity != null )
-        //        {
-        //            return foundActivity;
-        //        }
-        //    }
-
-        //    return null;
-        //}
+            return new TaskActivityHandle( this, maxActivityId );
+        }
 
         public TaskAllocationHandle NewActivityAllocation( decimal percentOfTotal )
         {

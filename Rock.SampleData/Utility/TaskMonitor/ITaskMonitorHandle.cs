@@ -57,7 +57,7 @@ namespace System.Diagnostics
         /// Returns a handle to the current activity for the Task.
         /// </summary>
         /// <returns></returns>
-        TaskActivityHandle GetCurrentActivity();
+        TaskActivityHandle GetCurrentActivityHandle();
 
         #region Message Management
 
