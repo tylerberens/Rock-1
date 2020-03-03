@@ -22,7 +22,7 @@ SELECT isnull(x.[StartSundayDate], '1900-01-01') [StartSundayDate]
 	,CASE 
 		WHEN x.[EndSundayDate] IS NULL
 			THEN '9999-12-31'
-		WHEN x.[EndSundayDate] > @EndDate
+		WHEN x.[EndSundayDate] >= @EndDate
 			THEN DateAdd(day, - 7, x.[EndSundayDate])
 		ELSE @EndDate
 		END [EndSundayDate]

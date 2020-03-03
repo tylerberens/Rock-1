@@ -1113,11 +1113,6 @@ function(item) {
                 dateRange.UserInputEndDateTime.Value.AddDays( 0 - (int)dateRange.UserInputEndDateDayOfWeek ) :
                 new DateTime( 2100, 1, 1, 23, 59, 59 );
 
-            if ( end < start )
-            {
-                end = end.AddDays( start.Subtract( end ).Days + 6 );
-            }
-
             string groupIds = GetSelectedGroupIds().AsDelimited( "," );
             string campusIds = GetAttributeValue( AttributeKeys.ShowCampusFilter ).AsBoolean() ? clbCampuses.SelectedValues.AsDelimited( "," ) : string.Empty;
             var dataView = dvpDataView.SelectedValueAsInt();
