@@ -70,6 +70,7 @@
                             <Rock:RockCheckBox ID="cbFutureFollowUp" runat="server" SourceTypeName="Rock.Model.ConnectionType, Rock" PropertyName="EnableFutureFollowUp" Label="Enable Future Follow-up" />
                             <Rock:RockCheckBox ID="cbFullActivityList" runat="server" SourceTypeName="Rock.Model.ConnectionType, Rock" PropertyName="EnableFullActivityList" Label="Enable Full Activity List" />
                             <Rock:RockCheckBox ID="cbRequiresPlacementGroup" runat="server" SourceTypeName="Rock.Model.ConnectionType, Rock" PropertyName="RequiresPlacementGroupToConnect" Label="Requires Placement Group To Connect" />
+                            <Rock:RockCheckBox ID="cbEnableRequestSecurity" runat="server" SourceTypeName="Rock.Model.ConnectionType, Rock" PropertyName="EnableRequestSecurity" Label="Enable Request Security" />
                         </div>
                     </div>
                     <Rock:PanelWidget ID="wpConnectionRequestAttributes" runat="server" Title="Connection Request Attributes" CssClass="connection-request-attribute-panel">
@@ -179,6 +180,7 @@
                     <div class="col-md-6">
                         <Rock:RockCheckBox ID="cbActivityTypeIsActive" runat="server" Label="Is Active" ValidationGroup="ConnectionActivityType" />
                     </div>
+                    <Rock:AttributeValuesContainer ID="avcActivityAttributes" runat="server" />
                 </div>
             </Content>
         </Rock:ModalDialog>

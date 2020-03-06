@@ -425,6 +425,7 @@ namespace RockWeb.Blocks.Connection
                     connectionType.EnableFutureFollowup = cbFutureFollowUp.Checked;
                     connectionType.EnableFullActivityList = cbFullActivityList.Checked;
                     connectionType.RequiresPlacementGroupToConnect = cbRequiresPlacementGroup.Checked;
+                    connectionType.EnableRequestSecurity = cbEnableRequestSecurity.Checked;
 
                     foreach ( var connectionActivityTypeState in ActivityTypesState )
                     {
@@ -436,6 +437,7 @@ namespace RockWeb.Blocks.Connection
                         }
 
                         connectionActivityType.CopyPropertiesFrom( connectionActivityTypeState );
+                        connectionActivityType.CopyAttributesFrom( connectionActivityTypeState );
                     }
 
                     foreach ( var connectionStatusState in StatusesState )
@@ -479,6 +481,11 @@ namespace RockWeb.Blocks.Connection
                     rockContext.WrapTransaction( () =>
                     {
                         rockContext.SaveChanges();
+
+                        foreach ( var connectionActivityType in connectionType.ConnectionActivityTypes )
+                        {
+                            connectionActivityType.SaveAttributeValues( rockContext );
+                        }
 
                         /* Save Attributes */
                         string qualifierValue = connectionType.Id.ToString();
@@ -902,10 +909,17 @@ namespace RockWeb.Blocks.Connection
             if ( connectionActivityType == null )
             {
                 connectionActivityType = new ConnectionActivityType();
+                var connectionTypeId = hfConnectionTypeId.Value.AsIntegerOrNull();
+                if ( connectionTypeId.HasValue )
+                {
+                    connectionActivityType.ConnectionTypeId = connectionTypeId;
+                }
             }
 
             connectionActivityType.Name = tbConnectionActivityTypeName.Text;
             connectionActivityType.IsActive = cbActivityTypeIsActive.Checked;
+            connectionActivityType.LoadAttributes();
+            avcActivityAttributes.GetEditValues( connectionActivityType );
 
             if ( !connectionActivityType.IsValid )
             {
@@ -970,6 +984,9 @@ namespace RockWeb.Blocks.Connection
                 tbConnectionActivityTypeName.Text = string.Empty;
                 cbActivityTypeIsActive.Checked = true;
             }
+
+            int connectionTypeId = int.Parse( hfConnectionTypeId.Value );
+            avcActivityAttributes.AddEditControls( connectionActivityType ?? new ConnectionActivityType() { ConnectionTypeId = connectionTypeId }, Rock.Security.Authorization.EDIT, CurrentPerson );
             hfConnectionTypeAddConnectionActivityTypeGuid.Value = connectionActivityTypeGuid.ToString();
             ShowDialog( "ConnectionActivityTypes", true );
         }
@@ -1535,6 +1552,7 @@ namespace RockWeb.Blocks.Connection
             tbIconCssClass.Text = connectionType.IconCssClass;
             nbDaysUntilRequestIdle.Text = connectionType.DaysUntilRequestIdle.ToString();
             cbRequiresPlacementGroup.Checked = connectionType.RequiresPlacementGroupToConnect;
+            cbEnableRequestSecurity.Checked = connectionType.EnableRequestSecurity;
             cbFullActivityList.Checked = connectionType.EnableFullActivityList;
             cbFutureFollowUp.Checked = connectionType.EnableFutureFollowup;
 
@@ -1552,7 +1570,7 @@ namespace RockWeb.Blocks.Connection
                 .OrderBy( a => a.Order )
                 .ThenBy( a => a.Name )
                 .ToList();
-            
+
             BindAttributesGrid();
             BindConnectionActivityTypesGrid();
             BindConnectionWorkflowsGrid();
