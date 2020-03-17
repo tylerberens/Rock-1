@@ -447,6 +447,7 @@
     <Compile Include="Attribute\IconCssClassAttribute.cs" />
     <Compile Include="Blocks\RockMobileBlockType.cs" />
     <Compile Include="Blocks\Types\Mobile\Cms\Hero.cs" />
+    <Compile Include="Blocks\Types\Mobile\Events\CalendarEventList.cs" />
     <Compile Include="Blocks\Types\Mobile\Events\CalendarView.cs" />
     <Compile Include="Blocks\Types\Mobile\Groups\GroupAttendanceEntry.cs" />
     <Compile Include="Blocks\Types\Mobile\Groups\GroupEdit.cs" />
@@ -455,6 +456,13 @@
     <Compile Include="Blocks\Types\Mobile\Groups\GroupMemberView.cs" />
     <Compile Include="Blocks\Types\Mobile\Groups\GroupView.cs" />
     <Compile Include="Blocks\Types\Mobile\Prayer\PrayerRequestDetails.cs" />
+    <Compile Include="Blocks\Types\Mobile\Prayer\PrayerSession.cs" />
+    <Compile Include="Blocks\Types\Mobile\Prayer\PrayerSessionSetup.cs" />
+    <Compile Include="Field\Types\ConnectionRequestActivityFieldType.cs" />
+    <Compile Include="Plugin\HotFixes\105_PageParameterFilterBlock.cs" />
+    <Compile Include="Plugin\HotFixes\104_MigrationRollupsFor10_3_0.cs" />
+    <Compile Include="Utility\ExtensionMethods\ICollectionExtensions.cs" />
+    <Compile Include="Plugin\HotFixes\106_EnableLavaDefaultSetting.cs" />
     <Compile Include="Web\UI\RegistrationInstanceBlock.cs">
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
@@ -2719,6 +2727,15 @@
     <Content Include="Plugin\HotFixes\097_FamilyAnalyticsProcChange_spCrm_FamilyAnalyticsEraDataset.sql">
       <DependentUpon>097_FamilyAnalyticsProcChange.cs</DependentUpon>
     </Content>
+    <Content Include="Plugin\HotFixes\104_MigrationRollupsFor10_3_0_spCheckin_AttendanceAnalyticsQuery_AttendeeLastAttendance.sql">
+      <DependentUpon>104_MigrationRollupsFor10_3_0.cs</DependentUpon>
+    </Content>
+    <Content Include="Plugin\HotFixes\104_MigrationRollupsFor10_3_0_spCheckin_AttendanceAnalyticsQuery_NonAttendees.sql">
+      <DependentUpon>104_MigrationRollupsFor10_3_0.cs</DependentUpon>
+    </Content>
+    <Content Include="Plugin\HotFixes\104_MigrationRollupsFor10_3_0_spFinance_PledgeAnalyticsQuery.sql">
+      <DependentUpon>104_MigrationRollupsFor10_3_0.cs</DependentUpon>
+    </Content>
     <Content Include="Scripts\jquery-1.12.4.intellisense.js" />
     <Content Include="Scripts\jquery-1.12.4.js" />
     <Content Include="Scripts\jquery-1.12.4.min.js" />
@@ -2804,7 +2821,7 @@
 REM In a production environment, it will be 10 seconds, even without the VBCSCOMPILER_TTL environment variable
 if "$(ConfigurationName)" == "Debug" (
  echo "setting VBCSCOMPILER_TTL to 10 seconds"
-"$(SolutionDir)Dev Tools\VBCS_Compiler\setVBCSCOMPILER_TTL.bat"
+ call "$(SolutionDir)Dev Tools\VBCS_Compiler\setVBCSCOMPILER_TTL.bat"
 )
 
 REM delete build artifacts from stuff that is no longer part of Rock (InteractivePreGeneratedViews and React)
