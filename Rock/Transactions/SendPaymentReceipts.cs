@@ -130,7 +130,7 @@ namespace Rock.Transactions
                             mergeFields.Add( "TransactionEntity", transactionEntityList.First() );
                         }
 
-                        var emailMessage = new RockEmailMessage( SystemEmailGuid );
+                        var emailMessage = new RockEmailMessage( SystemEmailGuid, mergeFields );
                         emailMessage.AddRecipient( new RockEmailMessageRecipient( person, mergeFields ) );
                         var errors = new List<string>();
                         // errors will be logged by send

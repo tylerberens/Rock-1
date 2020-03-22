@@ -1320,17 +1320,17 @@ namespace RockWeb.Blocks.Communication
             // only set the ReplyToEmail, CCEMails, and BCCEmails if the template has one (just in case they already filled these in for this communication
             if ( communicationTemplate.ReplyToEmail.IsNotNullOrWhiteSpace() )
             {
-                ebReplyToAddress.Text = communicationTemplate.ReplyToEmail;
+                ebReplyToAddress.Text = communicationTemplate.ReplyToEmail.ResolveMergeFields( Rock.Lava.LavaHelper.GetCommonMergeFields( this.RockPage, this.CurrentPerson ) );
             }
 
             if ( communicationTemplate.CCEmails.IsNotNullOrWhiteSpace() )
             {
-                ebCCList.Text = communicationTemplate.CCEmails;
+                ebCCList.Text = communicationTemplate.CCEmails.ResolveMergeFields( Rock.Lava.LavaHelper.GetCommonMergeFields( this.RockPage, this.CurrentPerson ) );
             }
 
             if ( communicationTemplate.BCCEmails.IsNotNullOrWhiteSpace() )
             {
-                ebBCCList.Text = communicationTemplate.BCCEmails;
+                ebBCCList.Text = communicationTemplate.BCCEmails.ResolveMergeFields( Rock.Lava.LavaHelper.GetCommonMergeFields( this.RockPage, this.CurrentPerson ) );
             }
 
             hfShowAdditionalFields.Value = ( !string.IsNullOrEmpty( communicationTemplate.ReplyToEmail ) || !string.IsNullOrEmpty( communicationTemplate.CCEmails ) || !string.IsNullOrEmpty( communicationTemplate.BCCEmails ) ).ToTrueFalse().ToLower();

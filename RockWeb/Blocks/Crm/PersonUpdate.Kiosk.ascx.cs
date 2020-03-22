@@ -355,7 +355,7 @@ namespace RockWeb.Blocks.Crm
                 if ( receiptEmail != null && receiptEmail.To.IsNotNullOrWhiteSpace() )
                 {
                     var errorMessages = new List<string>();
-                    var message = new RockEmailMessage( receiptEmail );
+                    var message = new RockEmailMessage( receiptEmail, mergeFields );
                     foreach ( var recipient in message.GetRecipients() )
                     {
                         recipient.MergeFields = mergeFields;

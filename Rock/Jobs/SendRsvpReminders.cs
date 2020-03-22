@@ -392,7 +392,7 @@ namespace Rock.Jobs
         private int SendReminderEmail( Person person, SystemCommunication reminder, Dictionary<string, object> lavaMergeFields )
         {
             var recipient = new RockEmailMessageRecipient( person, lavaMergeFields );
-            var message = new RockEmailMessage( reminder );
+            var message = new RockEmailMessage( reminder, lavaMergeFields );
             message.SetRecipients( new List<RockEmailMessageRecipient>() { recipient } );
             message.Send( out List<string> emailErrors );
 

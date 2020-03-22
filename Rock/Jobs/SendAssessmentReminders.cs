@@ -177,7 +177,7 @@ namespace Rock.Jobs
             recipients.Add( new RockEmailMessageRecipient( person, mergeObjects ) );
 
             var errors = new List<string>();
-            var emailMessage = new RockEmailMessage( assessmentSystemEmailGuid );
+            var emailMessage = new RockEmailMessage( assessmentSystemEmailGuid, mergeObjects );
             emailMessage.SetRecipients( recipients );
             emailMessage.Send( out errors );
 

@@ -141,7 +141,7 @@ namespace Rock.Jobs
                         mergeFields.Add( "Expiring", expirationDate );
                         recipients.Add( new RockEmailMessageRecipient( person, mergeFields ) );
 
-                        var emailMessage = new RockEmailMessage( systemEmail.Guid );
+                        var emailMessage = new RockEmailMessage( systemEmail.Guid, mergeFields );
                         emailMessage.SetRecipients( recipients );
 
                         var emailErrors = new List<string>();

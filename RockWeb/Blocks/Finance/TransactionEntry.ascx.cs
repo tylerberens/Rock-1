@@ -926,7 +926,7 @@ TransactionAccountDetails: [
                                 mergeFields.Add( "Person", person );
                                 mergeFields.Add( "User", user );
 
-                                var emailMessage = new RockEmailMessage( GetAttributeValue( "ConfirmAccountTemplate" ).AsGuid() );
+                                var emailMessage = new RockEmailMessage( GetAttributeValue( "ConfirmAccountTemplate" ).AsGuid(), mergeFields );
                                 emailMessage.AddRecipient( new RockEmailMessageRecipient( person, mergeFields ) );
                                 emailMessage.AppRoot = ResolveRockUrl( "~/" );
                                 emailMessage.ThemeRoot = ResolveRockUrl( "~~/" );

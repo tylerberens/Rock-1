@@ -229,7 +229,7 @@ namespace Rock.Jobs
                     var missingRequirements = _groupsMissingRequriements.Where( g => notificationGroupIds.Contains( g.Id ) ).ToList();
                     mergeFields.Add( "GroupsMissingRequirements", missingRequirements );
 
-                    var emailMessage = new RockEmailMessage( systemEmailGuid.Value );
+                    var emailMessage = new RockEmailMessage( systemEmailGuid.Value, mergeFields );
                     emailMessage.AddRecipient( new RockEmailMessageRecipient( recipient, mergeFields ) );
                     var emailErrors = new List<string>();
                     emailMessage.Send( out emailErrors );
@@ -245,13 +245,15 @@ namespace Rock.Jobs
                                                         .Where( m => m.Group.Guid == accountAbilityGroupGuid )
                                                         .Select( m => m.Person );
 
-                    var emailMessage = new RockEmailMessage( systemEmailGuid.Value );
+                    var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null );
+                    mergeFields.Add( "GroupsMissingRequirements", _groupsMissingRequriements );
+
+                    var emailMessage = new RockEmailMessage( systemEmailGuid.Value, mergeFields );
                     foreach ( var person in accountabilityGroupMembers )
                     {
-                        var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null );
-                        mergeFields.Add( "Person", person );
-                        mergeFields.Add( "GroupsMissingRequirements", _groupsMissingRequriements );
-                        emailMessage.AddRecipient( new RockEmailMessageRecipient( person, mergeFields ) );
+                        var recipientMergeFields = new Dictionary<string, object>( mergeFields );
+                        recipientMergeFields.Add( "Person", person );
+                        emailMessage.AddRecipient( new RockEmailMessageRecipient( person, recipientMergeFields ) );
                         recipients++;
                     }
                     var emailErrors = new List<string>();

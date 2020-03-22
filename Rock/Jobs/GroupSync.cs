@@ -214,7 +214,7 @@ namespace Rock.Jobs
                                             var mergeFields = new Dictionary<string, object>();
                                             mergeFields.Add( "Group", sync.Group );
                                             mergeFields.Add( "Person", person );
-                                            var emailMessage = new RockEmailMessage( sync.ExitSystemCommunication );
+                                            var emailMessage = new RockEmailMessage( sync.ExitSystemCommunication, mergeFields );
                                             emailMessage.AddRecipient( new RockEmailMessageRecipient( person, mergeFields ) );
                                             var emailErrors = new List<string>();
                                             emailMessage.Send( out emailErrors );
@@ -350,7 +350,7 @@ namespace Rock.Jobs
                                             mergeFields.Add( "Person", person );
                                             mergeFields.Add( "NewPassword", newPassword );
                                             mergeFields.Add( "CreateLogin", createLogin );
-                                            var emailMessage = new RockEmailMessage( sync.WelcomeSystemCommunication );
+                                            var emailMessage = new RockEmailMessage( sync.WelcomeSystemCommunication, mergeFields );
                                             emailMessage.AddRecipient( new RockEmailMessageRecipient( person, mergeFields ) );
                                             var emailErrors = new List<string>();
                                             emailMessage.Send( out emailErrors );

@@ -341,7 +341,7 @@ namespace Rock.Jobs
                                     mergeFields.Add( "Person", person );
                                     mergeFields.Add( "Suggestions", personSuggestionNotices.OrderBy( s => s.SuggestionType.Order ).ToList() );
 
-                                    var emailMessage = new RockEmailMessage( systemEmailGuid.Value );
+                                    var emailMessage = new RockEmailMessage( systemEmailGuid.Value, mergeFields );
                                     emailMessage.AddRecipient( new RockEmailMessageRecipient( person, mergeFields ) );
                                     var errors = new List<string>();
                                     emailMessage.Send(out errors);

@@ -540,7 +540,8 @@ namespace RockWeb.Blocks.Finance
             {
                 var givingUnit = new PersonAliasService( rockContext ).Get( this.SelectedGivingUnit.PersonAliasId ).Person;
 
-                var emailMessage = new RockEmailMessage( receiptCommunication.Guid );
+                var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( this.RockPage, this.CurrentPerson );
+                var emailMessage = new RockEmailMessage( receiptCommunication.Guid, mergeFields );
                 emailMessage.AddRecipient( new RockEmailMessageRecipient( givingUnit, GetMergeFields( givingUnit ) ) );
                 emailMessage.AppRoot = ResolveRockUrl( "~/" );
                 emailMessage.ThemeRoot = ResolveRockUrl( "~~/" );

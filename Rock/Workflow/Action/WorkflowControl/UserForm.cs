@@ -114,7 +114,7 @@ namespace Rock.Workflow.Action
 
                             if ( systemCommunication != null )
                             {
-                                emailMessage = new RockEmailMessage( systemCommunication );
+                                emailMessage = new RockEmailMessage( systemCommunication, workflowMergeFields );
                             }
                         }
 #pragma warning disable CS0618 // Type or member is obsolete

@@ -64,6 +64,7 @@ namespace Rock.Jobs
                 List<int> groupIds = new List<int>();
                 GetGroupIds( groupIds, sendToDescendants, group );
 
+                var mergeFields = Lava.LavaHelper.GetCommonMergeFields( null );
                 var recipients = new List<RockEmailMessageRecipient>();
 
                 var groupMemberList = new GroupMemberService( rockContext ).Queryable().Where( gm =>
@@ -78,18 +79,18 @@ namespace Rock.Jobs
                         continue;
                     }
 
-                    var mergeFields = Lava.LavaHelper.GetCommonMergeFields( null );
-                    mergeFields.Add( "Person", person );
-                    mergeFields.Add( "GroupMember", groupMember );
-                    mergeFields.Add( "Group", groupMember.Group );
+                    var recipientMergeFields = new Dictionary<string, object>( mergeFields );
+                    recipientMergeFields.Add( "Person", person );
+                    recipientMergeFields.Add( "GroupMember", groupMember );
+                    recipientMergeFields.Add( "Group", groupMember.Group );
 
-                    recipients.Add( new RockEmailMessageRecipient( groupMember.Person, mergeFields ) );
+                    recipients.Add( new RockEmailMessageRecipient( groupMember.Person, recipientMergeFields ) );
                 }
 
                 var errors = new List<string>();
                 if ( recipients.Any() )
                 {
-                    var emailMessage = new RockEmailMessage( emailTemplateGuid );
+                    var emailMessage = new RockEmailMessage( emailTemplateGuid, mergeFields );
                     emailMessage.SetRecipients( recipients );
                     emailMessage.Send( out errors );
 

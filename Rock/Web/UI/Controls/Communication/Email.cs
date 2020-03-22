@@ -186,6 +186,7 @@ namespace Rock.Web.UI.Controls.Communication
             ebFromAddress = new EmailBox();
             ebFromAddress.ID = string.Format( "ebFromAddress_{0}", this.ID );
             ebFromAddress.Label = "From Address";
+            ebFromAddress.AllowLava = true;
             Controls.Add( ebFromAddress );
 
             lFromAddress = new RockLiteral();
@@ -196,6 +197,7 @@ namespace Rock.Web.UI.Controls.Communication
             ebReplyToAddress = new EmailBox();
             ebReplyToAddress.ID = string.Format( "ebReplyToAddress_{0}", this.ID );
             ebReplyToAddress.Label = "Reply To Address";
+            ebReplyToAddress.AllowLava = true;
             Controls.Add( ebReplyToAddress );
 
             tbSubject = new RockTextBox();
@@ -228,12 +230,14 @@ namespace Rock.Web.UI.Controls.Communication
             ebCcAddress.ID = string.Format( "ebCcAddress_{0}", this.ID );
             ebCcAddress.Label = "CC Address";
             ebCcAddress.Help = "Any address in this field will be copied on the email sent to every recipient.  Lava can be used to access recipient data. <span class='tip tip-lava'></span>";
+            ebCcAddress.AllowLava = true;
             Controls.Add( ebCcAddress );
 
             ebBccAddress = new EmailBox();
             ebBccAddress.ID = string.Format( "ebBccAddress{0}", this.ID );
             ebBccAddress.Label = "Bcc Address";
             ebBccAddress.Help = "Any address in this field will be copied on the email sent to every recipient.  Lava can be used to access recipient data. <span class='tip tip-lava'></span>";
+            ebBccAddress.AllowLava = true;
             Controls.Add( ebBccAddress );
         }
 

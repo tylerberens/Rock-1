@@ -1114,7 +1114,7 @@ namespace RockWeb
 
                             if ( recipients.Any() )
                             {
-                                var message = new RockEmailMessage( Rock.SystemGuid.SystemCommunication.CONFIG_EXCEPTION_NOTIFICATION.AsGuid() );
+                                var message = new RockEmailMessage( Rock.SystemGuid.SystemCommunication.CONFIG_EXCEPTION_NOTIFICATION.AsGuid(), mergeFields );
                                 message.SetRecipients( recipients );
                                 message.Send();
                             }

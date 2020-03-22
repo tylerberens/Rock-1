@@ -518,7 +518,7 @@ namespace Rock.Jobs
                 new RockEmailMessageRecipient( leader.Person, mergeObjects )
             };
 
-            var message = new RockEmailMessage( systemCommunication );
+            var message = new RockEmailMessage( systemCommunication, mergeObjects );
             message.SetRecipients( recipients );
             return message;
         }

@@ -159,21 +159,22 @@ namespace Rock.Jobs
                         continue;
                     }
 
+                    var mergeFields = new Dictionary<string, object>();
+                    mergeFields.Add( "PendingIndividuals", pendingIndividuals );
+                    mergeFields.Add( "Group", group );
+                    mergeFields.Add( "ParentGroup", group.ParentGroup );
+
                     var recipients = new List<RockEmailMessageRecipient>();
                     foreach ( var leader in groupLeaders )
                     {
-                        // create merge object
-                        var mergeFields = new Dictionary<string, object>();
-                        mergeFields.Add( "PendingIndividuals", pendingIndividuals );
-                        mergeFields.Add( "Group", group );
-                        mergeFields.Add( "ParentGroup", group.ParentGroup );
-                        mergeFields.Add( "Person", leader.Person );
-                        recipients.Add( new RockEmailMessageRecipient( leader.Person, mergeFields ) );
+                        var recipientMergeFields = new Dictionary<string, object>( mergeFields );
+                        recipientMergeFields.Add( "Person", leader.Person );
+                        recipients.Add( new RockEmailMessageRecipient( leader.Person, recipientMergeFields ) );
                     }
 
 
                     var errorMessages = new List<string>();
-                    var emailMessage = new RockEmailMessage( systemEmail.Guid );
+                    var emailMessage = new RockEmailMessage( systemEmail.Guid, mergeFields );
                     emailMessage.SetRecipients( recipients );
                     var sendSuccess = emailMessage.Send( out errorMessages );
 

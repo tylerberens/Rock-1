@@ -1352,7 +1352,7 @@ mission. We are so grateful for your commitment.</p>
                 mergeFields.Add( "Person", targetPerson );
                 mergeFields.Add( "User", userLogin );
 
-                var emailMessage = new RockEmailMessage( GetAttributeValue( AttributeKey.ConfirmAccountEmailTemplate ).AsGuid() );
+                var emailMessage = new RockEmailMessage( GetAttributeValue( AttributeKey.ConfirmAccountEmailTemplate ).AsGuid(), mergeFields );
                 emailMessage.AddRecipient( new RockEmailMessageRecipient( targetPerson, mergeFields ) );
                 emailMessage.AppRoot = ResolveRockUrl( "~/" );
                 emailMessage.ThemeRoot = ResolveRockUrl( "~~/" );

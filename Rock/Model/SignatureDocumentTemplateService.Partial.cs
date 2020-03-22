@@ -249,7 +249,7 @@ namespace Rock.Model
                         mergeFields.Add( "SignatureDocument", document );
                         mergeFields.Add( "InviteLink", inviteLink );
 
-                        var emailMessage = new RockEmailMessage( systemEmail );
+                        var emailMessage = new RockEmailMessage( systemEmail, mergeFields );
                         emailMessage.AddRecipient( new RockEmailMessageRecipient( person, mergeFields ) );
                         emailMessage.Send();
                     }

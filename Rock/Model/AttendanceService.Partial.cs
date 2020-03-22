@@ -685,14 +685,16 @@ namespace Rock.Model
                 {
                     try
                     {
-                        var emailMessage = new RockEmailMessage( scheduleConfirmationSystemEmail );
                         var recipient = attendancesByPerson.Person;
                         var attendances = attendancesByPerson.Attendances;
 
                         var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null );
                         mergeFields.Add( "Attendance", attendances.FirstOrDefault() );
                         mergeFields.Add( "Attendances", attendances );
+
+                        var emailMessage = new RockEmailMessage( scheduleConfirmationSystemEmail, mergeFields );
                         emailMessage.AddRecipient( new RockEmailMessageRecipient( recipient, mergeFields ) );
+
                         List<string> sendErrors;
                         bool sendSuccess = emailMessage.Send( out sendErrors );
 
@@ -760,8 +762,6 @@ namespace Rock.Model
                 {
                     try
                     {
-
-                        var emailMessage = new RockEmailMessage( scheduleReminderSystemEmail );
                         var recipient = attendancesByPerson.Person;
                         var attendances = attendancesByPerson.Attendances;
 
@@ -773,6 +773,8 @@ namespace Rock.Model
                         var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null );
                         mergeFields.Add( "Attendance", attendances.FirstOrDefault() );
                         mergeFields.Add( "Attendances", attendances );
+
+                        var emailMessage = new RockEmailMessage( scheduleReminderSystemEmail, mergeFields );
                         emailMessage.AddRecipient( new RockEmailMessageRecipient( recipient, mergeFields ) );
                         emailMessage.Send();
                         emailsSent++;

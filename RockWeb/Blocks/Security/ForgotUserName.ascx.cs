@@ -126,7 +126,7 @@ namespace RockWeb.Blocks.Security
             {
                 mergeFields.Add( "Results", results.ToArray() );
 
-                var emailMessage = new RockEmailMessage( GetAttributeValue( "EmailTemplate" ).AsGuid() );
+                var emailMessage = new RockEmailMessage( GetAttributeValue( "EmailTemplate" ).AsGuid(), mergeFields );
                 emailMessage.AddRecipient( RockEmailMessageRecipient.CreateAnonymous( tbEmail.Text, mergeFields ) );
                 emailMessage.AppRoot = ResolveRockUrlIncludeRoot( "~/" );
                 emailMessage.ThemeRoot = ResolveRockUrlIncludeRoot( "~~/" );

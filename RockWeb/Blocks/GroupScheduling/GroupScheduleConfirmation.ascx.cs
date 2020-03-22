@@ -635,7 +635,7 @@ namespace RockWeb.Blocks.GroupScheduling
                 foreach ( var recipient in recipients )
                 {
                     recipient.MergeFields = mergeFields;
-                    var emailMessage = new RockEmailMessage( GetAttributeValue( "SchedulingResponseEmail" ).AsGuid() );
+                    var emailMessage = new RockEmailMessage( GetAttributeValue( "SchedulingResponseEmail" ).AsGuid(), mergeFields );
                     emailMessage.AddRecipient( recipient );
                     emailMessage.CreateCommunicationRecord = false;
                     emailMessage.Send();

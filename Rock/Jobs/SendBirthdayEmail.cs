@@ -106,16 +106,17 @@ namespace Rock.Jobs
 
             var recipients = new List<RockEmailMessageRecipient>();
 
+            var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null );
             var personList = personQry.AsNoTracking().ToList();
             foreach ( var person in personList )
             {
-                var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null );
-                mergeFields.Add( "Person", person );
+                var recipientMergeFields = new Dictionary<string, object>( mergeFields );
+                recipientMergeFields.Add( "Person", person );
 
-                recipients.Add( new RockEmailMessageRecipient( person, mergeFields ) );
+                recipients.Add( new RockEmailMessageRecipient( person, recipientMergeFields ) );
             }
 
-            var emailMessage = new RockEmailMessage( systemEmail.Guid );
+            var emailMessage = new RockEmailMessage( systemEmail.Guid, mergeFields );
             emailMessage.SetRecipients( recipients );
             var errors = new List<string>();
 

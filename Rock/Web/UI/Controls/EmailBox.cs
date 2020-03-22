@@ -116,11 +116,10 @@ namespace Rock.Web.UI.Controls
                 // then added a \s so that spaces are allowed between email addresses
                 if ( this.AllowLava )
                 {
-                    _regexValidator.ValidationExpression = @"({{\s*[\w\.]+\s*}})|(((\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*)*([\s,])*)*)";
+                    _regexValidator.ValidationExpression = @"(((\w+([-+.]\w+)*@({[^}]+}}?))|({[^}]+}}?)@\w+([-.]\w+)*\.\w+([-.]\w+)*|({[^}]+}}?)|(\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*)*([\s,])*)*)";
                 }
                 else
                 {
-                  
                     _regexValidator.ValidationExpression = @"((\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*)*([\s,])*)*";
                 }
             }
@@ -128,7 +127,7 @@ namespace Rock.Web.UI.Controls
             {
                 if ( this.AllowLava )
                 {
-                    _regexValidator.ValidationExpression = @"({{\s*[\w\.]+\s*}})|(\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*)";
+                    _regexValidator.ValidationExpression = @"(\w+([-+.]\w+)*@({[^}]+}}?)+)|({[^}]+}}?)+@\w+([-.]\w+)*\.\w+([-.]\w+)*|({[^}]+}}?)+|(\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*)";
                 }
                 else
                 {

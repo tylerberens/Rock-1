@@ -161,7 +161,7 @@ namespace Rock.Workflow.Action
             }
             else
             {
-                var recipientList = to.SplitDelimitedValues().ToList();
+                var recipientList = to.ResolveMergeFields( mergeFields ).SplitDelimitedValues().ToList();
                 foreach ( string recipient in recipientList )
                 {
                     recipients.Add( RockEmailMessageRecipient.CreateAnonymous( recipient, mergeFields ) );
@@ -170,7 +170,7 @@ namespace Rock.Workflow.Action
 
             if ( recipients.Any() )
             {
-                var emailMessage = new RockEmailMessage( GetAttributeValue( action, "SystemEmail" ).AsGuid() );
+                var emailMessage = new RockEmailMessage( GetAttributeValue( action, "SystemEmail" ).AsGuid(), mergeFields );
                 emailMessage.SetRecipients( recipients );
                 emailMessage.CreateCommunicationRecord = GetAttributeValue( action, "SaveCommunicationHistory" ).AsBoolean();
                 emailMessage.Send();

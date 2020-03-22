@@ -139,16 +139,18 @@ namespace Rock.Communication
         /// Initializes a new instance of the <see cref="RockEmailMessage"/> class.
         /// </summary>
         /// <param name="systemCommunication">The system email.</param>
-        public RockEmailMessage( SystemCommunication systemCommunication ) : this()
+        /// <param name="mergeObjects">The merge objects.</param>
+        public RockEmailMessage( SystemCommunication systemCommunication, IDictionary<string, object> mergeObjects ) : this()
         {
-            InitEmailMessage( systemCommunication );
+            InitEmailMessage( systemCommunication, mergeObjects );
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RockEmailMessage" /> class.
         /// </summary>
         /// <param name="systemGuid">The system communication unique identifier.</param>
-        public RockEmailMessage( Guid systemGuid ) : this()
+        /// <param name="mergeObjects">The merge objects.</param>
+        public RockEmailMessage( Guid systemGuid, IDictionary<string, object> mergeObjects ) : this()
         {
             using ( var rockContext = new RockContext() )
             {
@@ -156,7 +158,7 @@ namespace Rock.Communication
 
                 if ( systemCommunication != null )
                 {
-                    InitEmailMessage( systemCommunication );
+                    InitEmailMessage( systemCommunication, mergeObjects );
                 }
                 else
                 {
@@ -180,7 +182,8 @@ namespace Rock.Communication
         /// Initializes the email message.
         /// </summary>
         /// <param name="systemCommunication">The system email.</param>
-        private void InitEmailMessage( SystemCommunication systemCommunication )
+        /// <param name="mergeObjects">The merge objects.</param>
+        private void InitEmailMessage( SystemCommunication systemCommunication, IDictionary<string, object> mergeObjects )
         {
             if ( systemCommunication == null )
             {
@@ -193,7 +196,7 @@ namespace Rock.Communication
             var recipients = systemCommunication.To.SplitDelimitedValues().ToList().Select( a => RockEmailMessageRecipient.CreateAnonymous( a, null ) ).ToList();
             this.SetRecipients( recipients );
 
-            this.CCEmails = systemCommunication.Cc.SplitDelimitedValues().ToList();
+            this.CCEmails = systemCommunication.Cc.ResolveMergeFields( mergeObjects ).SplitDelimitedValues().ToList();
             this.BCCEmails = systemCommunication.Bcc.SplitDelimitedValues().ToList();
             this.Subject = systemCommunication.Subject;
             this.Message = systemCommunication.Body;

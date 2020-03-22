@@ -196,7 +196,7 @@ namespace RockWeb.Blocks.Finance
                 var confirmationEmailTemplateGuid = GetAttributeValue( "ConfirmationEmailTemplate" ).AsGuidOrNull();
                 if ( confirmationEmailTemplateGuid.HasValue )
                 {
-                    var emailMessage = new RockEmailMessage( confirmationEmailTemplateGuid.Value );
+                    var emailMessage = new RockEmailMessage( confirmationEmailTemplateGuid.Value, mergeFields );
                     emailMessage.AddRecipient( new RockEmailMessageRecipient( person, mergeFields ) );
                     emailMessage.AppRoot = ResolveRockUrl( "~/" );
                     emailMessage.ThemeRoot = ResolveRockUrl( "~~/" );

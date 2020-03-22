@@ -78,7 +78,7 @@ namespace Rock.Jobs
                     var mergeFields = Lava.LavaHelper.GetCommonMergeFields( null );
                     mergeFields.Add( "Communications", communications );
 
-                    var emailMessage = new RockEmailMessage( systemEmailGuid.Value );
+                    var emailMessage = new RockEmailMessage( systemEmailGuid.Value, mergeFields );
                     foreach ( var email in recipientEmails )
                     {
                         emailMessage.AddRecipient( RockEmailMessageRecipient.CreateAnonymous( email, mergeFields ) );

@@ -94,6 +94,7 @@ namespace Rock.Jobs
                     }
                 }
 
+                var mergeFields = Lava.LavaHelper.GetCommonMergeFields( null );
                 var recipients = new List<RockEmailMessageRecipient>();
                 if( resultSet.Any() )
                 {
@@ -103,13 +104,13 @@ namespace Rock.Jobs
                         {
                             continue;
                         }
-                        var mergeFields = Lava.LavaHelper.GetCommonMergeFields( null );
-                        mergeFields.Add( "Person", person );
-                        recipients.Add( new RockEmailMessageRecipient( person, mergeFields ) );
+                        var recipientMergeFields = new Dictionary<string, object>( mergeFields );
+                        recipientMergeFields.Add( "Person", person );
+                        recipients.Add( new RockEmailMessageRecipient( person, recipientMergeFields ) );
                     }
                 }
 
-                var emailMessage = new RockEmailMessage( emailTemplateGuid.Value );
+                var emailMessage = new RockEmailMessage( emailTemplateGuid.Value, mergeFields );
                 emailMessage.SetRecipients( recipients );
 
                 var errors = new List<string>();

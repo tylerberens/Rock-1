@@ -489,7 +489,7 @@ Thank you for logging in, however, we need to confirm the email associated with 
             var recipients = new List<RockEmailMessageRecipient>();
             recipients.Add( new RockEmailMessageRecipient( userLogin.Person, mergeFields ) );
 
-            var message = new RockEmailMessage( GetAttributeValue( "ConfirmAccountTemplate" ).AsGuid() );
+            var message = new RockEmailMessage( GetAttributeValue( "ConfirmAccountTemplate" ).AsGuid(), mergeFields );
             message.SetRecipients( recipients );
             message.AppRoot = ResolveRockUrl( "~/" );
             message.ThemeRoot = ResolveRockUrl( "~~/" );

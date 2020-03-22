@@ -1196,7 +1196,7 @@ cbDidNotMeet.ClientID );
 
                 foreach ( var recipient in recipients )
                 {
-                    var emailMessage = new RockEmailMessage( GetAttributeValue( "AttendanceEmailTemplate" ).AsGuid() );
+                    var emailMessage = new RockEmailMessage( GetAttributeValue( "AttendanceEmailTemplate" ).AsGuid(), mergeObjects );
                     emailMessage.AddRecipient( new RockEmailMessageRecipient( recipient, mergeObjects ) );
                     emailMessage.CreateCommunicationRecord = false;
                     emailMessage.Send();

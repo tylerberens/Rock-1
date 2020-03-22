@@ -1076,27 +1076,29 @@ namespace Rock.Utility
             var recipients = new List<RockEmailMessageRecipient>();
             using ( RockContext rockContext = new RockContext() )
             {
+                var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null );
+                mergeFields.Add( "SparkDataService", "National Change of Address (NCOA)" );
+                mergeFields.Add( "SparkDataConfig", sparkDataConfig );
+                mergeFields.Add( "Status", status );
+
                 Group group = new GroupService( rockContext ).GetNoTracking( sparkDataConfig.GlobalNotificationApplicationGroupId.Value );
 
                 foreach ( var groupMember in group.Members )
                 {
                     if ( groupMember.GroupMemberStatus == GroupMemberStatus.Active )
                     {
-                        var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null );
-                        mergeFields.Add( "Person", groupMember.Person );
-                        mergeFields.Add( "GroupMember", groupMember );
-                        mergeFields.Add( "Group", groupMember.Group );
-                        mergeFields.Add( "SparkDataService", "National Change of Address (NCOA)" );
-                        mergeFields.Add( "SparkDataConfig", sparkDataConfig );
-                        mergeFields.Add( "Status", status );
-                        recipients.Add( new RockEmailMessageRecipient( groupMember.Person, mergeFields ) );
+                        var recipientMergeFields = new Dictionary<string, object>( mergeFields );
+                        recipientMergeFields.Add( "Person", groupMember.Person );
+                        recipientMergeFields.Add( "GroupMember", groupMember );
+                        recipientMergeFields.Add( "Group", groupMember.Group );
+                        recipients.Add( new RockEmailMessageRecipient( groupMember.Person, recipientMergeFields ) );
                     }
                 }
 
                 var emailService = new SystemCommunicationService( rockContext );
                 var systemEmail = emailService.GetNoTracking( SystemGuid.SystemCommunication.SPARK_DATA_NOTIFICATION.AsGuid() );
 
-                var emailMessage = new RockEmailMessage( systemEmail.Guid );
+                var emailMessage = new RockEmailMessage( systemEmail.Guid, mergeFields );
                 emailMessage.SetRecipients( recipients );
                 emailMessage.Send();
             }

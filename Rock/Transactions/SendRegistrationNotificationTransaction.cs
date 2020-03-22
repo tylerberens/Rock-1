@@ -123,7 +123,7 @@ namespace Rock.Transactions
 
                     if ( messageRecipients.Any() )
                     {
-                        var emailMessage = new RockEmailMessage( Rock.SystemGuid.SystemCommunication.REGISTRATION_NOTIFICATION.AsGuid() );
+                        var emailMessage = new RockEmailMessage( Rock.SystemGuid.SystemCommunication.REGISTRATION_NOTIFICATION.AsGuid(), mergeFields );
                         emailMessage.AdditionalMergeFields = mergeFields;
                         emailMessage.SetRecipients( messageRecipients );
                         emailMessage.AppRoot = AppRoot;

@@ -450,7 +450,7 @@ namespace Rock.Jobs
 
                 var recipients = new List<RockEmailMessageRecipient> { recipient };
 
-                var emailMessage = new RockEmailMessage( SystemEmailTemplateGuid.Value );
+                var emailMessage = new RockEmailMessage( SystemEmailTemplateGuid.Value, mergeFields );
 
                 emailMessage.SetRecipients( recipients );
 

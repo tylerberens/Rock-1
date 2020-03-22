@@ -272,17 +272,19 @@ namespace Rock.Jobs
                 {
                     Person approverPerson = approverNotesToApprove.Key;
                     List<Note> noteList = approverNotesToApprove.Value;
+
+                    var mergeFields = new Dictionary<string, object>( _defaultMergeFields );
+                    mergeFields.Add( "ApproverPerson", approverPerson );
+                    mergeFields.Add( "NoteList", noteList );
+
                     if ( !string.IsNullOrEmpty( approverPerson.Email ) && approverPerson.IsEmailActive && noteList.Any() )
                     {
-                        var mergeFields = new Dictionary<string, object>( _defaultMergeFields );
-                        mergeFields.Add( "ApproverPerson", approverPerson );
-                        mergeFields.Add( "NoteList", noteList );
                         recipients.Add( new RockEmailMessageRecipient( approverPerson, mergeFields ) );
                     }
 
                     if ( _noteApprovalNotificationEmailGuid.HasValue )
                     {
-                        var emailMessage = new RockEmailMessage( _noteApprovalNotificationEmailGuid.Value );
+                        var emailMessage = new RockEmailMessage( _noteApprovalNotificationEmailGuid.Value, mergeFields );
                         emailMessage.SetRecipients( recipients );
                         emailMessage.Send( out errors );
                         _noteApprovalNotificationsSent += recipients.Count();
@@ -363,17 +365,18 @@ namespace Rock.Jobs
                         // make sure a person doesn't get a notification on a note that they wrote
                         noteList = noteList.Where( a => a.EditedByPersonAlias?.PersonId != personToNotify.Id ).ToList();
 
+                        var mergeFields = new Dictionary<string, object>( _defaultMergeFields );
+                        mergeFields.Add( "Person", personToNotify );
+                        mergeFields.Add( "NoteList", noteList );
+
                         if ( !string.IsNullOrEmpty( personToNotify.Email ) && personToNotify.IsEmailActive && personToNotify.EmailPreference != EmailPreference.DoNotEmail && noteList.Any() )
                         {
-                            var mergeFields = new Dictionary<string, object>( _defaultMergeFields );
-                            mergeFields.Add( "Person", personToNotify );
-                            mergeFields.Add( "NoteList", noteList );
                             recipients.Add( new RockEmailMessageRecipient( personToNotify, mergeFields ) );    
                         }
 
                         if ( _noteWatchNotificationEmailGuid.HasValue )
                         {
-                            var emailMessage = new RockEmailMessage( _noteWatchNotificationEmailGuid.Value );
+                            var emailMessage = new RockEmailMessage( _noteWatchNotificationEmailGuid.Value, mergeFields );
                             emailMessage.SetRecipients( recipients );
                             emailMessage.Send( out errors );
                             _noteWatchNotificationsSent += recipients.Count();

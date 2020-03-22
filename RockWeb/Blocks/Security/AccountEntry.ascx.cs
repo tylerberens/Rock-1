@@ -760,7 +760,7 @@ namespace RockWeb.Blocks.Security
 
                 mergeObjects.Add( "Results", results.ToArray() );
 
-                var emailMessage = new RockEmailMessage( GetAttributeValue( AttributeKeys.ForgotUsernameTemplate ).AsGuid() );
+                var emailMessage = new RockEmailMessage( GetAttributeValue( AttributeKeys.ForgotUsernameTemplate ).AsGuid(), mergeObjects );
                 emailMessage.AddRecipient( new RockEmailMessageRecipient( person, mergeObjects ) );
                 emailMessage.AppRoot = ResolveRockUrl( "~/" );
                 emailMessage.ThemeRoot = ResolveRockUrl( "~~/" );
@@ -799,7 +799,7 @@ namespace RockWeb.Blocks.Security
                 mergeObjects.Add( "Person", person );
                 mergeObjects.Add( "User", user );
 
-                var emailMessage = new RockEmailMessage( GetAttributeValue( AttributeKeys.ConfirmAccountTemplate ).AsGuid() );
+                var emailMessage = new RockEmailMessage( GetAttributeValue( AttributeKeys.ConfirmAccountTemplate ).AsGuid(), mergeObjects );
                 emailMessage.AddRecipient( new RockEmailMessageRecipient( person, mergeObjects ) );
                 emailMessage.AppRoot = ResolveRockUrl( "~/" );
                 emailMessage.ThemeRoot = ResolveRockUrl( "~~/" );
@@ -843,7 +843,7 @@ namespace RockWeb.Blocks.Security
                         mergeObjects.Add( "Person", person );
                         mergeObjects.Add( "User", user );
 
-                        var emailMessage = new RockEmailMessage( GetAttributeValue( AttributeKeys.AccountCreatedTemplate ).AsGuid() );
+                        var emailMessage = new RockEmailMessage( GetAttributeValue( AttributeKeys.AccountCreatedTemplate ).AsGuid(), mergeObjects );
                         emailMessage.AddRecipient( new RockEmailMessageRecipient( person, mergeObjects ) );
                         emailMessage.AppRoot = ResolveRockUrl( "~/" );
                         emailMessage.ThemeRoot = ResolveRockUrl( "~~/" );
