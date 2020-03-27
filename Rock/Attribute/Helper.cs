@@ -830,8 +830,11 @@ namespace Rock.Attribute
         /// </remarks>
         public static void SaveAttributeValues( Rock.Attribute.IHasAttributes model, RockContext rockContext = null )
         {
+
             if ( model != null && model.Attributes != null && model.AttributeValues != null && model.Attributes.Any() && model.AttributeValues.Any() )
             {
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
                 rockContext = rockContext ?? new RockContext();
                 var attributeValueService = new Model.AttributeValueService( rockContext );
 
@@ -873,6 +876,9 @@ namespace Rock.Attribute
                 {
                     rockContext.SaveChanges();
                 }
+
+                stopwatch.Stop();
+                System.Diagnostics.Debug.WriteLine( $@"Saving attributes for model {model.GetType()} took {stopwatch.ElapsedMilliseconds} ms" );
             }
         }
 
