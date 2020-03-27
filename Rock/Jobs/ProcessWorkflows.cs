@@ -21,6 +21,7 @@ using System.Text;
 
 using Quartz;
 
+using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
 
@@ -31,8 +32,24 @@ namespace Rock.Jobs
     /// Job to process the persisted active workflows
     /// </summary>
     [DisallowConcurrentExecution]
+
+    [IntegerField( "Command Timeout",
+        Description = "The time in seconds to allow a command to run. If not set the default of the DB provider is used, which is 30 seconds for SQL Server.",
+        IsRequired = false,
+        Order = 0,
+        Key = AttributeKey.CommandTimeout )]
+
     public class ProcessWorkflows : IJob
     {
+        #region Attribute Keys
+
+        private static class AttributeKey
+        {
+            public const string CommandTimeout = "CommandTimeout";
+        }
+
+        #endregion Attribute Keys
+
         /// <summary> 
         /// Empty constructor for job initialization
         /// <para>
@@ -64,6 +81,7 @@ namespace Rock.Jobs
             int workflowExceptions = 0;
             var processingErrors = new List<string>();
             var exceptionMsgs = new List<string>();
+            int? commandTimeout = context.JobDetail.JobDataMap.GetString( AttributeKey.CommandTimeout ).AsIntegerOrNull();
 
             foreach ( var workflowId in new WorkflowService( new RockContext() )
                 .GetActive()
@@ -88,7 +106,7 @@ namespace Rock.Jobs
                                 {
                                     var errorMessages = new List<string>();
 
-                                    var processed = workflowService.Process( workflow, out errorMessages );
+                                    var processed = workflowService.Process( workflow, null, commandTimeout, out errorMessages );
                                     if ( processed )
                                     {
                                         workflowsProcessed++;

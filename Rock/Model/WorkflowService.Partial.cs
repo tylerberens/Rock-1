@@ -39,18 +39,33 @@ namespace Rock.Model
         }
 
         /// <summary>
+        /// Processes the specified workflow.
+        /// </summary>
+        /// <param name="workflow">The workflow.</param>
+        /// <param name="entity">The entity.</param>
+        /// <param name="errorMessages">The error messages.</param>
+        /// <returns></returns>
+        public bool Process( Workflow workflow, object entity, out List<string> errorMessages )
+        {
+            return Process( workflow, entity, null, out errorMessages );
+        }
+
+        /// <summary>
         /// Processes the specified <see cref="Rock.Model.Workflow" />
         /// </summary>
         /// <param name="workflow">The <see cref="Rock.Model.Workflow" /> instance to process.</param>
         /// <param name="entity">The entity.</param>
+        /// <param name="dbContextCommandTimeout">The database context command timeout.</param>
         /// <param name="errorMessages">A <see cref="System.Collections.Generic.List{String}" /> that contains any error messages that were returned while processing the <see cref="Rock.Model.Workflow" />.</param>
         /// <returns></returns>
-        public bool Process( Workflow workflow, object entity, out List<string> errorMessages )
+        public bool Process( Workflow workflow, object entity, int? dbContextCommandTimeout, out List<string> errorMessages )
         {
             var workflowType = WorkflowTypeCache.Get( workflow.WorkflowTypeId );
             if ( workflowType != null && ( workflowType.IsActive ?? true ) )
             {
                 var rockContext = (RockContext)this.Context;
+
+                rockContext.Database.CommandTimeout = dbContextCommandTimeout == null ? null : dbContextCommandTimeout;
 
                 if ( workflow.IsPersisted )
                 {
