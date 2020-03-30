@@ -882,6 +882,56 @@ namespace Rock.Attribute
             }
         }
 
+        public static void NewSaveAttributeValues( Rock.Attribute.IHasAttributes model, RockContext rockContext = null )
+        {
+            if ( model != null && model.Attributes != null && model.AttributeValues != null && model.Attributes.Any() && model.AttributeValues.Any() )
+            {
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+                rockContext = rockContext ?? new RockContext();
+                var attributeValueService = new Model.AttributeValueService( rockContext );
+
+                var attributeIds = model.Attributes.Select( y => y.Value.Id ).ToList();
+                var valueQuery = attributeValueService.Queryable().Where( x => attributeIds.Contains( x.AttributeId ) && x.EntityId == model.Id );
+
+                var attributeValues = valueQuery.ToDictionary( x => x.AttributeKey );
+                foreach ( var attribute in model.Attributes.Values )
+                {
+                    var loopStopwatch = System.Diagnostics.Stopwatch.StartNew();
+                    if ( model.AttributeValues.ContainsKey( attribute.Key ) )
+                    {
+                        if ( attributeValues.ContainsKey( attribute.Key ) )
+                        {
+                            if ( attributeValues[attribute.Key].Value != model.AttributeValues[attribute.Key].Value )
+                            {
+                                attributeValues[attribute.Key].Value = model.AttributeValues[attribute.Key].Value;
+                                rockContext.SaveChanges();
+                            }
+                        }
+                        else
+                        {
+                            // only save a new AttributeValue if the value has a nonempty value
+                            var value = model.AttributeValues[attribute.Key].Value;
+                            if ( value.IsNotNullOrWhiteSpace() )
+                            {
+                                var attributeValue = new AttributeValue();
+                                attributeValue.AttributeId = attribute.Id;
+                                attributeValue.EntityId = model.Id;
+                                attributeValue.Value = value;
+                                attributeValueService.Add( attributeValue );
+                                rockContext.SaveChanges();
+                            }
+                        }
+                    }
+                    loopStopwatch.Stop();
+                    System.Diagnostics.Debug.WriteLine( $@"Saving attribute {attribute.Name} for model {model.GetType()} took {stopwatch.ElapsedMilliseconds} ms" );
+                }
+
+                stopwatch.Stop();
+                System.Diagnostics.Debug.WriteLine( $@"Saving attributes for model {model.GetType()} took {stopwatch.ElapsedMilliseconds} ms" );
+            }
+        }
+
         /// <summary>
         /// Saves an attribute value.
         /// </summary>

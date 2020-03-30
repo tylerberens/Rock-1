@@ -64,8 +64,8 @@ namespace Rock.Model
             if ( workflowType != null && ( workflowType.IsActive ?? true ) )
             {
                 var rockContext = (RockContext)this.Context;
-
                 rockContext.Database.CommandTimeout = dbContextCommandTimeout == null ? null : dbContextCommandTimeout;
+                rockContext.SqlLogging( true );
 
                 if ( workflow.IsPersisted )
                 {
@@ -118,6 +118,7 @@ namespace Rock.Model
                     }
                 }
 
+                rockContext.SqlLogging( false );
                 return result;
             }
 
