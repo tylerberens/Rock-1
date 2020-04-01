@@ -379,6 +379,10 @@ namespace Rock.Communication.Transport
                     if ( callbackUrl.IsNotNullOrWhiteSpace() )
                     {
                         createMessageOptions.StatusCallback = new Uri( callbackUrl );
+                        if ( System.Web.Hosting.HostingEnvironment.IsDevelopmentEnvironment )
+                        {
+                            createMessageOptions.StatusCallback = null;
+                        }
                     }
 
                     // if this is the final chunk, add the attachment(s) 
@@ -388,11 +392,6 @@ namespace Rock.Communication.Transport
                         {
                             createMessageOptions.MediaUrl = attachmentMediaUrls;
                         }
-                    }
-
-                    if ( System.Web.Hosting.HostingEnvironment.IsDevelopmentEnvironment )
-                    {
-                        createMessageOptions.StatusCallback = null;
                     }
 
                     response = MessageResource.Create( createMessageOptions );
@@ -409,16 +408,15 @@ namespace Rock.Communication.Transport
                 if ( callbackUrl.IsNotNullOrWhiteSpace() )
                 {
                     createMessageOptions.StatusCallback = new Uri( callbackUrl );
+                    if ( System.Web.Hosting.HostingEnvironment.IsDevelopmentEnvironment )
+                    {
+                        createMessageOptions.StatusCallback = null;
+                    }
                 }
 
                 if ( attachmentMediaUrls.Any() )
                 {
                     createMessageOptions.MediaUrl = attachmentMediaUrls;
-                }
-
-                if ( System.Web.Hosting.HostingEnvironment.IsDevelopmentEnvironment && !callbackUrl.Contains( ".ngrok.io" ) )
-                {
-                    createMessageOptions.StatusCallback = null;
                 }
 
                 response = MessageResource.Create( createMessageOptions );
