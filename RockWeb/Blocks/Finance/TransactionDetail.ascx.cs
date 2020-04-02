@@ -2104,7 +2104,7 @@ namespace RockWeb.Blocks.Finance
         /// <param name="transactionDetail">The transaction detail.</param>
         private static void ApplyFeeValueToField( CurrencyBox tbSingleAccountFeeAmount, FinancialTransactionDetail transactionDetail )
         {
-            tbSingleAccountFeeAmount.Text = GetFeeAsText( transactionDetail.FeeAmount );
+            tbSingleAccountFeeAmount.Value = transactionDetail.FeeAmount;
             tbSingleAccountFeeAmount.Visible = transactionDetail.FeeAmount.HasValue;
         }
 

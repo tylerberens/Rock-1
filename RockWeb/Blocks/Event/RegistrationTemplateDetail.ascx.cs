@@ -1942,7 +1942,7 @@ The logged-in person's information will be used to complete the registrar inform
             if ( rblDiscountType.SelectedValue == "Amount" )
             {
                 discount.DiscountPercentage = 0.0m;
-                discount.DiscountAmount = cbDiscountAmount.Text.AsDecimal();
+                discount.DiscountAmount = cbDiscountAmount.Value.GetValueOrDefault(0);
             }
             else
             {
@@ -3383,7 +3383,7 @@ The logged-in person's information will be used to complete the registrar inform
             hfDiscountGuid.Value = discount.Guid.ToString();
             tbDiscountCode.Text = discount.Code;
             nbDiscountPercentage.Text = ( discount.DiscountPercentage * 100.0m ).ToString( "N0" );
-            cbDiscountAmount.Text = discount.DiscountAmount.ToString();
+            cbDiscountAmount.Value = discount.DiscountAmount;
 
             if ( discount.DiscountAmount > 0 )
             {
@@ -3561,11 +3561,11 @@ The logged-in person's information will be used to complete the registrar inform
                 // if the Cost is 0 (vs 0.00M), set the text to blank since they haven't entered a value
                 if ( registrationTemplateFeeItem.Cost.ToString() == "0" )
                 {
-                    cbFeeItemCost.Text = string.Empty;
+                    cbFeeItemCost.Value = null;
                 }
                 else
                 {
-                    cbFeeItemCost.Text = registrationTemplateFeeItem.Cost.ToString();
+                    cbFeeItemCost.Value = registrationTemplateFeeItem.Cost;
                 }
 
                 nbMaximumUsageCount.Text = registrationTemplateFeeItem.MaximumUsageCount.ToString();
