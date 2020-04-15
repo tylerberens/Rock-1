@@ -266,7 +266,7 @@ namespace Rock.Utility
                     }
                     else
                     {
-                        
+
                         if ( attributeCache.EntityTypeQualifierColumn == "GroupTypeId" && parameterExpression.Type == typeof( Rock.Model.GroupMember ) )
                         {
                             // Special Case for GroupMember with Qualifier of 'GroupTypeId' (which is really Group.GroupTypeId)
@@ -292,6 +292,25 @@ namespace Rock.Utility
                         MemberExpression entityQualiferColumnExpression = Expression.Property( qualifierParameterExpression, attributeCache.EntityTypeQualifierColumn );
                         object entityTypeQualifierValueAsType = Convert.ChangeType( attributeCache.EntityTypeQualifierValue, entityQualiferColumnExpression.Type );
                         Expression entityQualiferColumnEqualExpression = Expression.Equal( entityQualiferColumnExpression, Expression.Constant( entityTypeQualifierValueAsType, entityQualiferColumnExpression.Type ) );
+
+                        // If the qualifier Column is GroupTypeId, we'll have to do an OR clause of all the GroupTypes that inherit from this
+                        // This would effectively add something like 'WHERE ([GroupTypeId] = 10) OR ([GroupTypeId] = 12) OR ([GroupTypeId] = 17)' to the WHERE clause
+                        if ( attributeCache.EntityTypeQualifierColumn == "GroupTypeId" && attributeCache.EntityTypeQualifierValue.AsIntegerOrNull().HasValue )
+                        {
+                            var baseInheritedGroupTypeId = attributeCache.EntityTypeQualifierValue.AsInteger();
+                            List<int> childGroupTypeIds;
+                            using ( var groupTypeRockContext = new RockContext() )
+                            {
+                                var groupTypeService = new GroupTypeService( groupTypeRockContext );
+                                childGroupTypeIds = groupTypeService.GetAllAssociatedDescendents( baseInheritedGroupTypeId ).Select( a => a.Id ).ToList();
+                            }
+
+                            foreach ( var childGroupTypeId in childGroupTypeIds )
+                            {
+                                Expression inheritedEntityQualiferColumnEqualExpression = Expression.Equal( entityQualiferColumnExpression, Expression.Constant( childGroupTypeId ) );
+                                entityQualiferColumnEqualExpression = Expression.Or( entityQualiferColumnEqualExpression, inheritedEntityQualiferColumnEqualExpression );
+                            }
+                        }
 
                         expression = Expression.And( entityQualiferColumnEqualExpression, expression );
                     }
