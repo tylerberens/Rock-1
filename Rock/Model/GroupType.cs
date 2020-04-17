@@ -858,7 +858,7 @@ namespace Rock.Model
             set { _triggers = value; }
         }
         private ICollection<GroupMemberWorkflowTrigger> _triggers;
-        
+
         /// <summary>
         /// Gets or sets the group schedule exclusions.
         /// </summary>
@@ -1020,8 +1020,10 @@ namespace Rock.Model
         /// <summary>
         /// A dictionary of actions that this class supports and the description of each.
         /// </summary>
-        public override Dictionary<string, string> SupportedActions {
-            get {
+        public override Dictionary<string, string> SupportedActions
+        {
+            get
+            {
                 if ( _supportedActions == null )
                 {
                     _supportedActions = new Dictionary<string, string>();
@@ -1114,7 +1116,7 @@ namespace Rock.Model
                 var changeEntry = dbContext.ChangeTracker.Entries<GroupType>().Where( a => a.Entity == this ).FirstOrDefault();
                 if ( changeEntry != null )
                 {
-                    var originalIndexState = (bool)changeEntry.OriginalValues["IsIndexEnabled"];
+                    var originalIndexState = ( bool ) changeEntry.OriginalValues["IsIndexEnabled"];
 
                     if ( originalIndexState == true && IsIndexEnabled == false )
                     {
@@ -1169,6 +1171,39 @@ namespace Rock.Model
                     groupType = null;
                 }
             }
+
+            return groupTypeIds;
+        }
+
+        /// <summary>
+        /// Gets a list of GroupType Ids, that identifies the
+        /// inheritence tree.
+        /// </summary>
+        /// <param name="rockContext">The database context to operate in.</param>
+        /// <returns>A list of GroupType Ids, including our own Id, that identifies the inheritance tree.</returns>
+        public List<int> GetDerivedGroupTypeIds( Rock.Data.RockContext rockContext )
+        {
+            rockContext = rockContext ?? new RockContext();
+
+            var groupTypeService = new GroupTypeService( rockContext );
+            var groupTypeIds = new List<int>();
+            var childGroupTypeIds = new List<int>() { this.Id };
+
+            //
+            // Loop until we find a recursive loop or run out of parent group types.
+            //
+            do
+            {
+                childGroupTypeIds = groupTypeService
+                    .Queryable().AsNoTracking().Where( t => t.InheritedGroupTypeId.HasValue && childGroupTypeIds.Contains( t.InheritedGroupTypeId.Value ) )
+                    .Select( a => a.Id )
+                    .ToList();
+
+                if ( childGroupTypeIds != null && childGroupTypeIds.Any() )
+                {
+                    groupTypeIds.AddRange( childGroupTypeIds );
+                }
+            } while ( childGroupTypeIds.Any() );
 
             return groupTypeIds;
         }
