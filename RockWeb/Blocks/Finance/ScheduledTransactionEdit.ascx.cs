@@ -419,6 +419,11 @@ achieve our mission.  We are so grateful for your commitment.
         {
             string errorMessage = string.Empty;
 
+            if ( !Page.IsValid )
+            {
+                return;
+            }
+
             switch ( hfCurrentPage.Value.AsInteger() )
             {
                 case 1:
@@ -1420,11 +1425,13 @@ achieve our mission.  We are so grateful for your commitment.
 
         // Disable the submit button as soon as it's clicked to prevent double-clicking
         $('a[id$=""btnNext""]').on('click', function() {{
-			$(this).addClass('disabled');
-			$(this).unbind('click');
-			$(this).on('click', function () {{
-				return false;
-			}});
+            if (Page_ClientValidate()) {{
+			    $(this).addClass('disabled');
+			    $(this).unbind('click');
+			    $(this).on('click', function () {{
+				    return false;
+			    }});
+            }}
         }});
     }});
 

@@ -28,7 +28,7 @@
                                         <asp:Repeater ID="rptAccountList" runat="server">
                                             <ItemTemplate>
                                                 <asp:HiddenField ID="hfAccountId" runat="server" Value='<%# Eval("Id") %>' />
-                                                <Rock:CurrencyBox ID="txtAccountAmount" runat="server" Label='<%# Eval("PublicName") %>' Text='<%# Eval("AmountFormatted") %>' Placeholder="0.00" CssClass="account-amount" />
+                                                <Rock:CurrencyBox ID="txtAccountAmount" runat="server" Label='<%# Eval("PublicName") %>' Text='<%# Eval("AmountFormatted") %>' Placeholder="0.00" CssClass="account-amount" ValidatorDisplayMode="None" />
                                             </ItemTemplate>
                                         </asp:Repeater>
                                         <Rock:ButtonDropDownList ID="btnAddAccount" runat="server" Visible="false" Label=" "
@@ -179,6 +179,7 @@
                     <asp:Literal ID="lSuccessFooter" runat="server"></asp:Literal>
                 </asp:Panel>
 
+                <asp:ValidationSummary ID="vsSummary" runat="server" HeaderText="Please correct the following:" CssClass="alert alert-validation" />
                 <Rock:NotificationBox ID="nbMessage" runat="server" Visible="false"></Rock:NotificationBox>
 
                 <div id="divActions" runat="server" class="actions">

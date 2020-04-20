@@ -34,7 +34,7 @@
                                         <asp:Repeater ID="rptAccountList" runat="server" OnItemDataBound="rptAccountList_ItemDataBound">
                                             <ItemTemplate>
                                                 <Rock:RockLiteral ID="txtAccountAmountLiteral" runat="server" Visible="false" />
-                                                <Rock:CurrencyBox ID="txtAccountAmount" runat="server" Placeholder="0.00" CssClass="account-amount" />
+                                                <Rock:CurrencyBox ID="txtAccountAmount" runat="server" Placeholder="0.00" CssClass="account-amount" ValidatorDisplayMode="None" MinimumValue="0" MinimumValueBoundaryType="Exclusive" />
                                             </ItemTemplate>
                                         </asp:Repeater>
 
@@ -208,7 +208,7 @@
             <div class="panel panel-default no-border">
                 <div class="panel-body">
                     <Rock:NotificationBox ID="nbSelectionMessage" runat="server" Visible="false"></Rock:NotificationBox>
-
+                    <asp:ValidationSummary ID="vsSummary" runat="server" HeaderText="Please correct the following:" CssClass="alert alert-validation" />
                     <div class="actions clearfix">
                         <a id="lHistoryBackButton" runat="server" class="btn btn-link" href="javascript: window.history.back();" >Previous</a>
                         <asp:LinkButton ID="btnPaymentInfoNext" runat="server" Text="Next" CssClass="btn btn-primary pull-right" OnClick="btnPaymentInfoNext_Click" />

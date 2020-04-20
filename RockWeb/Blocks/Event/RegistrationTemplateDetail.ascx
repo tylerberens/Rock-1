@@ -511,7 +511,7 @@
                             <asp:ListItem Text="Amount" Value="Amount" />
                         </Rock:RockRadioButtonList>
                         <Rock:NumberBox ID="nbDiscountPercentage" runat="server" AppendText="%" CssClass="input-width-md" Label="Discount Percentage" NumberType="Integer" ValidationGroup="Discount" />
-                        <Rock:CurrencyBox ID="cbDiscountAmount" runat="server" CssClass="input-width-md" Label="Discount Amount" ValidationGroup="Discount" />
+                        <Rock:CurrencyBox ID="cbDiscountAmount" runat="server" CssClass="input-width-md" Label="Discount Amount" ValidationGroup="Discount" MinimumValue="0" MinimumValueBoundaryType="Exclusive" />
                         <Rock:RockCheckBox ID="cbcAutoApplyDiscount" runat="server" Label="Auto Apply Discount"
                             Help="Will automatically apply the discount if the registration meets the criteria.  If multiple automatic discounts exist, only the first one that meets the criteria will be applied." />
                     </div>

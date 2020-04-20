@@ -124,7 +124,7 @@
                                             <div class="form-horizontal label-auto js-accounts">
                                                 <asp:Repeater ID="rptAccounts" runat="server">
                                                     <ItemTemplate>
-                                                        <Rock:CurrencyBox ID="cbAccountAmount" runat="server" Label='<%#Eval( "Name" )%>' data-account-id='<%#Eval("Id")%>' CssClass="js-account-amount input-width-md" onkeydown="javascript:return handleAmountBoxKeyPress(this, event.keyCode);" onkeyup="javascript:handleAmountBoxKeyUp(event.keyCode)" />
+                                                        <Rock:CurrencyBox ID="cbAccountAmount" runat="server" Label='<%#Eval( "Name" )%>' data-account-id='<%#Eval("Id")%>' CssClass="js-account-amount input-width-md" onkeydown="javascript:return handleAmountBoxKeyPress(this, event.keyCode);" onkeyup="javascript:handleAmountBoxKeyUp(event.keyCode)" ValidationGroup="vgTransactionMatch" />
                                                     </ItemTemplate>
                                                 </asp:Repeater>
 
@@ -133,7 +133,7 @@
                                                         <Rock:RockDropDownList ID="ddlAddAccount" runat="server" CssClass="hidden js-add-account" EnhanceForLongLists="true" />
                                                     </div>
                                                     <div class="control-wrapper">
-                                                        <Rock:CurrencyBox ID="cbOptionalAccountAmount" runat="server" CssClass="input-width-md" />
+                                                        <Rock:CurrencyBox ID="cbOptionalAccountAmount" runat="server" CssClass="input-width-md" ValidationGroup="vgTransactionMatch" />
                                                     </div>
                                                 </asp:Panel>
                                             </div>
@@ -150,7 +150,7 @@
                                         <Rock:DynamicPlaceholder ID="phPaymentAttributeEdits" runat="server" />
                                     </div>
                                 </div>
-
+                                
                                 <Rock:NotificationBox ID="nbSaveError" runat="server" NotificationBoxType="Danger" Dismissable="true" Text="Warning. Unable to save..." />
 
                                 <%-- note: using disabled instead of readonly so that we can set the postback value in javascript --%>
@@ -161,13 +161,14 @@
                                 <Rock:HiddenFieldWithClass ID="hfOriginalTotalAmount" runat="server" CssClass="js-original-total-amount" />
                                 <Rock:HiddenFieldWithClass ID="hfCurrencySymbol" runat="server" CssClass="js-currencysymbol" />
 
-                                <Rock:RockTextBox ID="tbSummary" runat="server" Label="Summary" TextMode="MultiLine" Rows="2" />
+                                <Rock:RockTextBox ID="tbSummary" runat="server" Label="Summary" TextMode="MultiLine" Rows="2" />                                
                             </div>
                         </div>
                     </div>
 
                     <div class="row actions">
                         <div class="col-md-12">
+                            <asp:ValidationSummary ID="vsTransactionMatch" runat="server" HeaderText="Please correct the following:" CssClass="alert alert-validation" ValidationGroup="vgTransactionMatch" />
                             <asp:LinkButton ID="btnPrevious" runat="server" CssClass="btn" OnClick="btnPrevious_Click">Previous</asp:LinkButton>
                             <div class="pull-right">
                                 <asp:LinkButton ID="btnCancel" runat="server" CssClass="btn btn-default" Visible="false" OnClick="btnCancel_Click">Cancel</asp:LinkButton>
@@ -455,6 +456,9 @@
 
             // handle btnNext so that it warns if the total amount was changed from the original (if there was an amount to start with)
             function verifyUnallocated(e) {
+                if (!Page_ClientValidate()) {
+                    return false;
+                }
                 $unallocatedAmountEl = $('#<%=pnlView.ClientID%>').find('.js-unallocated-amount');
                 if ($unallocatedAmountEl.is(':visible')) {
                     if (Number($unallocatedAmountEl.find('input').val()) != 0) {
