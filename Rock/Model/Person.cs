@@ -30,11 +30,13 @@ using System.Net;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Web;
+using System.Linq.Expressions;
 
 using Rock.Data;
 using Rock.UniversalSearch;
 using Rock.UniversalSearch.IndexModels;
 using Rock.Web.Cache;
+using LinqKit;
 
 namespace Rock.Model
 {
@@ -3636,6 +3638,42 @@ namespace Rock.Model
             }
 
             return qryWithGradeOffset.Select( a => a.Person );
+        }
+
+
+
+        public static IQueryable<Person> WhereLastNameContains( this IQueryable<Person> personQry, string[] lastNamePatterns )
+        {
+            var predicate = PredicateBuilder.False<Person>();
+
+            foreach ( string pattern in lastNamePatterns )
+            {
+                predicate = predicate.Or( p => p.LastName.Contains( pattern ) );
+            }
+            
+            return personQry.AsExpandable().Where( predicate );
+        }
+
+    }
+    public static class PredicateBuilder
+    {
+        public static Expression<Func<T, bool>> True<T>() { return f => true; }
+        public static Expression<Func<T, bool>> False<T>() { return f => false; }
+
+        public static Expression<Func<T, bool>> Or<T>(this Expression<Func<T, bool>> expr1,
+                                                            Expression<Func<T, bool>> expr2)
+        {
+            var invokedExpr = Expression.Invoke(expr2, expr1.Parameters.Cast<Expression>());
+            return Expression.Lambda<Func<T, bool>>
+                  (Expression.OrElse(expr1.Body, invokedExpr), expr1.Parameters);
+        }
+
+        public static Expression<Func<T, bool>> And<T>(this Expression<Func<T, bool>> expr1,
+                                                             Expression<Func<T, bool>> expr2)
+        {
+            var invokedExpr = Expression.Invoke(expr2, expr1.Parameters.Cast<Expression>());
+            return Expression.Lambda<Func<T, bool>>
+                  (Expression.AndAlso(expr1.Body, invokedExpr), expr1.Parameters);
         }
     }
 
