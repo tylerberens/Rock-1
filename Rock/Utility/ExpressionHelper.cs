@@ -297,17 +297,20 @@ namespace Rock.Utility
                         // This would effectively add something like 'WHERE ([GroupTypeId] = 10) OR ([GroupTypeId] = 12) OR ([GroupTypeId] = 17)' to the WHERE clause
                         if ( attributeCache.EntityTypeQualifierColumn == "GroupTypeId" && attributeCache.EntityTypeQualifierValue.AsIntegerOrNull().HasValue )
                         {
-                            var baseInheritedGroupTypeId = attributeCache.EntityTypeQualifierValue.AsInteger();
-                            List<int> childGroupTypeIds;
-                            using ( var groupTypeRockContext = new RockContext() )
+                            var qualifierGroupTypeId = attributeCache.EntityTypeQualifierValue.AsInteger();
+                            var inheritedGroupTypes = new List<GroupTypeCache>();
+                            var inheritedGroupType = GroupTypeCache.Get( qualifierGroupTypeId )?.InheritedGroupType;
+                            while ( inheritedGroupType != null )
                             {
-                                var groupTypeService = new GroupTypeService( groupTypeRockContext );
-                                childGroupTypeIds = groupTypeService.GetAllAssociatedDescendents( baseInheritedGroupTypeId ).Select( a => a.Id ).ToList();
+                                inheritedGroupTypes.Add( inheritedGroupType );
+                                inheritedGroupType = inheritedGroupType.InheritedGroupType;
                             }
 
-                            foreach ( var childGroupTypeId in childGroupTypeIds )
+                            var inheritedGroupTypeIds = inheritedGroupTypes.Select( a => a.Id ).ToList();
+
+                            foreach ( var inheritedGroupTypeId in inheritedGroupTypeIds )
                             {
-                                Expression inheritedEntityQualiferColumnEqualExpression = Expression.Equal( entityQualiferColumnExpression, Expression.Constant( childGroupTypeId ) );
+                                Expression inheritedEntityQualiferColumnEqualExpression = Expression.Equal( entityQualiferColumnExpression, Expression.Constant( inheritedGroupTypeId ) );
                                 entityQualiferColumnEqualExpression = Expression.Or( entityQualiferColumnEqualExpression, inheritedEntityQualiferColumnEqualExpression );
                             }
                         }
