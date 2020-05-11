@@ -549,8 +549,6 @@ function validateCurrencyValue_<ID>( sender, args )
             controlScript = controlScript.Replace( "<MSG-RANGE-ERROR>", GetRangeErrorMessage() );
 
             ScriptManager.RegisterStartupScript( this, this.GetType(), "CurrencyFieldValidation_" + this.ClientID, controlScript, true );
-
-            //this.AddCssClass( "js-currency-field-rangevalidation" );
         }
 
         /// <summary>
