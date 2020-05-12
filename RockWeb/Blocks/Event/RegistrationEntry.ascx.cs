@@ -4594,7 +4594,7 @@ namespace RockWeb.Blocks.Event
                     }
                     else
                     {
-                        CreateAttributeField( hasDependantVisibilityRule, field, setValues, value, GetAttributeValue( "ShowFieldDescriptions" ).AsBoolean(), BlockValidationGroup, phRegistrantControls, runstuff );
+                        CreateAttributeField( hasDependantVisibilityRule, field, setValues, value, GetAttributeValue( "ShowFieldDescriptions" ).AsBoolean(), BlockValidationGroup, phRegistrantControls, DynamicControlPostbackMethod );
                     }
                 }
 
@@ -4621,7 +4621,7 @@ namespace RockWeb.Blocks.Event
             divFees.Visible = phFees.Controls.Count > 0;
         }
 
-        private void runstuff()
+        private void DynamicControlPostbackMethod()
         {
             CreateRegistrantControls( true );
             ParseDynamicControls();
