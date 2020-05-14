@@ -4621,6 +4621,11 @@ namespace RockWeb.Blocks.Event
             divFees.Visible = phFees.Controls.Count > 0;
         }
 
+        /// <summary>
+        /// Method to run for the dynamic control FieldVisibility.EditValueUpdated event.
+        /// This is to recreate the controls for filter conditions, so it is not used by
+        /// PersonFields.
+        /// </summary>
         private void DynamicControlPostbackMethod()
         {
             CreateRegistrantControls( true );
