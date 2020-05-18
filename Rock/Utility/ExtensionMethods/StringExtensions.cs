@@ -948,6 +948,27 @@ namespace Rock
         }
 
         /// <summary>
+        /// Parse a string representation of a decimal number formatted for the specified culture, and return the numeric value or null if unsuccessful.
+        /// </summary>
+        /// <param name="str">The string to parse.</param>
+        /// <param name="culture">The specific culture for which the number is formatted, which determines the valid separator symbols. If null, the current culture is used.</param>
+        /// <returns>A decimal value, or null if the input string could not be parsed.</returns>
+        public static decimal? AsDecimalOrNull( this string str, CultureInfo culture )
+        {
+            if ( !string.IsNullOrWhiteSpace( str ) )
+            {
+                decimal decimalValue;
+
+                if ( decimal.TryParse( str, NumberStyles.Any, culture ?? CultureInfo.CurrentCulture, out decimalValue ) )
+                {
+                    return decimalValue;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Attempts to convert string to double.  Returns 0 if unsuccessful.
         /// </summary>
         /// <param name="str">The string.</param>
