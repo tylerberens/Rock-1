@@ -15,30 +15,24 @@
 // </copyright>
 //
 using System.Collections.Generic;
-
-using Rock.Reporting;
+using System.Globalization;
+using System.Web.UI;
 using Rock.Web.UI.Controls;
 
 namespace Rock.Field.Types
 {
     /// <summary>
-    /// Field used to save and display a currency amount
+    /// Field used to save and display a currency amount.
     /// </summary>
+    /// <remarks>
+    /// The currency field type is stored internally as a string representation of a decimal value formatted using the InvariantCulture,
+    /// to ensure that it is consistently processed by clients operating with different culture settings.
+    /// The invariant culture specifies a decimal number in the form "1,234.56" - other cultures may use a different
+    /// group separator and/or decimal separator.
+    /// </remarks>
     public class CurrencyFieldType : DecimalFieldType
     {
-
         #region Formatting
-
-        /// <summary>
-        /// Gets the align value that should be used when displaying value
-        /// </summary>
-        public override System.Web.UI.WebControls.HorizontalAlign AlignValue
-        {
-            get
-            {
-                return System.Web.UI.WebControls.HorizontalAlign.Right;
-            }
-        }
 
         /// <summary>
         /// Formats the value.
@@ -52,10 +46,39 @@ namespace Rock.Field.Types
         {
             if ( !string.IsNullOrWhiteSpace( value ) )
             {
-                return value.AsDecimal().FormatAsCurrency();
+                var decimalValue = value.ToStringSafe().AsDecimalOrNull( CultureInfo.InvariantCulture );
+
+                if ( decimalValue != null )
+                {
+                    return decimalValue.FormatAsCurrency();
+                }
             }
 
-            return base.FormatValue( parentControl, value, null, condensed );
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Returns the value using the most appropriate datatype
+        /// </summary>
+        /// <param name="parentControl">The parent control.</param>
+        /// <param name="value">The value.</param>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <returns></returns>
+        public override object ValueAsFieldType( System.Web.UI.Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues )
+        {
+            return value.ToStringSafe().AsDecimalOrNull( CultureInfo.InvariantCulture );
+        }
+
+        /// <summary>
+        /// Returns the value that should be used for sorting, using the most appropriate datatype
+        /// </summary>
+        /// <param name="parentControl">The parent control.</param>
+        /// <param name="value">The value.</param>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <returns></returns>
+        public override object SortValue( System.Web.UI.Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues )
+        {
+            return value.ToStringSafe().AsDecimalOrNull( CultureInfo.InvariantCulture );
         }
 
         #endregion
@@ -70,7 +93,7 @@ namespace Rock.Field.Types
         /// <returns>
         /// The control
         /// </returns>
-        public override System.Web.UI.Control EditControl(System.Collections.Generic.Dictionary<string, ConfigurationValue> configurationValues, string id)
+        public override System.Web.UI.Control EditControl( System.Collections.Generic.Dictionary<string, ConfigurationValue> configurationValues, string id )
         {
             return new CurrencyBox { ID = id };
         }
@@ -100,49 +123,44 @@ namespace Rock.Field.Types
         }
 
         /// <summary>
-        /// Returns the value using the most appropriate datatype
+        /// Reads new values entered by the user for the field
         /// </summary>
-        /// <param name="parentControl">The parent control.</param>
-        /// <param name="value">The value.</param>
+        /// <param name="control">Parent control that controls were added to in the CreateEditControl() method</param>
         /// <param name="configurationValues">The configuration values.</param>
         /// <returns></returns>
-        public override object ValueAsFieldType( System.Web.UI.Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues )
+        public override string GetEditValue( Control control, Dictionary<string, ConfigurationValue> configurationValues )
         {
-            return value.AsDecimalOrNull();
-        }
-
-        /// <summary>
-        /// Returns the value that should be used for sorting, using the most appropriate datatype
-        /// </summary>
-        /// <param name="parentControl">The parent control.</param>
-        /// <param name="value">The value.</param>
-        /// <param name="configurationValues">The configuration values.</param>
-        /// <returns></returns>
-        public override object SortValue( System.Web.UI.Control parentControl, string value, Dictionary<string, ConfigurationValue> configurationValues )
-        {
-            // return ValueAsFieldType which returns the value as a Decimal
-            return this.ValueAsFieldType( parentControl, value, configurationValues );
-        }
-
-        #endregion
-
-        #region Filter Control
-
-        /// <summary>
-        /// Gets the type of the filter comparison.
-        /// </summary>
-        /// <value>
-        /// The type of the filter comparison.
-        /// </value>
-        public override Model.ComparisonType FilterComparisonType
-        {
-            get
+            if ( control is CurrencyBox cb )
             {
-                return ComparisonHelper.NumericFilterComparisonTypes;
+                if ( cb.Value == null )
+                {
+                    return string.Empty;
+                }
+                else
+                {
+                    // Return the decimal value of the CurrencyBox as a string formatted using the InvariantCulture number format.
+                    return cb.Value.Value.ToString( CultureInfo.InvariantCulture );
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Sets the value.
+        /// </summary>
+        /// <param name="control">The control.</param>
+        /// <param name="configurationValues">The configuration values.</param>
+        /// <param name="value">A decimal value formatted with the InvariantCulture.</param>
+        public override void SetEditValue( Control control, Dictionary<string, ConfigurationValue> configurationValues, string value )
+        {
+            if ( control is CurrencyBox cb )
+            {
+                // The value for the Currency Field is supplied as a string representation of a decimal formatted using the InvariantCulture number format.
+                cb.Value = value.ToStringSafe().AsDecimalOrNull( CultureInfo.InvariantCulture );
             }
         }
 
         #endregion
-
     }
 }
