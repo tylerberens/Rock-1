@@ -4683,6 +4683,7 @@ namespace RockWeb.Blocks.Event
         {
             CreateRegistrantControls( true );
             ParseDynamicControls();
+            ShowFamilyMembersPanel();
         }
 
         /// <summary>
