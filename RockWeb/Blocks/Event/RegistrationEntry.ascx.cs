@@ -4774,6 +4774,7 @@ namespace RockWeb.Blocks.Event
                     .OrderBy( f => f.Order ) )
                 {
                     object value = null;
+                    bool updateField = true;
 
                     if ( field.FieldSource == RegistrationFieldSource.PersonField )
                     {
@@ -4781,19 +4782,19 @@ namespace RockWeb.Blocks.Event
                     }
                     else
                     {
-                        value = ParseAttributeField( field );
+                        value = ParseAttributeField( field, out updateField );
                     }
 
-                    if ( value != null )
+                    if ( updateField )
                     {
-                        if ( value.ToString() != "-1" )
+                        if ( value != null )
                         {
                             registrant.FieldValues.AddOrReplace( field.Id, new FieldValueObject( field, value ) );
                         }
-                    }
-                    else
-                    {
-                        registrant.FieldValues.Remove( field.Id );
+                        else
+                        {
+                            registrant.FieldValues.Remove( field.Id );
+                        }
                     }
                 }
 
@@ -4924,8 +4925,10 @@ namespace RockWeb.Blocks.Event
         /// </summary>
         /// <param name="field">The field.</param>
         /// <returns></returns>
-        private object ParseAttributeField( RegistrationTemplateFormField field )
+        private object ParseAttributeField( RegistrationTemplateFormField field, out bool updateField )
         {
+            updateField = true;
+
             if ( field.AttributeId.HasValue )
             {
                 var attribute = AttributeCache.Get( field.AttributeId.Value );
@@ -4939,9 +4942,10 @@ namespace RockWeb.Blocks.Event
                         return attribute.FieldType.Field.GetEditValue( control, attribute.QualifierValues );
                     }
 
-                    // If null is returned the value is removed and if empty then the value is updated to empty string.
-                    // Return -1 so caller realizes it shouldn't do anything to the state of this attribtue
-                    return "-1";
+                    // If the control is not visible we don't want to clear out the value.
+                    // So set updateField to false so the value is not set to null or empty
+                    updateField = false;
+                    return null;
                 }
             }
 
