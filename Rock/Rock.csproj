@@ -213,8 +213,8 @@
     <Reference Include="RestSharp, Version=105.2.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\RestSharp.105.2.3\lib\net452\RestSharp.dll</HintPath>
     </Reference>
-    <Reference Include="Rock.Common.Mobile, Version=0.3.8.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Rock.Common.Mobile.0.3.8\lib\net452\Rock.Common.Mobile.dll</HintPath>
+    <Reference Include="Rock.Common.Mobile, Version=0.3.9.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Rock.Common.Mobile.0.3.9\lib\net452\Rock.Common.Mobile.dll</HintPath>
     </Reference>
     <Reference Include="StackExchange.Redis.StrongName, Version=1.2.6.0, Culture=neutral, PublicKeyToken=c219ff1ca8c2ce46, processorArchitecture=MSIL">
       <HintPath>..\packages\StackExchange.Redis.StrongName.1.2.6\lib\net45\StackExchange.Redis.StrongName.dll</HintPath>
@@ -310,6 +310,7 @@
     <Compile Include="Attribute\ColorFieldAttribute.cs" />
     <Compile Include="Attribute\ComparisonFieldAttribute.cs" />
     <Compile Include="Attribute\ContentChannelsFieldAttribute.cs" />
+    <Compile Include="Attribute\DocumentTypeFieldAttribute.cs" />
     <Compile Include="Attribute\MetricFieldAttribute.cs" />
     <Compile Include="Attribute\StepFieldAttribute.cs" />
     <Compile Include="Attribute\StepProgramStepStatusFieldAttribute.cs" />
@@ -440,6 +441,7 @@
     <Compile Include="Blocks\Types\Mobile\Cms\Hero.cs" />
     <Compile Include="Blocks\Types\Mobile\Cms\StructuredContentView.cs" />
     <Compile Include="Blocks\Types\Mobile\Communication\CommunicationListSubscribe.cs" />
+    <Compile Include="Blocks\Types\Mobile\Events\CalendarEventItemOccurrenceView.cs" />
     <Compile Include="Blocks\Types\Mobile\Events\CalendarEventList.cs" />
     <Compile Include="Blocks\Types\Mobile\Events\CalendarView.cs" />
     <Compile Include="Blocks\Types\Mobile\Groups\GroupAttendanceEntry.cs" />
@@ -451,10 +453,14 @@
     <Compile Include="Blocks\Types\Mobile\Prayer\PrayerRequestDetails.cs" />
     <Compile Include="Blocks\Types\Mobile\Prayer\PrayerSession.cs" />
     <Compile Include="Blocks\Types\Mobile\Prayer\PrayerSessionSetup.cs" />
+    <Compile Include="Bulk\BulkImport\InteractionsImport.cs" />
+    <Compile Include="Bulk\BulkImport\InteractionImport.cs" />
     <Compile Include="Communication\CommunicationTemplateHelper.cs" />
     <Compile Include="Field\Types\ConnectionRequestActivityFieldType.cs" />
+    <Compile Include="Field\Types\DocumentTypeFieldType.cs" />
     <Compile Include="Field\Types\StepFieldType.cs" />
     <Compile Include="Jobs\CampaignManager.cs" />
+    <Compile Include="Jobs\SendGroupAttendanceDigest.cs" />
     <Compile Include="Jobs\SendMessageResults.cs" />
     <Compile Include="Jobs\PostV103DataMigrationsSpiritualGifts.cs" />
     <Compile Include="Model\CampaignConnectionItem.cs" />
@@ -471,8 +477,12 @@
     <Compile Include="Plugin\HotFixes\112_XamlTemplateMigration.cs" />
     <Compile Include="Plugin\HotFixes\111_HideGiftsCategoriesWithNoGifts.cs" />
     <Compile Include="Plugin\HotFixes\114_MigrationRollupsFor10_3_3.cs" />
+    <Compile Include="Plugin\HotFixes\123_MigrationRollupsFor10_3_6.cs" />
+    <Compile Include="Plugin\HotFixes\122_FixContentChannelItemChildItemsOrder.cs" />
+    <Compile Include="Plugin\HotFixes\121_MigrationRollupsFor10_3_5.cs" />
     <Compile Include="Plugin\HotFixes\120_StructuredContentTools.cs" />
     <Compile Include="Plugin\HotFixes\119_AddMobileGroupMemberListBlockTemplate.cs" />
+    <Compile Include="Plugin\HotFixes\124_AddGroupAttendanceDigestSystemCommunication.cs" />
     <Compile Include="Reporting\DataFilter\Person\StepParticipantsByAttributeValueFilter.cs" />
     <Compile Include="Reporting\DataFilter\Step\StepsAttributeValuesFilter.cs" />
     <Compile Include="SystemKey\CampaignConnectionKey.cs" />
@@ -2566,6 +2576,7 @@
     <Compile Include="Workflow\Action\Groups\SetGroupMemberAttribute.cs" />
     <Compile Include="Workflow\Action\Groups\SetGroupMemberNote.cs" />
     <Compile Include="Workflow\Action\Groups\UpdateGroupMemberStatus.cs" />
+    <Compile Include="Workflow\Action\People\AddPersonToFamily.cs" />
     <Compile Include="Workflow\Action\People\GetPersonFromFields.cs" />
     <Compile Include="Workflow\Action\People\PersonAddressUpdate.cs" />
     <Compile Include="Workflow\Action\People\PersonFollowAdd.cs" />

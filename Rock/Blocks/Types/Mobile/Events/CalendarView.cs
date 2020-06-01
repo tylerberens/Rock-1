@@ -217,7 +217,7 @@ namespace Rock.Blocks.Types.Mobile.Events
             {
                 Audiences = GetAudiences().Select( a => new
                 {
-                    a.Id,
+                    a.Guid,
                     Name = a.Value,
                     Color = a.GetAttributeValue( "HighlightColor")
                 } ),
@@ -261,6 +261,7 @@ namespace Rock.Blocks.Types.Mobile.Events
             var properties = new Dictionary<string, string>
             {
                 { "Id", "Id" },
+                { "Guid", "Guid" },
                 { "Name", "Name" },
                 { "StartDateTime", "DateTime" },
                 { "EndDateTime", "EndDateTime" },
@@ -314,14 +315,15 @@ namespace Rock.Blocks.Types.Mobile.Events
                             {
                                 Date = b,
                                 Duration = duration,
-                                AudienceIds = a.EventItem.EventItemAudiences.Select( c => c.DefinedValueId ).ToList(),
+                                AudienceGuids = a.EventItem.EventItemAudiences.Select( c => DefinedValueCache.Get( c.DefinedValueId )?.Guid ).Where( c => c.HasValue ).Select( c => c.Value ).ToList(),
                                 EventItemOccurrence = a
                             } );
                     } )
                     .Select( a => new
                     {
                         a.EventItemOccurrence,
-                        a.EventItemOccurrence.EventItem.Id,
+                        a.EventItemOccurrence.Guid,
+                        a.EventItemOccurrence.Id,
                         a.EventItemOccurrence.EventItem.Name,
                         DateTime = a.Date,
                         EndDateTime = a.Duration > 0 ? ( DateTime? ) a.Date.AddMinutes( a.Duration ) : null,
@@ -330,7 +332,7 @@ namespace Rock.Blocks.Types.Mobile.Events
                         Campus = a.EventItemOccurrence.Campus != null ? a.EventItemOccurrence.Campus.Name : "All Campuses",
                         Location = a.EventItemOccurrence.Campus != null ? a.EventItemOccurrence.Campus.Name : "All Campuses",
                         LocationDescription = a.EventItemOccurrence.Location,
-                        Audiences = a.AudienceIds,
+                        Audiences = a.AudienceGuids,
                         a.EventItemOccurrence.EventItem.Description,
                         a.EventItemOccurrence.EventItem.Summary,
                         OccurrenceNote = a.EventItemOccurrence.Note.SanitizeHtml()
