@@ -1,0 +1,8 @@
+#!/bin/bash
+SCRIPT_NAME='commit-msg-verify-rock-message-format.ps1'
+
+HOOKS_PATH=$(git rev-parse --git-path hooks)
+SCRIPT_PATH=$HOOKS_PATH/$SCRIPT_NAME
+exec powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$SCRIPT_PATH" -CommitFile "$1"
+
+#exit 
