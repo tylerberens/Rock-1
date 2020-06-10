@@ -1716,6 +1716,14 @@ namespace Rock.Web.UI
 
             base.OnLoad( e );
 
+            if (this.IsPostBack)
+            {
+                if (this.Request.Params["__EVENTARGUMENT"]?.StartsWith("BLOCK_UPDATED") == true)
+                {
+                    trigger_Click(null, null);
+                }
+            }
+
             Page.Header.DataBind();
 
             try
@@ -2381,6 +2389,7 @@ Sys.Application.add_load(function () {
         /// <param name="updatePanel">The <see cref="System.Web.UI.UpdatePanel"/> to add the <see cref="System.Web.UI.AsyncPostBackTrigger"/> to.</param>
         public void AddConfigurationUpdateTrigger( UpdatePanel updatePanel )
         {
+            updatePanel.Attributes["data-updatepanel-block-id"] = updatePanel.RockBlock()?.BlockId.ToString();
             AsyncPostBackTrigger trigger = new AsyncPostBackTrigger();
             trigger.ControlID = "rock-config-trigger";
             trigger.EventName = "Click";

@@ -104,7 +104,12 @@
                     }
                     else {
                         $('#rock-config-trigger-data').val(msg);
-                        $('#rock-config-trigger').trigger('click');
+                        var blockId = msg.replace('BLOCK_UPDATED:', '');
+                        var $updatePanel = $('[data-updatepanel-block-id="' + blockId + '"]');
+                        if ($updatePanel.length) {
+                           var doPostBackScript = "javascript: __doPostBack('" + $updatePanel.prop('id') + "', '" + msg + "')";
+                           window.location = doPostBackScript;
+                        }
                     }
                 }
             },
