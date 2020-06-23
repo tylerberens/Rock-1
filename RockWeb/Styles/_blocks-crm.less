@@ -1858,8 +1858,8 @@ tr.inactive {
   border: 1px solid @panel-border;
 
   &.active {
-    border-color: var(--brand-color);
     border-color: @brand-primary;
+    border-color: var(--brand-primary, @brand-primary);
   }
 
   a {
