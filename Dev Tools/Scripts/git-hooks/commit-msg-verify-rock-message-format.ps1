@@ -11,7 +11,7 @@ $commitText = Get-Content -Path "$commitFile"
 $fixesPattern='.*(?i)Fix(es|ed) #([0-9]+)'
 $issuePattern='^\+.*\(Fixes #([0-9]*)\)(\.)?$'
 $newLinePattern='(\r\n|\r|\n)'
-$releaseCommitPattern='\+ \[.*\] (Improved|Updated|Added|Fixed) .*\.'
+$releaseCommitPattern='\+ \(.*\) (Improved|Updated|Added|Fixed) .*\.'
 
 write-host "Validating Rock commit message format..."
 
@@ -45,7 +45,7 @@ if ($isReleaseCommit -eq $true -and $isIssueFix -eq $false )
 	if ($verifiedReleaseFormat -eq $false)
 	{
 	  write-host "Invalid Commit Message Format. Valid Release Commit message format is:"
-	  write-host "+ [{Module}] {Improved|Updated|Added|Fixed} {Release Commit Description}."
+	  write-host "+ ({Module}) {Improved|Updated|Added|Fixed} {Release Commit Description}."
 	  exit 1
 	}
 }
