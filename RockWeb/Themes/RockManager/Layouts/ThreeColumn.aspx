@@ -41,10 +41,7 @@
 
         <section id="page-content">
             <!-- Ajax Error -->
-            <div class="alert alert-danger ajax-error no-index" style="display:none">
-                <p><strong>Error</strong></p>
-                <span class="ajax-error-message"></span>
-            </div>
+            <div class="alert alert-danger ajax-error no-index" style="display:none"><span class="ajax-error-message"></span></div>
 
             <div class="row">
                 <div class="col-md-12">

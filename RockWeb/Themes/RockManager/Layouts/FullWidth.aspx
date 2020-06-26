@@ -1,5 +1,4 @@
 ﻿<%@ Page Language="C#" MasterPageFile="Site.Master" AutoEventWireup="true" Inherits="Rock.Web.UI.RockPage" %>
-
 <script runat="server">
 
     // keep code below to call base class init method
@@ -29,68 +28,45 @@
 </script>
 
 <asp:Content ID="ctMain" ContentPlaceHolderID="main" runat="server">
+    <!-- Start Content Area -->
 
-        <!-- Start Content Area -->
+    <!-- Page Title -->
+    <section id="secPageTitle" class="page-title" runat="server">
+        <Rock:PageBreadCrumbs ID="PageBreadCrumbs" runat="server" />
+        <h1 class="title"><Rock:PageIcon ID="PageIcon" runat="server" /> <Rock:PageTitle ID="PageTitle" runat="server" /></h1>
 
-        <!-- Page Title -->
-        <section id="secPageTitle" class="page-title" runat="server">
-            <Rock:PageBreadCrumbs ID="PageBreadCrumbs" runat="server" />
-            <h1 class="title"><Rock:PageIcon ID="PageIcon" runat="server" /> <Rock:PageTitle ID="PageTitle" runat="server" /></h1>
+        <Rock:PageDescription ID="PageDescription" runat="server" />
+    </section>
 
-            <Rock:PageDescription ID="PageDescription" runat="server" />
-        </section>
+    <section id="page-content">
 
-        <section id="page-content">
+        <!-- Ajax Error -->
+        <div class="alert alert-danger ajax-error no-index" style="display:none"><span class="ajax-error-message"></span></div>
 
-            <!-- Ajax Error -->
-            <div class="alert alert-danger ajax-error no-index" style="display:none">
-                <p><strong>Error</strong></p>
-                <span class="ajax-error-message"></span>
-            </div>
+        <div class="row">
+            <Rock:Zone Name="Feature" runat="server" CssClass="col-md-12" />
+        </div>
 
-            <div class="row">
-                <div class="col-md-12">
-                    <Rock:Zone Name="Feature" runat="server" />
-                </div>
-            </div>
+        <div class="row">
+            <Rock:Zone Name="Main" runat="server" CssClass="col-md-12" />
+        </div>
 
-            <div class="row">
-                <div class="col-md-12">
-                    <Rock:Zone Name="Main" runat="server" />
-                </div>
-            </div>
+        <div class="row">
+            <Rock:Zone Name="Section A" runat="server"  CssClass="col-md-12" />
+        </div>
 
-            <div class="row">
-                <div class="col-md-12">
-                    <Rock:Zone Name="Section A" runat="server" />
-                </div>
-            </div>
+        <div class="row">
+            <Rock:Zone Name="Section B" runat="server" CssClass="col-md-4" />
+            <Rock:Zone Name="Section C" runat="server" CssClass="col-md-4" />
+            <Rock:Zone Name="Section D" runat="server" CssClass="col-md-4" />
+        </div>
 
-            <div class="row">
-                <div class="col-md-4">
-                    <Rock:Zone Name="Section B" runat="server" />
-                </div>
-                <div class="col-md-4">
-                    <Rock:Zone Name="Section C" runat="server" />
-                </div>
-                <div class="col-md-4">
-                    <Rock:Zone Name="Section D" runat="server" />
-                </div>
-            </div>
+        <div class="row">
+            <Rock:Zone Name="Section E" runat="server" CssClass="col-md-6" />
+            <Rock:Zone Name="Section F" runat="server" CssClass="col-md-6" />
+        </div>
+    </section>
 
-            <div class="row">
-                <div class="col-md-6">
-                    <Rock:Zone Name="Section E" runat="server" />
-                </div>
-                <div class="col-md-6">
-                    <Rock:Zone Name="Section F" runat="server" />
-                </div>
-            </div>
-        </section>
-
-        <!-- End Content Area -->
-
-
-
+    <!-- End Content Area -->
 </asp:Content>
 

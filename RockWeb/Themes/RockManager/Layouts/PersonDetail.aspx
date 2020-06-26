@@ -12,85 +12,47 @@
 
 </script>
 
-
 <asp:Content ID="ctMain" ContentPlaceHolderID="main" runat="server">
-
     <div class="personprofile">
 
         <!-- Ajax Error -->
-        <div class="alert alert-danger ajax-error no-index" style="display:none">
-            <p><strong>Error</strong></p>
-            <span class="ajax-error-message"></span>
-        </div>
+        <div class="alert alert-danger ajax-error no-index" style="display:none"><span class="ajax-error-message"></span></div>
 
-        <div class="personprofilebar-bio">
-                <Rock:Zone Name="Individual Detail" runat="server" />
-        </div>
+        <Rock:Zone Name="Individual Detail" runat="server" CssClass="personprofilebar-bio" />
 
         <div class="personprofilebar-badge">
             <div class="row">
-                <div class="badge-group col-sm-4">
-                    <Rock:Zone Name="Badge Bar Left" runat="server" />
-                </div>
-                <div class="badge-group col-sm-4">
-                    <Rock:Zone Name="Badge Bar Middle" runat="server" />
-                </div>
-                <div class="badge-group col-sm-4">
-                    <Rock:Zone Name="Badge Bar Right" runat="server" />
-                </div>
+                <Rock:Zone Name="Badge Bar Left" runat="server" CssClass="badge-group col-sm-4" />
+                <Rock:Zone Name="Badge Bar Middle" runat="server" CssClass="badge-group col-sm-4" />
+                <Rock:Zone Name="Badge Bar Right" runat="server" CssClass="badge-group col-sm-4" />
             </div>
         </div>
 
-        <div class="personprofilebar-family">
-            <Rock:Zone Name="Family Detail" runat="server" />
-        </div>
+        <Rock:Zone Name="Family Detail" runat="server" CssClass="personprofilebar-family" />
 
-		<div class="pagetabs">
-            <div class="row">
-                <div class="col-md-12">
-                    <Rock:Zone Name="Sub Navigation" runat="server" />
-                </div>
-            </div>
-		</div>
+        <Rock:Zone Name="Sub Navigation" runat="server" CssClass="pagetabs" />
 
         <div class="person-content">
             <div class="row">
-                <div class="col-md-8">
-                    <Rock:Zone Name="Section A1" runat="server" />
-                </div>
-                <div class="col-md-4">
-                    <Rock:Zone Name="Section A2" runat="server" />
-                </div>
+                <Rock:Zone Name="Section A1" runat="server" CssClass="col-md-8" />
+                <Rock:Zone Name="Section A2" runat="server" CssClass="col-md-4" />
             </div>
 
             <div class="row">
-                <div class="col-md-4">
-                    <Rock:Zone Name="Section B1" runat="server" />
-                </div>
-                <div class="col-md-4">
-                    <Rock:Zone Name="Section B2" runat="server" />
-                </div>
-                <div class="col-md-4">
-                    <Rock:Zone Name="Section B3" runat="server" />
-                </div>
+                <Rock:Zone Name="Section B1" runat="server" CssClass="col-md-4" />
+                <Rock:Zone Name="Section B2" runat="server" CssClass="col-md-4" />
+                <Rock:Zone Name="Section B3" runat="server" CssClass="col-md-4" />
             </div>
 
             <div class="row">
-                <div class="col-md-12">
-                    <Rock:Zone Name="Section C1" runat="server" />
-                </div>
+                <Rock:Zone Name="Section C1" runat="server" CssClass="col-md-12" />
             </div>
 
             <div class="row">
-                <div class="col-md-4">
-                    <Rock:Zone Name="Section D1" runat="server" />
-                </div>
-                <div class="col-md-8">
-                    <Rock:Zone Name="Section D2" runat="server" />
-                </div>
+                <Rock:Zone Name="Section D1" runat="server" CssClass="col-md-4" />
+                <Rock:Zone Name="Section D2" runat="server" CssClass="col-md-8" />
             </div>
         </div>
 
 	</div>
-
 </asp:Content>

@@ -36,8 +36,6 @@
 
     <script src="<%# System.Web.Optimization.Scripts.Url("~/Scripts/Bundles/RockJQueryLatest") %>"></script>
 
-
-
     <!-- Set the viewport width to device width for mobile -->
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
@@ -72,11 +70,8 @@
                 </Rock:Lava>
 
                 <div id="fixed-header" class="header-content" role="navigation">
-                    <div class="clearfix">
-                        <!-- bookmark markup goes here -->
-                        <div class="navbar-zone-login"><Rock:Zone Name="Login" runat="server" /></div>
-                        <div class="navbar-zone-header"><Rock:Zone Name="Header" runat="server" /></div>
-                    </div>
+                    <Rock:Zone Name="Header" runat="server" CssClass="navbar-zone-header" />
+                    <Rock:Zone Name="Login" runat="server" CssClass="navbar-zone-login" />
                 </div>
             </nav>
 
@@ -93,9 +88,7 @@
                 <div class="main-content">
                     <asp:ContentPlaceHolder ID="main" runat="server"></asp:ContentPlaceHolder>
 
-                    <div class="main-footer">
-                        <Rock:Zone Name="Footer" runat="server" />
-                    </div>
+                    <Rock:Zone Name="Footer" runat="server" CssClass="main-footer" />
                 </div>
             </div>
 
@@ -119,6 +112,5 @@
         Sys.Application.add_load(BindNavEvents);
         Sys.Application.add_load(PreventNumberScroll);
     </script>
-
 </body>
 </html>
