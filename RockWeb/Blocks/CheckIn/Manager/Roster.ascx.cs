@@ -841,11 +841,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var attendanceQuery = new AttendanceService( rockContext )
                 .Queryable( "AttendanceCode,PersonAlias.Person,Occurrence.Schedule" )
                 .AsNoTracking()
-                .Where( a => a.StartDateTime >= startDateTime )
-                .Where( a => a.StartDateTime <= now )
-                .Where( a => a.PersonAliasId.HasValue )
-                .Where( a => a.Occurrence.LocationId == CurrentLocationId )
-                .Where( a => a.Occurrence.ScheduleId.HasValue );
+                .Where( a => a.StartDateTime >= startDateTime &&
+                             a.StartDateTime <= now &&
+                             a.PersonAliasId.HasValue &&
+                             a.Occurrence.LocationId == CurrentLocationId &&
+                             a.Occurrence.ScheduleId.HasValue );
 
             /*
                 If StatusFilter == All, no further filtering is needed.
@@ -856,14 +856,14 @@ namespace RockWeb.Blocks.CheckIn.Manager
             if ( CurrentStatusFilter == StatusFilter.CheckedIn )
             {
                 attendanceQuery = attendanceQuery
-                    .Where( a => !a.PresentDateTime.HasValue )
-                    .Where( a => !a.EndDateTime.HasValue );
+                    .Where( a => !a.PresentDateTime.HasValue &&
+                                 !a.EndDateTime.HasValue );
             }
             else if ( CurrentStatusFilter == StatusFilter.Present )
             {
                 attendanceQuery = attendanceQuery
-                    .Where( a => a.PresentDateTime.HasValue )
-                    .Where( a => !a.EndDateTime.HasValue );
+                    .Where( a => a.PresentDateTime.HasValue &&
+                                 !a.EndDateTime.HasValue );
             }
 
             List<Attendance> attendances = attendanceQuery.ToList();
