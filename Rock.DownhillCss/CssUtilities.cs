@@ -48,6 +48,16 @@ namespace Rock.DownhillCss
 
             StringBuilder frameworkCss = new StringBuilder();
 
+            // Apply Reset & Base CSS First - It is import that this is first so that the utility classes outrank the base CSS
+            if (settings.Platform == DownhillPlatform.Mobile)
+            {
+                frameworkCss.Append( baseStylesMobile );
+            }
+            else
+            {
+                frameworkCss.Append( baseStylesWeb );
+            }
+
             // Alerts
             AlertStyles( frameworkCss, settings, applicationColorProperties ); /* somewhat mobile specific now */
 
@@ -72,15 +82,7 @@ namespace Rock.DownhillCss
             // Build Border Width Utilities
             BorderWidths( frameworkCss, settings, applicationColorProperties ); /* somewhat mobile specific now */
 
-            // Add base styles that are not generated
-            if ( settings.Platform == DownhillPlatform.Mobile )
-            {
-                frameworkCss.Append( baseStylesMobile );
-            }
-            else
-            {
-                frameworkCss.Append( baseStylesWeb );
-            }
+            
 
             return CssUtilities.ParseCss( frameworkCss.ToString(), settings );
         }
@@ -207,16 +209,23 @@ namespace Rock.DownhillCss
         #region Text
         private static void TextSizes( StringBuilder frameworkCss, DownhillSettings settings, PropertyInfo[] applicationColorProperties )
         {
-            frameworkCss.AppendLine( "/*" );
-            frameworkCss.AppendLine( "// Text Size Utilities" );
-            frameworkCss.AppendLine( "*/" );
-
-            foreach ( var size in settings.FontSizes )
+            // Mobile won't be using the text sizes. Instead it will use named sizes
+            if (settings.Platform == DownhillPlatform.Mobile)
             {
-                frameworkCss.AppendLine( $".text-{size.Key.ToLower()} {{" );
-                frameworkCss.AppendLine( $"    font-size: {size.Value * settings.FontSizeDefault}{settings.FontUnits};" );
-                frameworkCss.AppendLine( "}" );
+                return;
             }
+
+            frameworkCss.AppendLine("/*");
+            frameworkCss.AppendLine("// Text Size Utilities");
+            frameworkCss.AppendLine("*/");
+
+            foreach (var size in settings.FontSizes)
+            {
+                frameworkCss.AppendLine($".text-{size.Key.ToLower()} {{");
+                frameworkCss.AppendLine($"    font-size: {size.Value * settings.FontSizeDefault}{settings.FontUnits};");
+                frameworkCss.AppendLine("}");
+            }
+            
         }
 
         private static void TextColors( StringBuilder frameworkCss, DownhillSettings settings, PropertyInfo[] applicationColorProperties )
@@ -555,13 +564,18 @@ namespace Rock.DownhillCss
         #region Platform Base Styles
         private static string baseStylesWeb = @"";
 
-        private static string baseStylesMobile = @"
-/*
+        private static string baseStylesMobile = @"/*
     Resets
     -----------------------------------------------------------
 */
 
 /* Fixes frame backgrounds from being black while in dark mode */
+
+^editor {
+    background-color: transparent;
+    color: ?color-text;
+}
+
 ^frame {
     background-color: transparent;
 }
@@ -576,7 +590,7 @@ NavigationPage {
 
 ^label {
     font-size: default;
-    color:  ;
+    color: ?color-text;
 }
 
 /*
@@ -599,28 +613,28 @@ NavigationPage {
 .h2 {
     color: ?color-heading;
     font-style: bold;
-    font-size: title;
+    font-size: 28;
     line-height: 1;
 }
 
 .h3 {
     color: ?color-heading;
     font-style: bold;
-    font-size: subtitle;
+    font-size: 22;
     line-height: 1.05;
 }
 
 .h4 {
     color: ?color-heading;
     font-style: bold;
-    font-size: default;
+    font-size: 16;
     line-height: 1.1;
 }
 
 .h5, .h6 {
     color: ?color-heading;
     font-style: bold;
-    font-size: small;
+    font-size: 13;
     line-height: 1.25;
 }
 
@@ -666,22 +680,18 @@ NavigationPage {
 
 .text-xs {
     font-size: micro;
-    color: ?color-text;
 }
 
 .text-sm {
     font-size: small;
-    color: ?color-text;
 }
 
 .text-md {
     font-size: medium;
-    color: ?color-text;
 }
 
 .text-lg {
     font-size: large;
-    color: ?color-text;
 }
 
 .text-title {
@@ -691,21 +701,17 @@ NavigationPage {
 
 .text-subtitle {
     font-size: subtitle;
-    color: ?color-text;
 }
 
 .text-caption {
     font-size: caption;
-    color: ?color-text;
 }
 
 .text-body {
     font-size: body;
-    color: ?color-text;
 }
 
 .title {
-    color: ?color-text;
     font-style: bold;
     font-size: default;
     line-height: 1;
@@ -896,8 +902,54 @@ NavigationPage {
 .less-than-15-min {}
 .less-than-5-min{}
 
+/* Modal */
+.modal {
+    background-color: #ffffff;
+    padding: 0;
+    margin: 48 16;
+    border-radius: 8;
+}
+
+.modal-anchor-top {
+    margin: 0 0 48 0;
+}
+
+.modal-anchor-bottom {
+    margin: 48 0 0 0;
+}
+
+.modal-header {
+    background-color: ?color-brand;
+    padding: 16;
+}
+
+.modal-body {
+    padding: 16;
+    background-color: #ffffff;
+}
+
+.modal-anchor-top .modal-body {
+    padding-top: 32;
+}
+
+.modal-anchor-bottom .modal-body {
+    padding-bottom: 32;
+}
+
+.modal-close,
+.modal-title {
+    color: #ffffff; 
+}
+
+.modal-title {
+    line-height: 0;
+    margin: 0;
+    padding: 0;
+}
+
 /* Divider */
 .divider {
+    background-color: ?color-gray-200;
     height: 1;
 }
 
@@ -932,6 +984,8 @@ NavigationPage {
 /* Buttons */
 .btn {
     border-radius: ?radius-base;
+    padding-left: 16;
+    padding-right: 16;
 }
 
 .btn.btn-primary {
@@ -972,6 +1026,11 @@ NavigationPage {
 .btn.btn-secondary {
     color: #ffffff;
     background-color: ?color-secondary;
+}
+
+.btn.btn-brand {
+    color: #ffffff;
+    background-color: ?color-brand;
 }
 
 .btn.btn-default {
@@ -1042,6 +1101,14 @@ NavigationPage {
     border-width: 1;
     background-color: transparent;
 }
+
+.btn.btn-outline-brand {
+    color: ?color-brand;
+    border-color: ?color-brand;
+    border-width: 1;
+    background-color: transparent;
+}
+
 
 /* Button Sizes */
 .btn.btn-lg {
@@ -1188,11 +1255,15 @@ NavigationPage {
 .calendar-events-heading {
     margin-top: 32;
     text-align: center;
+    margin-bottom: 16;
 }
 
 .calendar-events-day {
-    text-align: left;
-    margin-bottom: 8;
+    color: ?color-heading;
+    font-style: bold;
+    font-size: 16;
+    line-height: 1.1;
+    margin-bottom: 0;
 }
 
 .calendar-event {
@@ -1209,6 +1280,7 @@ NavigationPage {
 
 .calendar-event-title {
     font-style: bold;
+    font-size: 16;
 }
 
 .calendar-event-text {
@@ -1257,6 +1329,11 @@ NavigationPage {
 ^switch {
     color: ?color-text;
     font-size: default;
+}
+
+^literal {
+    line-height: 1.15;
+    margin-bottom: 16;
 }
 
 /* Field Titles */
@@ -1316,12 +1393,6 @@ fieldcontainer > .no-fieldstack {
 formfield .required-indicator {
     margin-right: 4;
 }
-
-/* Divider */
-.divider {
-    background-color: ?color-gray-400;
-}
-
 
 /* Cards */
 .card {
