@@ -16,6 +16,7 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
@@ -28,16 +29,17 @@ using Rock.Data;
 using Rock.Lava;
 using Rock.Model;
 using Rock.Web.Cache;
+using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 
 namespace RockWeb.Blocks.CheckIn.Manager
 {
     /// <summary>
-    /// Block used to open and close classrooms, mark a person as 'present' in the classroom, Etc.
+    /// Block used to view people currently checked into a classroom, mark a person as 'present' in the classroom, check them out, Etc.
     /// </summary>
     [DisplayName( "Roster" )]
     [Category( "Check-in > Manager" )]
-    [Description( "Block used to open and close classrooms, mark a person as 'present' in the classroom, Etc." )]
+    [Description( "Block used to view people currently checked into a classroom, mark a person as 'present' in the classroom, check them out, Etc." )]
 
     #region Block Attributes
 
@@ -83,6 +85,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         private class PageParameterKey
         {
             public const string Area = "Area";
+            public const string LocationId = "LocationId";
         }
 
         #endregion Page Parameter Keys
@@ -103,19 +106,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         #endregion ViewState Keys
-
-        #region User Preference Keys
-
-        /// <summary>
-        /// Keys to use for user preferences.
-        /// </summary>
-        private class UserPreferenceKey
-        {
-            public const string LocationId = "LocationId";
-            public const string StatusFilter = "StatusFilter";
-        }
-
-        #endregion User Preference Keys
 
         #region Entity Attribute Value Keys
 
@@ -174,7 +164,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             get
             {
-                return string.Format( "campus-{0}-{1}", CurrentCampusId, UserPreferenceKey.LocationId );
+                return string.Format( "campus-{0}-LocationId", CurrentCampusId );
             }
         }
 
@@ -246,16 +236,13 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// The status filter user preference key, taking into consideration the currently-selected campus.
+        /// The status filter user preference key.
         /// </summary>
         public string StatusFilterUserPreferenceKey
         {
             get
             {
-                //return string.Format( "campus-{0}-{1}", CurrentCampusId, UserPreferenceKey.StatusFilter );
-
-                // While it makes sense for the location ID user preference to be per-campus, this preference should span campuses.
-                return UserPreferenceKey.StatusFilter;
+                return "StatusFilter";
             }
         }
 
@@ -297,8 +284,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void Block_BlockUpdated( object sender, EventArgs e )
         {
-            // Wipe out this value to trigger the reloading of the Area-related properties.
+            // Wipe out these values to trigger reloading of data.
             CurrentAreaGuid = null;
+            CurrentLocationId = 0;
+            CurrentStatusFilter = StatusFilter.Unknown;
 
             BuildRoster();
         }
@@ -573,7 +562,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// </summary>
         private void BuildRoster()
         {
-            nbWarning.Visible = false;
+            ResetControlVisibility();
 
             if ( !SetArea() )
             {
@@ -601,17 +590,38 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             if ( locationId <= 0 )
             {
-                // If not defined on the LocationPicker, check for a Block user preference.
-                locationId = GetBlockUserPreference( LocationIdUserPreferenceKey ).AsInteger();
+                // If not defined on the LocationPicker, check first for a LocationId Page parameter.
+                locationId = PageParameter( PageParameterKey.LocationId ).AsInteger();
 
-                if ( locationId <= 0 )
+                if ( locationId > 0 )
                 {
-                    ShowWarningMessage( "Please select a Location.", false );
-                    return;
+                    // If the Page parameter was set, make sure it's valid for the selected Campus.
+                    if ( !IsLocationWithinCampus( locationId ) )
+                    {
+                        locationId = 0;
+                    }
                 }
 
-                SetLocation( locationId );
+                if ( locationId > 0 )
+                {
+                    SetBlockUserPreference( LocationIdUserPreferenceKey, locationId.ToString(), true );
+                }
+                else
+                {
+                    // If still not defined, check for a Block user preference.
+                    locationId = GetBlockUserPreference( LocationIdUserPreferenceKey ).AsInteger();
+
+                    if ( locationId <= 0 )
+                    {
+                        ShowWarningMessage( "Please select a Location.", false );
+                        return;
+                    }
+                }
+
+                SetLocationControl( locationId );
             }
+
+            InitializeSubPageNav( locationId );
 
             // Check the ButtonGroup for the StatusFilter value.
             StatusFilter statusFilter = GetStatusFilterValueFromControl();
@@ -626,7 +636,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     statusFilter = StatusFilter.All;
                 }
 
-                SetStatusFilter( statusFilter );
+                SetStatusFilterControl( statusFilter );
             }
 
             // If the Location or StatusFilter selections have changed, we need to reload the attendees.
@@ -637,6 +647,17 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
                 ShowAttendees();
             }
+        }
+
+        /// <summary>
+        /// Resets control visibily to default values.
+        /// </summary>
+        private void ResetControlVisibility()
+        {
+            nbWarning.Visible = false;
+            lpLocation.Visible = true;
+            pnlSubPageNav.Visible = true;
+            pnlRoster.Visible = true;
         }
 
         /// <summary>
@@ -711,11 +732,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
             {
                 var campusContext = RockPage.GetCurrentContext( campusEntityType ) as Campus;
 
-                // TODO(JH) - Do we want to fall back to the first campus?
-                //campus = campusContext != null
-                //    ? CampusCache.Get( campusContext )
-                //    : CampusCache.All().FirstOrDefault();
-
                 campus = CampusCache.Get( campusContext );
             }
 
@@ -723,22 +739,37 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// Shows a warning message, and optionally hides the main content panel.
+        /// Shows a warning message, and optionally hides the content panels.
         /// </summary>
         /// <param name="warningMessage">The warning message to show.</param>
-        /// <param name="hideContentPanel">Whether to hide the main content panel.</param>
-        private void ShowWarningMessage( string warningMessage, bool hideContentPanel )
+        /// <param name="hideLocationPicker">Whether to hide the lpLocation control.</param>
+        private void ShowWarningMessage( string warningMessage, bool hideLocationPicker )
         {
             nbWarning.Text = warningMessage;
             nbWarning.Visible = true;
-            pnlContent.Visible = !hideContentPanel;
+            lpLocation.Visible = !hideLocationPicker;
+            pnlSubPageNav.Visible = false;
+            pnlRoster.Visible = false;
+        }
+
+        /// <summary>
+        /// Determines whether the specified location is within the current campus.
+        /// </summary>
+        /// <param name="locationId">The location identifier.</param>
+        private bool IsLocationWithinCampus( int locationId )
+        {
+            using ( var rockContext = new RockContext() )
+            {
+                var locationCampusId = new LocationService( rockContext ).GetCampusIdForLocation( locationId );
+                return locationCampusId == CurrentCampusId;
+            }
         }
 
         /// <summary>
         /// Sets the value of the lpLocation control.
         /// </summary>
         /// <param name="locationId">The identifier of the location.</param>
-        private void SetLocation( int locationId )
+        private void SetLocationControl( int locationId )
         {
             using ( var rockContext = new RockContext() )
             {
@@ -748,6 +779,28 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     lpLocation.Location = location;
                 }
             }
+        }
+
+        /// <summary>
+        /// Initializes the sub page nav.
+        /// </summary>
+        /// <param name="locationId">The location identifier.</param>
+        private void InitializeSubPageNav( int locationId )
+        {
+            RockPage rockPage = this.Page as RockPage;
+            if ( rockPage != null )
+            {
+                PageCache page = PageCache.Get( rockPage.PageId );
+                if ( page != null )
+                {
+                    pbSubPages.RootPageId = page.ParentPageId ?? 0;
+                }
+            }
+
+            pbSubPages.QueryStringParametersToAdd = new NameValueCollection
+            {
+                { PageParameterKey.LocationId, locationId.ToString() }
+            };
         }
 
         /// <summary>
@@ -766,7 +819,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// Sets the value of the bgStatus control.
         /// </summary>
         /// <param name="statusFilter">The status filter.</param>
-        private void SetStatusFilter( StatusFilter statusFilter )
+        private void SetStatusFilterControl( StatusFilter statusFilter )
         {
             bgStatus.SelectedValue = statusFilter.ToString( "d" );
         }
@@ -796,6 +849,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// </summary>
         private void RemoveDisabledStatusFilters()
         {
+            // Reset the visibility, just in case the control was previously hidden.
+            bgStatus.Visible = true;
+
             if ( !EnablePresence )
             {
                 // When EnablePresence is false for a given Check-in Area, the [Attendance].[PresentDateTime] value will have already been set upon check-in.
@@ -809,9 +865,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     return;
                 }
 
-                // Reset the visibility, just in case the control was previously hidden.
-                bgStatus.Visible = true;
-
                 // If EnablePresence is false, it doesn't make sense to show the 'Checked-in' filter.
                 var checkedInItem = bgStatus.Items.FindByValue( StatusFilter.CheckedIn.ToString( "d" ) );
                 if ( checkedInItem != null )
@@ -822,7 +875,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 if ( CurrentStatusFilter == StatusFilter.CheckedIn )
                 {
                     CurrentStatusFilter = StatusFilter.Present;
-                    SetStatusFilter( CurrentStatusFilter );
+                    SetStatusFilterControl( CurrentStatusFilter );
                 }
             }
         }

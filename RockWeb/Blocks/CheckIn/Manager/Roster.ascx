@@ -20,12 +20,12 @@
                 <div class="pull-left">
                     <Rock:LocationPicker ID="lpLocation" runat="server" AllowedPickerModes="Named" CssClass="picker-lg" OnSelectLocation="lpLocation_SelectLocation" />
                 </div>
-                <div class="pull-right">
-                    Sub Page Nav Goes Here
-                </div>
+                <asp:Panel ID="pnlSubPageNav" runat="server" class="pull-right">
+                    <Rock:PageNavButtons ID="pbSubPages" runat="server" />
+                </asp:Panel>
             </div>
 
-            <div class="panel panel-block">
+            <asp:Panel ID="pnlRoster" runat="server" CssClass="panel panel-block">
                 <div class="panel-heading clearfix">
                     <h1 class="panel-title pull-left">Room Roster</h1>
                     <div class="pull-right">
@@ -56,7 +56,7 @@
                         </Rock:Grid>
                     </div>
                 </div>
-            </div>
+            </asp:Panel>
 
         </asp:Panel>
 
