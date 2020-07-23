@@ -108,6 +108,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         #region Page Parameter Constants
 
         private const string PERSON_GUID_PAGE_QUERY_KEY = "Person";
+        private const string PERSON_ID_PAGE_QUERY_KEY = "PersonId";
 
         #endregion
 
@@ -156,21 +157,25 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             base.OnLoad( e );
 
+            Guid personGuid = GetPersonGuid();
+
             if ( !Page.IsPostBack )
             {
                 if ( IsUserAuthorized( Authorization.VIEW ) )
                 {
-                    Guid? personGuid = PageParameter( PERSON_GUID_PAGE_QUERY_KEY ).AsGuidOrNull();
-                    if ( personGuid.HasValue )
+                    if ( personGuid != Guid.Empty )
                     {
-                        ShowDetail( personGuid.Value );
+                        ShowDetail( personGuid );
                     }
                 }
             }
             else
             {
-                var person = new PersonService( new RockContext() ).Get( PageParameter( PERSON_GUID_PAGE_QUERY_KEY ).AsGuid() );
-                BindAttribute( person );
+                var person = new PersonService( new RockContext() ).Get( personGuid );
+                if ( person != null )
+                {
+                    BindAttribute( person );
+                }
             }
         }
 
@@ -187,7 +192,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void Block_BlockUpdated( object sender, EventArgs e )
         {
-            ShowDetail( PageParameter( PERSON_GUID_PAGE_QUERY_KEY ).AsGuid() );
+            ShowDetail( GetPersonGuid() );
         }
 
         /// <summary>
@@ -244,7 +249,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 }
             }
 
-            ShowDetail( PageParameter( PERSON_GUID_PAGE_QUERY_KEY ).AsGuid() );
+            ShowDetail( GetPersonGuid() );
         }
 
         protected void rptrFamily_ItemDataBound( object sender, RepeaterItemEventArgs e )
@@ -331,7 +336,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             }
 
             var rockContext = new RockContext();
-            var person = new PersonService( rockContext ).Get( PageParameter( PERSON_GUID_PAGE_QUERY_KEY ).AsGuid() );
+            var person = new PersonService( rockContext ).Get( GetPersonGuid() );
             var phoneNumber = person.PhoneNumbers.FirstOrDefault( n => n.IsMessagingEnabled );
             if ( phoneNumber == null )
             {
@@ -374,9 +379,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             nbReprintMessage.Visible = false;
 
-            Guid? personGuid = PageParameter( PERSON_GUID_PAGE_QUERY_KEY ).AsGuidOrNull();
+            Guid personGuid = GetPersonGuid();
 
-            if ( personGuid == null || !personGuid.HasValue )
+            if ( personGuid == Guid.Empty )
             {
                 maNoLabelsFound.Show( "No person was found.", ModalAlertType.Alert );
                 return;
@@ -392,8 +397,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             var attendanceIds = hfCurrentAttendanceIds.Value.SplitDelimitedValues().AsIntegerList();
 
-            // Get the person Id from the Guid in the page parameter
-            var personId = new PersonService( rockContext ).Queryable().Where( p => p.Guid == personGuid.Value ).Select( p => p.Id ).FirstOrDefault();
+            // Get the person Id from the PersonId page paramater, or look it up based on the Person Guid page parameter.
+            int? personIdParam = PageParameter( PERSON_ID_PAGE_QUERY_KEY ).AsIntegerOrNull();
+            int personId = personIdParam.HasValue
+                ? personIdParam.Value
+                : new PersonService( rockContext ).GetId( personGuid ).GetValueOrDefault();
+
             hfPersonId.Value = personId.ToString();
 
             var possibleLabels = ZebraPrint.GetLabelTypesForPerson( personId, attendanceIds );
@@ -478,6 +487,47 @@ namespace RockWeb.Blocks.CheckIn.Manager
         #endregion
 
         #region Methods
+
+        private Guid? _personGuid;
+
+        /// <summary>
+        /// Gets the person unique identifier.
+        /// </summary>
+        private Guid GetPersonGuid()
+        {
+            /*
+                7/23/2020 - JH
+                This Block was originally written specifically around Person Guid, so its usage is interwoven throughout the Block.
+                We are now introducing Person ID as an alternate query string parameter, so we might get one or the other.. or both.
+                Rather than refactor all existing usages throughout the Block to be aware of either identifier, this method will
+                serve as a central point to merge either identifier into a Guid result.
+
+                Reason: Enhancing Check-in functionality.
+            */
+
+            if ( _personGuid.HasValue )
+            {
+                return _personGuid.Value;
+            }
+
+            Guid? personGuid = PageParameter( PERSON_GUID_PAGE_QUERY_KEY ).AsGuidOrNull();
+            if ( personGuid.HasValue )
+            {
+                _personGuid = personGuid;
+                return _personGuid.Value;
+            }
+
+            int? personId = PageParameter( PERSON_ID_PAGE_QUERY_KEY ).AsIntegerOrNull();
+            if ( personId.HasValue )
+            {
+                using ( var rockContext = new RockContext() )
+                {
+                    _personGuid = new PersonService( rockContext ).GetGuid( personId.Value );
+                }
+            }
+
+            return _personGuid ?? Guid.Empty;
+        }
 
         /// <summary>
         /// Show the details for the given person.
@@ -566,16 +616,13 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     isFamilyChild.Add( thisPerson.GroupId, thisPerson.GroupRole.Guid.Equals( childGuid ) );
                 }
 
-                // Get the current url's root (without the person's guid)
-                string urlRoot = Request.Url.ToString().ReplaceCaseInsensitive( personGuid.ToString(), "" );
-
                 // Get the other family members and the info needed for rendering
                 var familyMembers = allFamilyMembers.Where( m => m.PersonId != person.Id )
                     .OrderBy( m => m.GroupId )
                     .ThenBy( m => m.Person.BirthDate )
                     .Select( m => new
                     {
-                        Url = urlRoot + m.Person.Guid.ToString(),
+                        Url = GetRelatedPersonUrl( person, m.Person.Guid, m.Person.Id ),
                         FullName = m.Person.FullName,
                         Gender = m.Person.Gender,
                         FamilyRole = m.GroupRole,
@@ -623,7 +670,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                             .ThenBy( m => m.Person.NickName )
                             .Select( m => new
                             {
-                                Url = urlRoot + m.Person.Guid.ToString(),
+                                Url = GetRelatedPersonUrl( person, m.Person.Guid, m.Person.Id ),
                                 FullName = m.Person.FullName,
                                 Gender = m.Person.Gender,
                                 Note = " (" + m.GroupRole.Name + ")"
@@ -715,6 +762,19 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 gHistory.DataSource = attendances;
                 gHistory.DataBind();
             }
+        }
+
+        /// <summary>
+        /// Gets the related person URL.
+        /// </summary>
+        private string GetRelatedPersonUrl( Rock.Model.Person currentPerson, Guid relatedPersonGuid, int relatedPersonId )
+        {
+            var template = "{0}={1}";
+            var relatedPersonUrl = Request.Url.ToString()
+                .ReplaceCaseInsensitive( string.Format( template, PERSON_GUID_PAGE_QUERY_KEY, currentPerson.Guid ), string.Format( template, PERSON_GUID_PAGE_QUERY_KEY, relatedPersonGuid ) )
+                .ReplaceCaseInsensitive( string.Format( template, PERSON_ID_PAGE_QUERY_KEY, currentPerson.Id ), string.Format( template, PERSON_ID_PAGE_QUERY_KEY, relatedPersonId ) );
+
+            return relatedPersonUrl;
         }
 
         /// <summary>
