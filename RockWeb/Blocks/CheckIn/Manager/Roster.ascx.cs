@@ -682,13 +682,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             if ( !areaGuid.HasValue )
             {
-                // Finally, fall back to the Weekly Service Check-in system Guid.
-                areaGuid = Rock.SystemGuid.GroupType.GROUPTYPE_WEEKLY_SERVICE_CHECKIN_AREA.AsGuidOrNull();
-            }
-
-            // TODO(JH) - Discuss with Nick, as this is no longer needed based on the fallback above.
-            if ( !areaGuid.HasValue )
-            {
+                // Finally, fall back to the Area select page.
                 if ( !NavigateToLinkedPage( AttributeKey.AreaSelectPage ) )
                 {
                     ShowWarningMessage( "The 'Area Select Page' Block Attribute must be defined.", true );

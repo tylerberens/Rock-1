@@ -21,7 +21,7 @@
                     <Rock:LocationPicker ID="lpLocation" runat="server" AllowedPickerModes="Named" CssClass="picker-lg" OnSelectLocation="lpLocation_SelectLocation" />
                 </div>
                 <asp:Panel ID="pnlSubPageNav" runat="server" class="pull-right">
-                    <Rock:PageNavButtons ID="pbSubPages" runat="server" />
+                    <Rock:PageNavButtons ID="pbSubPages" runat="server" IncludeCurrentQueryString="true" />
                 </asp:Panel>
             </div>
 
