@@ -86,6 +86,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             public const string Area = "Area";
             public const string LocationId = "LocationId";
+            public const string Person = "Person";
         }
 
         #endregion Page Parameter Keys
@@ -453,7 +454,19 @@ namespace RockWeb.Blocks.CheckIn.Manager
         protected void gAttendees_RowSelected( object sender, Rock.Web.UI.Controls.RowEventArgs e )
         {
             string personGuid = e.RowKeyValues[0].ToString();
-            if ( !NavigateToLinkedPage( AttributeKey.PersonPage, new Dictionary<string, string> { { "Person", personGuid } } ) )
+            var queryParams = new Dictionary<string, string>
+            {
+                { PageParameterKey.Person, personGuid }
+            };
+
+            // If an Area Guid was passed to the Page, pass it along so it can be passed back.
+            string areaGuid = PageParameter( PageParameterKey.Area );
+            if ( areaGuid.IsNotNullOrWhiteSpace() )
+            {
+                queryParams.Add( PageParameterKey.Area, areaGuid );
+            }
+
+            if ( !NavigateToLinkedPage( AttributeKey.PersonPage, queryParams ) )
             {
                 ShowWarningMessage( "The 'Person Page' Block Attribute must be defined.", true );
             }
