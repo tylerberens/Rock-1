@@ -18,7 +18,7 @@ namespace Rock.Migrations
 {
     using System;
     using System.Data.Entity.Migrations;
-    
+
     /// <summary>
     ///
     /// </summary>
@@ -40,7 +40,7 @@ namespace Rock.Migrations
             RemoveConnectionDetailPageInConnectionType();
         }
 
-        private static void AddConnectionRequestDetailPageInConnectionType()
+        private void AddConnectionRequestDetailPageInConnectionType()
         {
             AddColumn( "dbo.ConnectionType", "ConnectionRequestDetailPageId", c => c.Int() );
             AddColumn( "dbo.ConnectionType", "ConnectionRequestDetailPageRouteId", c => c.Int() );
@@ -55,7 +55,7 @@ namespace Rock.Migrations
             RockMigrationHelper.AddOrUpdateBlockTypeAttribute( "39C53B93-C75A-45DE-B9E7-DFA4EE6B7027", "1EDAFDED-DFE6-4334-B019-6EECBA89E05A", "Use Connection Request Detail Page From Connection Type", "UseConnectionRequestDetailPageFromConnectionType", "Use Connection Request Detail Page From Connection Type", @"If enabled, the Connection Request Detail page defined by the Connection Type will be used to view the request(if it's not empty/unset). Otherwise the Connection Request Detail page configured on this block will be used.", 2, @"True", "9F7D1BD2-472B-4C1C-9905-C956B9104304" );
         }
 
-        private static void RemoveConnectionDetailPageInConnectionType()
+        private void RemoveConnectionDetailPageInConnectionType()
         {
             // Use Connection Request Detail Page From Connection Type Attribute for BlockType: Connection Requests         
             RockMigrationHelper.DeleteAttribute( "9F7D1BD2-472B-4C1C-9905-C956B9104304" );
