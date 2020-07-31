@@ -498,7 +498,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 var img = e.Item.FindControl( "imgPerson" ) as Literal;
                 if ( img != null )
                 {
-                    img.Text = Rock.Model.Person.GetPersonPhotoImageTag( person.Id, person.PhotoId, person.Age.AsIntegerOrNull(), person.Gender, null, 50, 50 );
+                    img.Text = Rock.Model.Person.GetPersonPhotoImageTag( person.Id, person.PhotoId, person.Age.AsIntegerOrNull(), person.Gender, null, 50, 50, person.Name, "avatar avatar-lg mr-3" );
                 }
 
                 var lStatus = e.Item.FindControl( "lStatus" ) as Literal;
@@ -526,7 +526,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     var lAge = e.Item.FindControl( "lAge" ) as Literal;
                     if ( lAge != null )
                     {
-                        lAge.Text = string.Format( "{0}<small>(Age: {1})</small>",
+                        lAge.Text = string.Format( "{0}<span class='small text-muted'>(Age: {1})</span>",
                             string.IsNullOrWhiteSpace( person.ScheduleGroupNames ) ? "<br/>" : " ",
                             person.Age );
                     }
@@ -1636,7 +1636,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     PhotoId = person.PhotoId;
 
                     ScheduleGroupNames = attendances
-                        .Select( a => string.Format( "<br/><small>{0}{1}{2}</small>",
+                        .Select( a => string.Format( "<span class='d-block small text-muted'>{0}{1}{2}</span>",
                                 a.Occurrence.Group.Name,
                                 a.Occurrence.Schedule != null ? " - " + a.Occurrence.Schedule.Name : "",
                                 a.AttendanceCode != null ? " - " + a.AttendanceCode.Code : "" ) )

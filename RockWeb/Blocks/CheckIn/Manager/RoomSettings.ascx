@@ -7,11 +7,11 @@
 
         <asp:Panel ID="pnlContent" runat="server">
 
-            <div class="clearfix">
-                <div class="pull-left">
+            <div class="page-title-addon d-flex flex-wrap justify-content-between align-items-center">
+                <div>
                     <Rock:LocationPicker ID="lpLocation" runat="server" AllowedPickerModes="Named" IncludeInactiveNamedLocations="true" CssClass="picker-lg" OnSelectLocation="lpLocation_SelectLocation" />
                 </div>
-                <asp:Panel ID="pnlSubPageNav" runat="server" class="pull-right">
+                <asp:Panel ID="pnlSubPageNav" runat="server">
                     <Rock:PageNavButtons ID="pbSubPages" runat="server" IncludeCurrentQueryString="true" />
                 </asp:Panel>
             </div>

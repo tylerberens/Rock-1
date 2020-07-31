@@ -15,7 +15,7 @@
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
 
-        <div class="row margin-b-sm">
+        <div class="row">
             <div class="col-sm-3 col-xs-12">
 
                 <!-- Photo, Name & Campus, Phone & Email, Attributes -->
@@ -23,7 +23,7 @@
                     <asp:Literal ID="lPhoto" runat="server" />
 
                     <div class="d-flex flex-column align-items-center p-2 pb-3">
-                        <h1 class="title name js-checkin-person-name margin-t-none text-center"><asp:Literal ID="lName" runat="server"></asp:Literal></h1>
+                        <h1 class="title name js-checkin-person-name mt-0 text-center"><asp:Literal ID="lName" runat="server"></asp:Literal></h1>
                         <Rock:HighlightLabel ID="hlCampus" runat="server" LabelType="Campus" />
                     </div>
 
@@ -33,7 +33,7 @@
                             <Rock:NotificationBox ID="nbResult" runat="server" Visible="false" Dismissable="true" />
 
                             <!-- During entry -->
-                            <textarea runat="server" rows="3" cols="30" id="tbSmsMessage" visible="false" placeholder="Your SMS message here..." class="form-control js-sms-message margin-b-sm"></textarea>
+                            <textarea runat="server" rows="3" cols="30" id="tbSmsMessage" visible="false" placeholder="Your SMS message here..." class="form-control js-sms-message mb-2"></textarea>
                             <asp:LinkButton runat="server" Visible="false" ID="btnSmsSend" CssClass="btn btn-xs btn-primary js-btn-send mb-3" OnClick="btnSend_Click">Send</asp:LinkButton>
                             <asp:LinkButton runat="server" Visible="false" ID="btnSmsCancel" CssClass="btn btn-xs btn-link mb-3" OnClick="btnSmsCancel_Click">Cancel</asp:LinkButton>
                         </div>
@@ -43,12 +43,12 @@
                                 <div class="mb-2">
                                     <div>
                                         <%# Eval("NumberFormatted") %>
-                                        <a href="tel:<%# Eval("Number") %>"><i class="fa fa-phone-square"></i></a>
+                                        <a class="text-color" href="tel:<%# Eval("Number") %>"><i class="fa fa-phone-square"></i></a>
                                         <asp:LinkButton ID="btnSms" runat="server" Visible="false" OnClick="btnSms_Click" Text="<i class='fa fa-sms'></i>" />
                                     </div>
-                                    <div class="text-sm text-muted">
+                                    <span class="d-block small text-muted">
                                         <%# Eval("NumberTypeValue.Value") %>
-                                    </div>
+                                    </span>
                                 </div>
                             </ItemTemplate>
                         </asp:Repeater>
@@ -136,21 +136,20 @@
                         <Columns>
                             <Rock:RockTemplateField HeaderText="When">
                                 <ItemTemplate>
-                                    <%# ((DateTime)Eval("Date")).ToShortDateString() %><br />
-                                    <%# Eval("Schedule") %>
+                                    <span><%# ((DateTime)Eval("Date")).ToShortDateString() %></span>
+                                    <span class="d-block small text-muted"><%# Eval("Schedule") %></span>
                                     <asp:Literal ID="lWhoCheckedIn" runat="server"></asp:Literal>
                                 </ItemTemplate>
                             </Rock:RockTemplateField>
                             <Rock:RockTemplateField HeaderText="Location">
                                 <ItemTemplate>
-                                    <%# Eval("Location") %><br />
-                                    <%# Eval("Group") %>
+                                    <span><%# Eval("Location") %></span>
+                                    <span class="d-block small text-muted"><%# Eval("Group") %></span>
                                 </ItemTemplate>
                             </Rock:RockTemplateField>
-                            <Rock:RockTemplateField HeaderText="Code">
+                            <Rock:RockTemplateField HeaderText="Code" ItemStyle-CssClass="align-middle">
                                 <ItemTemplate>
-                                    <asp:Literal ID="lActive" runat="server"></asp:Literal><br />
-                                    <%# Eval("Code") %>
+                                    <%# Eval("Code") %> <asp:Literal ID="lActive" runat="server"></asp:Literal><br />
                                 </ItemTemplate>
                             </Rock:RockTemplateField>
                             <Rock:DeleteField OnClick="gHistory_Delete" ButtonCssClass="js-cancel-checkin btn btn-xs btn-danger" Tooltip="Delete This Checkin" />

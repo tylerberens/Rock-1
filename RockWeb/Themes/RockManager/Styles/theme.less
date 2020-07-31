@@ -24,6 +24,12 @@
   5. Components
 */
 
+.site-name {
+  font-size: 28px;
+  font-weight: @font-weight-bold;
+  padding-bottom: 4px;
+}
+
 .panel-widget {
   overflow: hidden;
 }
@@ -652,6 +658,7 @@ body.nav-open {
 
 .rock-top-header {
   margin-bottom: 0;
+  color: @white;
   background-color: @brand-primary;
   background-color: var(--brand-primary, @brand-primary);
   border: 0;
@@ -731,7 +738,7 @@ body.nav-open {
     top: 0;
     display: none;
     float: left;
-    width: @navbarside-width;
+    width: @navbar-top-height;
     height: @navbar-top-height;
     padding: 6px;
     color: @white;
@@ -754,7 +761,7 @@ body.nav-open {
       background-image: url("../../../Assets/Images/rock-logo-circle-white.svg");
       background-repeat: no-repeat;
       background-position: center center;
-      background-size: (@navbarside-width * .525);
+      background-size: (@navbar-top-height * .525);
     }
 
     .logo {
@@ -1002,6 +1009,13 @@ body.nav-open {
   background-color: @navbarside-background-color;
   background-color: var(--navbarside-background-color);
 
+  .zone-content,
+  .page-menu,
+  .block-content,
+  .block-content > div {
+    height: 100%;
+  }
+
   &::-webkit-scrollbar {
     width: 6px;
     background-color: transparent;
@@ -1013,13 +1027,13 @@ body.nav-open {
     border-radius: 10px;
   }
 
-  &.open-secondary-nav {
-    width: @navbarside-width + 280px;
+  // &.open-secondary-nav {
+  //   width: @navbarside-width + 280px;
 
-    &::-webkit-scrollbar-thumb {
-      background-color: rgba(0,0,0,0);
-    }
-  }
+  //   &::-webkit-scrollbar-thumb {
+  //     background-color: rgba(0,0,0,0);
+  //   }
+  // }
 
   @media (min-width: @screen-sm-min) {
     top: @navbar-top-height;
@@ -1049,205 +1063,53 @@ body.nav-open {
 
   .navbar-side {
     cursor: default;
-
-    .navbar-logo {
-      @media (min-width: @screen-sm-min) {
-        display: none;
-      }
-
-      a:hover {
-        background-color: @navbarside-background-color;
-        background-color: var(--navbarside-background-color);
-      }
-    }
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    height: ~"calc(100% - @{navbar-top-height})";
 
     & > li {
       width: @navbarside-width;
       margin-top: 0;
-      text-align: center;
+      text-align: left;
       cursor: pointer;
-      border-top: 1px solid lighten(@navbarside-background-color, 7%);
 
-      &:last-child {
-        border-bottom: 1px solid lighten(@navbarside-background-color, 7%);
-      }
+      a {
+        color: @navbarside-color;
+        padding: 10px 4px 10px 8px;
 
-      &:first-child {
-        border-top: 0;
-      }
+        &::before {
+          display: inline-block;
+          width: 0;
+          height: 8px;
+          margin: 0 14px 1px 10px;
+          content: " ";
+          background: @brand-primary;
+        }
 
-      > i {
-        display: flex;
-        height: @navbar-top-height;
-        font-size: floor(@navbarside-width * .325);
-        align-items: center;
-        justify-content: center;
-
-        &:hover {
-          color: @navbarside-color;
+        &:hover,
+        &:focus {
+          background:  @navbarside-sub-bg;
         }
       }
 
-      &.open {
-        background-color: @navbarside-sub-bg;
-        box-shadow: inset 3px 0 0 0 @brand-primary;
-
-        @media @sm {
+      &.current {
+        a {
           &::before {
-            position: absolute;
-            top: -(ceil(@navbarside-width * .35));
-            right: 0;
-            width: ceil(@navbarside-width * .35);
-            height: ceil(@navbarside-width * .35);
-            content: " ";
-          }
-
-          &::after {
-            position: absolute;
-            right: 0;
-            bottom: -(ceil(@navbarside-width * .35));
-            z-index: 1;
-            width: ceil(@navbarside-width * .35);
-            height: ceil(@navbarside-width * .35);
-            content: " ";
+            width: 8px;
+            padding-left: 8px;
+            margin-right: 6px;
           }
         }
       }
 
-      &.current,
-      &.current:hover {
-        box-shadow: inset 3px 0 0 0 @brand-primary;
-        > i {
-          color: @white;
-        }
-      }
-
-      .nav-childpages {
-        position: fixed;
-        top: 0;
-        bottom: 0;
-        left: @navbarside-width;
-        z-index: 2000;
-        display: none;
-        width: 280px;
-        padding: 0 10px 0 12px;
-        overflow-x: hidden;
-        overflow-y: auto;
-        text-align: left;
-        background-color: @navbarside-sub-bg;
 
 
-        /* Fix for https://bugs.webkit.org/show_bug.cgi?id=160953 Safari 10.1+ */
-        @media not all and (min-resolution: .001dpcm) and (min-width: @screen-sm-min) {
-          @supports (-webkit-appearance:none) {
-            top: @navbar-top-height;
-          }
-        }
 
 
-        li {
-
-          a {
-            padding: 0;
-            line-height: 2.5;
-            color: @navbarside-color;
-
-            &::before {
-              display: inline-block;
-              width: 0;
-              height: 8px;
-              margin-right: 14px;
-              margin-bottom: 1px;
-              content: " ";
-              background: @brand-primary;
-            }
-
-            &:focus {
-              color: @nav-sub-text-rollover-color;
-              background-color: @nav-sub-text-rollover-bg;
-            }
-
-            &:hover {
-              color: @white;
-              background-color: @navbarside-sub-bg;
-
-              &::before {
-                width: 8px;
-                padding-left: 8px;
-                margin-right: 6px;
-              }
-            }
-          }
-
-          &.current {
-            a {
-              font-weight: 600;
-              color: @white;
-              &::before {
-                width: 8px;
-                padding-left: 8px;
-                margin-right: 6px;
-              }
-            }
-          }
-
-          &.title {
-            font-size: 28px;
-            font-weight: @font-weight-light;
-            line-height: 1;
-            color: @navbarside-color;
-            height: @navbar-top-height;
-            display: flex;
-            align-items: center;
-
-            + .header {
-              margin-top: 0;
-            }
-          }
-
-          &.header {
-            padding-top: 11px;
-            padding-left: 5px !important;
-            margin-top: 24px;
-            margin-bottom: (@line-height-computed / 2);
-            font-size: 11px;
-            font-weight: 600;
-            line-height: 1;
-            color: rgba(167,174,181,.6);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            border-top: 1px solid rgba(167,174,181,.6);
-          }
-
-
-          &:last-child {
-            margin-bottom: 72px;
-          }
-        }
-
-
-        &::-webkit-scrollbar {
-          width: 10px;
-          background-color: transparent;
-        }
-
-        &::-webkit-scrollbar-thumb {
-          width: 10px;
-          background-color: rgba(0,0,0, .2);
-          border-radius: 10px;
-        }
-      }
     }
 
-    > li.open {
-      .nav-childpages {
-        display: inline-block;
 
-        li.header {
-          padding-left: 0;
-        }
-      }
-    }
   }
 
   // Hide config-bar inside navigation since it is always cropped
@@ -1272,8 +1134,8 @@ body.nav-open {
 // expanded view
 @media (min-width: @screen-sm-min) {
   .navbar-static-side {
-    display: block;
-    height: ~"calc(100% - @{navbar-top-height})" !important; // Overrides collapse if window is resized
+    display: flex;
+    // height: ~"calc(100% - @{navbar-top-height})" !important; // Overrides collapse if window is resized
   }
 
   #content-wrapper {
@@ -1300,13 +1162,14 @@ body.navbar-side-open {
     min-height: 600px;
   }
 
-  .page-title {
+  .page-title,
+  .page-title-inject,
+  .page-title-addon {
     padding: 20px 15px;
     margin: -5px -15px 5px;
     color: @pagetitle-text-color;
     background-color: @pagetitle-background;
     background-color: var(--pagetitle-background, @pagetitle-background);
-    border-bottom: 1px solid @gray-lighter;
 
     .title {
       margin: 0;
@@ -1341,14 +1204,33 @@ body.navbar-side-open {
     }
   }
 
+  .page-title,
+  .page-title-addon {
+    border-bottom: 1px solid @gray-lighter;
+  }
+
 
   @media (min-width: @screen-md-min) {
     padding: 0;
     margin: 35px 35px 0;
 
-    .page-title {
+    .page-title,
+    .page-title-inject,
+    .page-title-addon {
       padding: 20px 35px;
       margin: -35px -35px 35px;
+    }
+
+    .page-title-inject {
+      padding-bottom: 0;
+      margin-bottom: 0;
+    }
+
+    .page-title-addon {
+      margin-top: 0;
+      padding-top: 0;
+      padding-bottom: 20px;
+      margin-bottom: 35px;
     }
   }
 }
@@ -1530,6 +1412,49 @@ body.navbar-side-open {
   }
 }
 
+
+.picker-lg {
+  .picker-label {
+    display: flex;
+    align-items: center;
+    margin-left: -4px;
+    padding-left: 4px;
+    border: 0;
+    box-shadow: none;
+    width: auto;
+    max-width: none;
+
+    &:focus {
+      background: fade(#000,8%);
+    }
+
+    > i {
+      display: none;
+    }
+
+    span {
+      width: auto;
+    }
+
+    > b {
+      float: left !important;
+      margin: 0 0 0 8px !important;
+    }
+  }
+
+  .picker-select-none {
+    display: none !important;
+  }
+
+  .selected-names {
+    font-size: 24px;
+    font-weight: 700;
+  }
+}
+
+.avatar-column {
+  width: 40px;
+}
 
 
 /* #endregion */

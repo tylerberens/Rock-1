@@ -59,17 +59,11 @@
                 <div class="navbar-toggle navbar-toggle-side-left collapsed" data-toggle="collapse" data-target=".navbar-static-side">
                     <i class="fa fa-bars"></i>
                 </div>
-                <Rock:Lava ID="hlHomeCorner" runat="server">
-                    {%- if CurrentPage.Layout.Site.SiteLogoBinaryFileId != null -%}
-                        <a href="{{ '~' | ResolveRockUrl }}" title="Rock RMS" class="navbar-brand-corner has-logo">
-                            <img src="{{ '~' | ResolveRockUrl }}GetImage.ashx?id={{ CurrentPage.Layout.Site.SiteLogoBinaryFileId }}&w=42&h=42" alt="{{ 'Global' | Attribute:'OrganizationName' }}" class="logo">
-                        </a>
-                    {%- else -%}
-                        <a href="{{ '~' | ResolveRockUrl }}" title="Rock RMS" class="navbar-brand-corner no-logo"></a>
-                    {%- endif -%}
-                </Rock:Lava>
 
                 <div id="fixed-header" class="header-content" role="navigation">
+                    <Rock:Lava ID="siteNameLava" runat="server">
+                        <span class="site-name d-none d-sm-flex align-items-center">{{ CurrentPage.Layout.Site.Name }}</span>
+                    </Rock:Lava>
                     <Rock:Zone Name="Header" runat="server" CssClass="navbar-zone-header" />
                     <Rock:Zone Name="Login" runat="server" CssClass="navbar-zone-login" />
                 </div>
@@ -109,7 +103,7 @@
     </form>
 
     <script>
-        Sys.Application.add_load(BindNavEvents);
+        //Sys.Application.add_load(BindNavEvents);
         Sys.Application.add_load(PreventNumberScroll);
     </script>
 </body>

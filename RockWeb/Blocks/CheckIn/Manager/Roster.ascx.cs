@@ -358,8 +358,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var lPhoto = e.Row.FindControl( "lPhoto" ) as Literal;
             if ( lPhoto != null )
             {
-                var imgTag = Rock.Model.Person.GetPersonPhotoImageTag( attendee.PersonId, attendee.PhotoId, attendee.Age, attendee.Gender, null, 50, 50 );
-                lPhoto.Text = string.Format( @"<div class=""photo-icon photo-round js-person-popover"">{0}</div>", imgTag );
+                var imgTag = Rock.Model.Person.GetPersonPhotoImageTag( attendee.PersonId, attendee.PhotoId, attendee.Age, attendee.Gender, null, 50, 50, attendee.Name, "avatar avatar-lg" );
+                lPhoto.Text = string.Format( @"{0}", imgTag );
             }
 
             // Mobile only.
@@ -373,7 +373,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var lName = e.Row.FindControl( "lName" ) as Literal;
             if ( lName != null )
             {
-                lName.Text = string.Format( @"<div class=""name""><span class=""js-checkin-person-name"">{0}</span><span class=""badges d-sm-none"">{1}</span></div><div class=""parent-name text-sm text-muted"">{2}</div>",
+                lName.Text = string.Format( @"<div class=""name""><span class=""js-checkin-person-name"">{0}</span><span class=""badges d-sm-none"">{1}</span></div><div class=""parent-name small text-muted"">{2}</div>",
                     attendee.Name,
                     GetBadges( attendee, true ),
                     attendee.ParentNames );
@@ -390,7 +390,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var lMobileTagAndSchedules = e.Row.FindControl( "lMobileTagAndSchedules" ) as Literal;
             if ( lMobileTagAndSchedules != null )
             {
-                lMobileTagAndSchedules.Text = string.Format( @"<div class=""person-tag"">{0}</div><div class=""text-sm text-muted"">{1}</div>", attendee.Tag, attendee.ServiceTimes );
+                lMobileTagAndSchedules.Text = string.Format( @"<div class=""person-tag"">{0}</div><div class=""small text-muted"">{1}</div>", attendee.Tag, attendee.ServiceTimes );
             }
 
             // Desktop only.
