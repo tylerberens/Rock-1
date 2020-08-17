@@ -173,6 +173,20 @@ namespace Rock
         }
 
         /// <summary>
+        /// Sets the value of an attribute key in memory.  Note, this will not persist value to database
+        /// </summary>
+        /// <remarks>
+        /// This method processes values that do not match an overload with a more specific Type.
+        /// </remarks>
+        /// <param name="entity">The entity.</param>
+        /// <param name="key">The key.</param>
+        /// <param name="value">The value.</param>
+        public static void SetAttributeValue( this IHasAttributes entity, string key, object value )
+        {
+            entity.SetAttributeValue( key, value?.ToString() ?? string.Empty );
+        }
+
+        /// <summary>
         /// Gets the authorized attributes.
         /// </summary>
         /// <param name="entity">The entity.</param>
