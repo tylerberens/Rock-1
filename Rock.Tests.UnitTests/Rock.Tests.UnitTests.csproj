@@ -91,6 +91,7 @@
     <Compile Include="Rock\Reporting\ValueFilterTests.cs" />
     <Compile Include="Rock\Utility\ExtensionMethods\StringExtensionsTests.cs" />
     <Compile Include="Rock\Utility\ExtensionMethods\TypeExtensionsTests.cs" />
+    <Compile Include="Rock\Utility\RockSerializableNamedValueListTests.cs" />
     <Compile Include="Rock\Utility\RockSerializableListTests.cs" />
     <Compile Include="Rock\Utility\RockSerializableDictionaryTests.cs" />
     <Compile Include="Rock\Utility\RockDynamicTests.cs" />
