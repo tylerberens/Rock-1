@@ -244,7 +244,7 @@ namespace RockWeb
             //// note: we put a RequiresViewSecurity flag on BinaryFileType because checking security for every image would be slow (~40ms+ per image request)
             if ( binaryFileMetaData.BinaryFileType_RequiresViewSecurity )
             {
-                var currentUser = new UserLoginService( rockContext ).GetByUserName( UserLogin.GetCurrentUserName() );
+                var currentUser = UserLoginService.GetCurrentUser();
                 Person currentPerson = currentUser != null ? currentUser.Person : null;
                 BinaryFile binaryFileAuth = new BinaryFileService( rockContext ).Queryable( "BinaryFileType" ).AsNoTracking().First( a => a.Id == binaryFileMetaData.Id );
                 if ( !binaryFileAuth.IsAuthorized( Authorization.VIEW, currentPerson ) )
