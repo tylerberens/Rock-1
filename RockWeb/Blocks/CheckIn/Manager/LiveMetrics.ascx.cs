@@ -41,19 +41,83 @@ namespace RockWeb.Blocks.CheckIn.Manager
     [DisplayName( "Live Metrics" )]
     [Category( "Check-in > Manager" )]
     [Description( "Block used to view current check-in counts and locations." )]
-    [CustomRadioListField( "Navigation Mode", "Navigation and attendance counts can be grouped and displayed either by 'Group Type > Group Type (etc) > Group > Location' or by 'location > location (etc).'  Select the navigation hierarchy that is most appropriate for your organization.", "T^Group Type,L^Location,", true, "T", "", 0, "Mode" )]
-    [GroupTypeField( "Check-in Type", "The Check-in Area to display.  This value can also be overridden through the URL query string key (e.g. when navigated to from the Check-in Type selection block).", false, "", "", 1, "GroupTypeTemplate", Rock.SystemGuid.DefinedValue.GROUPTYPE_PURPOSE_CHECKIN_TEMPLATE )]
-    [LinkedPage( "Person Page", "The page used to display a selected person's details.", order: 2 )]
-    [LinkedPage( "Area Select Page", "The page to redirect user to if area has not be configured or selected.", order: 3 )]
-    [DefinedValueField( Rock.SystemGuid.DefinedType.CHART_STYLES, "Chart Style", order: 4, defaultValue: Rock.SystemGuid.DefinedValue.CHART_STYLE_ROCK )]
-    [BooleanField( "Search By Code", "A flag indicating if security codes should also be evaluated in the search box results.", order: 5 )]
+
+    #region Block Attributes
+
+    [CustomRadioListField(
+        "Navigation Mode",
+        Description = "Navigation and attendance counts can be grouped and displayed either by 'Group Type > Group Type (etc) > Group > Location' or by 'location > location (etc).'  Select the navigation hierarchy that is most appropriate for your organization.",
+        ListSource = "T^Group Type,L^Location,",
+        IsRequired = true,
+        DefaultValue = "T",
+        Order = 0,
+        Key = AttributeKey.Mode )]
+    [GroupTypeField(
+        "Check-in Type",
+        Description = "The Check-in Area to display.  This value can also be overridden through the URL query string key (e.g. when navigated to from the Check-in Type selection block).",
+        IsRequired = false,
+        Order = 1,
+        Key = AttributeKey.GroupTypeTemplate,
+        GroupTypePurposeValueGuid = Rock.SystemGuid.DefinedValue.GROUPTYPE_PURPOSE_CHECKIN_TEMPLATE )]
+    [LinkedPage(
+        "Person Page",
+        Description = "The page used to display a selected person's details.",
+        Order = 2,
+        Key = AttributeKey.PersonPage )]
+    [LinkedPage(
+        "Area Select Page",
+        Description = "The page to redirect user to if area has not be configured or selected.",
+        Order = 3,
+        Key = AttributeKey.AreaSelectPage )]
+
+    #endregion Block Attributes
     public partial class LiveMetrics : Rock.Web.UI.RockBlock
     {
+        #region Attribute Keys
+
+        private static class AttributeKey
+        {
+            public const string Mode = "Mode";
+            public const string GroupTypeTemplate = "GroupTypeTemplate";
+            public const string PersonPage = "PersonPage";
+            public const string AreaSelectPage = "AreaSelectPage";
+        }
+
+        #endregion Attribute Keys
+
         #region Fields
 
         private string _configuredMode = "L";
 
         #endregion
+
+        #region ViewState Keys
+
+        private static class ViewStateKey
+        {
+            public const string CurrentCampusId = "CurrentCampusId";
+            public const string CurrentScheduleId = "CurrentScheduleId";
+            public const string CurrentNavPath = "CurrentNavPath";
+            public const string NavData = "NavData";
+        }
+
+        #endregion ViewState Keys
+
+        #region Page Parameter Keys
+
+        /// <summary>
+        /// Keys for page params
+        /// </summary>
+        private static class PageParameterKey
+        {
+            public const string NavPath = "NavPath";
+            public const string GroupType = "GroupType";
+            public const string Location = "Location";
+            public const string Group = "Group";
+            public const string Area = "Area";
+        }
+
+        #endregion Page Parameter Keys
 
         #region Properties
 
@@ -75,10 +139,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             base.LoadViewState( savedState );
 
-            CurrentCampusId = ViewState["CurrentCampusId"] as string;
-            CurrentScheduleId = ViewState["CurrentScheduleId"] as string;
-            CurrentNavPath = ViewState["CurrentNavPath"] as string;
-            NavData = ViewState["NavData"] as NavigationData;
+            CurrentCampusId = ViewState[ViewStateKey.CurrentCampusId] as string;
+            CurrentScheduleId = ViewState[ViewStateKey.CurrentScheduleId] as string;
+            CurrentNavPath = ViewState[ViewStateKey.CurrentNavPath] as string;
+            NavData = ViewState[ViewStateKey.NavData] as NavigationData;
         }
 
         public override List<Rock.Web.UI.BreadCrumb> GetBreadCrumbs( Rock.Web.PageReference pageReference )
@@ -106,7 +170,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             rptNavItems.ItemCommand += RptNavItems_ItemCommand;
             rptPeople.ItemDataBound += rptPeople_ItemDataBound;
 
-            _configuredMode = GetAttributeValue( "Mode" );
+            _configuredMode = GetAttributeValue( AttributeKey.Mode );
         }
 
         /// <summary>
@@ -158,16 +222,16 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 if ( !Page.IsPostBack )
                 {
                     // Check for navigation path
-                    string requestedNavPath = PageParameter( "NavPath" );
+                    string requestedNavPath = PageParameter( PageParameterKey.NavPath );
                     if ( !string.IsNullOrWhiteSpace( requestedNavPath ) )
                     {
                         CurrentNavPath = requestedNavPath;
                     }
                     else
                     {
-                        int? groupTypeId = PageParameter( "GroupType" ).AsIntegerOrNull();
-                        int? locationId = PageParameter( "Location" ).AsIntegerOrNull();
-                        int? groupId = PageParameter( "Group" ).AsIntegerOrNull();
+                        int? groupTypeId = PageParameter( PageParameterKey.GroupType ).AsIntegerOrNull();
+                        int? locationId = PageParameter( PageParameterKey.Location ).AsIntegerOrNull();
+                        int? groupId = PageParameter( PageParameterKey.Group ).AsIntegerOrNull();
                         if ( groupTypeId.HasValue || locationId.HasValue || groupId.HasValue )
                         {
                             CurrentNavPath = BuildCurrentPath( groupTypeId, locationId, groupId );
@@ -197,10 +261,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// </returns>
         protected override object SaveViewState()
         {
-            ViewState["NavData"] = NavData;
-            ViewState["CurrentNavPath"] = CurrentNavPath;
-            ViewState["CurrentScheduleId"] = CurrentScheduleId;
-            ViewState["CurrentCampusId"] = CurrentCampusId;
+            ViewState[ViewStateKey.NavData] = NavData;
+            ViewState[ViewStateKey.CurrentNavPath] = CurrentNavPath;
+            ViewState[ViewStateKey.CurrentScheduleId] = CurrentScheduleId;
+            ViewState[ViewStateKey.CurrentCampusId] = CurrentCampusId;
 
             return base.SaveViewState();
         }
@@ -238,6 +302,16 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
                 var loc = navItem as NavigationLocation;
 
+                if ( loc != null )
+                {
+                    var lStatus = e.Item.FindControl( "lStatus" ) as Literal;
+                    if ( lStatus != null )
+                    {
+                        bool isOpen = loc.IsActive;
+                        lStatus.Text = string.Format( @"<span class=""label label-{0} mr-2"">{1}</span>", isOpen ? "success" : "danger", isOpen ? "open" : "closed" );
+                    }
+                }
+
                 var lbl = e.Item.FindControl( "lblCurrentCount" ) as Label;
                 if ( lbl != null )
                 {
@@ -265,22 +339,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
                         }
                     }
                 }
-
-                var tgl = e.Item.FindControl( "tglRoom" ) as Toggle;
-                if ( tgl != null )
-                {
-                    if ( loc != null )
-                    {
-                        tgl.Visible = loc.HasGroups;
-                        tgl.Checked = loc.IsActive;
-                        tgl.Attributes["data-key"] = loc.Id.ToString();
-                    }
-                    else
-                    {
-                        tgl.Visible = false;
-                    }
-                }
-
             }
         }
 
@@ -339,24 +397,42 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     img.Text = Rock.Model.Person.GetPersonPhotoImageTag( person.Id, person.PhotoId, person.Age.AsIntegerOrNull(), person.Gender, null, 50, 50, person.Name, "avatar avatar-lg mr-3" );
                 }
 
+
+                string desktopStatus = string.Empty;
+                string statusClass = string.Empty;
+                string mobileIcon = @"<i class=""fa fa-{0}""></i>";
+
+                if ( NavData.AllowCheckout && person.CheckedOutDateTime.HasValue )
+                {
+                    statusClass = "danger";
+                    mobileIcon = string.Format( mobileIcon, "minus" );
+                    desktopStatus = "Checked-out";
+                }
+                else if ( NavData.EnablePresence && person.PresentDateTime.HasValue )
+                {
+                    statusClass = "success";
+                    mobileIcon = string.Format( mobileIcon, "check" );
+                    desktopStatus = "Present";
+                }
+                else
+                {
+                    statusClass = "warning";
+                    mobileIcon = "&nbsp;";
+                    desktopStatus = "Checked-in";
+                }
+
                 var lStatus = e.Item.FindControl( "lStatus" ) as Literal;
                 if ( lStatus != null )
                 {
-                    if ( person.LastCheckin.HasValue )
-                    {
-                        if ( person.CheckedInNow )
-                        {
-                            lStatus.Text = "<span class='badge badge-success'>Checked In</span><br/>";
-                        }
-                        else
-                        {
-                            lStatus.Text = person.LastCheckin.Value.ToShortDateString() + "<br/>";
-                        }
-                    }
-                    else
-                    {
-                        lStatus.Text = string.Empty;
-                    }
+                    lStatus.Text = string.Format( "<span class='label label-{0} d-sm-table d-none'>{1}</span>", statusClass, desktopStatus );
+                }
+
+
+                //mobile only
+                var lMobileStatus = e.Item.FindControl( "lMobileStatus" ) as Literal;
+                if ( lMobileStatus != null )
+                {
+                    lMobileStatus.Text = string.Format( @"<span class=""badge badge-circle badge-{0} d-sm-none"">{1}</span>", statusClass, mobileIcon );
                 }
 
                 if ( person.Age != string.Empty )
@@ -395,7 +471,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 {
                     var parms = new Dictionary<string, string>();
                     parms.Add( "Person", e.EventArgument.Substring( 1 ) );
-                    NavigateToLinkedPage( "PersonPage", parms );
+                    NavigateToLinkedPage( AttributeKey.PersonPage, parms );
                 }
                 else
                 {
@@ -404,37 +480,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 }
             }
         }
-
-        /// <summary>
-        /// Handles the CheckedChanged event of the tglRoom control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        protected void tglRoom_CheckedChanged( object sender, EventArgs e )
-        {
-            var tgl = sender as Toggle;
-            if ( tgl != null )
-            {
-                int? id = tgl.Attributes["data-key"].AsIntegerOrNull();
-                if ( id.HasValue )
-                {
-                    using ( var rockContext = new RockContext() )
-                    {
-                        var location = new LocationService( rockContext ).Get( id.Value );
-                        if ( location != null && location.IsActive != tgl.Checked )
-                        {
-                            location.IsActive = tgl.Checked;
-                            rockContext.SaveChanges();
-                            Rock.CheckIn.KioskDevice.Clear();
-                        }
-                    }
-                    NavData.Locations.Where( l => l.Id == id.Value ).ToList().ForEach( l => l.IsActive = tgl.Checked );
-                }
-            }
-
-            BuildNavigationControls();
-        }
-
 
         protected void lbUpdateThreshold_Click( object sender, EventArgs e )
         {
@@ -596,89 +641,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
             return string.Empty;
         }
 
-        private void RegisterStartupScript()
-        {
-            string script = string.Format( @"
-
-            var chartData = eval($('#{1}').val());
-            var chartLabel = eval($('#{2}').val());
-
-            var options = {{
-              maintainAspectRatio: false,
-                legend: {{
-                    position: 'bottom',
-                    display: false
-                }},
-                tooltips: {{
-                    enabled: true,
-                    backgroundColor: '#000',
-                    bodyFontColor: '#fff',
-                    titleFontColor: '#fff'
-                }}
-                ,scales: {{
-		            yAxes: [{{
-			            ticks: {{
-                           min: 0,
-                           stepSize: 1
-                         }},
-		            }}]
-              }}
-            }};
-                var data = {{
-                    labels: chartLabel,
-                    datasets: [{{
-                                label: 'Room 1',
-                                fill:  false,
-                                backgroundColor: '#059BFF',
-                                borderColor: '#059BFF',
-                                borderWidth: 0,
-                                pointRadius: 3,
-                                pointBackgroundColor: '#059BFF',
-                                pointBorderColor: '#059BFF',
-                                pointBorderWidth: 0,
-                                pointHoverBackgroundColor: 'rgba(5,155,255,.6)',
-                                pointHoverBorderColor: 'rgba(5,155,255,.6)',
-                                pointHoverRadius: '3',
-                                lineTension: 0,
-                                data: chartData
-                              }}
-                          ],
-                    borderWidth: 0
-                }};
-
-
-                Chart.defaults.global.defaultFontColor = '#777';
-                Chart.defaults.global.defaultFontFamily = 'sans-serif';
-
-           var ctx = document.getElementById( '{0}' ).getContext( '2d' );
-                        var chart = new Chart( ctx, {{
-                            type: 'line',
-                            data: data,
-                            options: options
-                }});    
-
-            $('.js-threshold-btn-edit').on('click', function(e){{
-                    var $parentDiv = $(this).closest('div.js-threshold');
-                    $parentDiv.find('.js-threshold-nb').val($parentDiv.find('.js-threshold-hf').val());
-                    $parentDiv.find('.js-threshold-view').hide();
-                    $parentDiv.find('.js-threshold-edit').show();
-                }});
-
-                $('a.js-threshold-edit').on('click', function(e){{
-                    var $parentDiv = $(this).closest('div.js-threshold');
-                    $parentDiv.find('.js-threshold-edit').hide();
-                    $parentDiv.find('.js-threshold-view').show();
-                    return true;
-                }});
-
-                $('.js-threshold').on('click', function(e){{
-                    e.stopPropagation();
-                }});
-", chartCanvas.ClientID, hfChartData.ClientID, hfChartLabel.ClientID );
-
-            ScriptManager.RegisterStartupScript( this.Page, this.GetType(), "chart", script, true );
-        }
-
         #region Get Navigation Data
 
         private NavigationData GetNavigationData( CampusCache campus, int? scheduleId )
@@ -697,17 +659,17 @@ namespace RockWeb.Blocks.CheckIn.Manager
                         .ForEach( l => validLocationids.Add( l ) );
                 }
 
-                var groupTypeTemplateGuid = PageParameter( "Area" ).AsGuidOrNull();
+                var groupTypeTemplateGuid = PageParameter( PageParameterKey.Area ).AsGuidOrNull();
                 if ( !groupTypeTemplateGuid.HasValue )
                 {
-                    groupTypeTemplateGuid = this.GetAttributeValue( "GroupTypeTemplate" ).AsGuidOrNull();
+                    groupTypeTemplateGuid = this.GetAttributeValue( AttributeKey.GroupTypeTemplate ).AsGuidOrNull();
                 }
 
                 if ( !groupTypeTemplateGuid.HasValue )
                 {
                     // Check to see if a specific group was specified
                     Guid? guid = Rock.SystemGuid.DefinedValue.GROUPTYPE_PURPOSE_CHECKIN_TEMPLATE.AsGuid();
-                    int? groupId = PageParameter( "Group" ).AsIntegerOrNull();
+                    int? groupId = PageParameter( PageParameterKey.Group ).AsIntegerOrNull();
                     if ( groupId.HasValue && guid.HasValue )
                     {
                         var group = new GroupService( rockContext ).Get( groupId.Value );
@@ -740,6 +702,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
                         }
                     }
 
+                    var allowCheckedOut = parentGroupType.GetAttributeValue( "core_checkin_AllowCheckout" ).AsBoolean( true );
+                    var enablePresence = parentGroupType.GetAttributeValue( "core_checkin_EnablePresence" ).AsBoolean();
+                    NavData.AllowCheckout = allowCheckedOut;
+                    NavData.EnablePresence = enablePresence;
+                    pnlPending.Visible = enablePresence;
+                    pnlCheckedOut.Visible = allowCheckedOut;
                     lGroupTypeName.Text = parentGroupType.Name ?? "";
 
                     // Get the groups
@@ -849,7 +817,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
                             a.Occurrence.LocationId.HasValue &&
                             a.StartDateTime > dayStart &&
                             a.StartDateTime < now &&
-                            !a.EndDateTime.HasValue &&
                             a.DidAttend.HasValue &&
                             a.DidAttend.Value &&
                             groupIds.Contains( a.Occurrence.GroupId.Value ) &&
@@ -873,6 +840,39 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     }
 
                     var attendanceList = attendanceQry.ToList();
+
+                    foreach ( var groupLoc in attendanceList
+                            .Where( a =>
+                                a.PersonAlias != null &&
+                                schedules.Any( b => b.Id == a.Occurrence.ScheduleId.Value ) )
+                            .GroupBy( a => new
+                            {
+                                GroupId = a.Occurrence.GroupId.Value,
+                                LocationId = a.Occurrence.LocationId.Value
+                            } ) )
+                    {
+                        List<int> pendingPeople = new List<int>();
+                        List<int> checkedInPeople = new List<int>();
+                        List<int> checkedOutPeople = new List<int>();
+
+                        if ( NavData.EnablePresence )
+                        {
+                            pendingPeople = groupLoc.Where( a => !a.PresentDateTime.HasValue ).Select( a => a.PersonAlias.PersonId ).ToList();
+                            checkedInPeople = groupLoc.Where( a => a.PresentDateTime.HasValue ).Select( a => a.PersonAlias.PersonId ).ToList();
+                        }
+                        else
+                        {
+                            checkedInPeople = groupLoc.Select( a => a.PersonAlias.PersonId ).ToList();
+                        }
+
+                        if ( NavData.AllowCheckout )
+                        {
+                            checkedOutPeople = groupLoc.Where( a => a.EndDateTime.HasValue ).Select( a => a.PersonAlias.PersonId ).ToList();
+                        }
+
+                        AddPersonCountByGroup( groupLoc.Key.GroupId, pendingPeople, checkedInPeople, checkedOutPeople );
+                        AddPersonCountByLocation( groupLoc.Key.LocationId, pendingPeople, checkedInPeople, checkedOutPeople );
+                    }
 
                     foreach ( DateTime chartTime in chartTimes )
                     {
@@ -915,10 +915,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 }
                 else
                 {
-                    if ( string.IsNullOrWhiteSpace( PageParameter( "Area" ) ) )
+                    if ( string.IsNullOrWhiteSpace( PageParameter( PageParameterKey.Area ) ) )
                     {
                         // If could not determine area and did not come from are select, redirect to area select page
-                        NavigateToLinkedPage( "AreaSelectPage" );
+                        NavigateToLinkedPage( AttributeKey.AreaSelectPage );
                     }
 
                     nbWarning.Text = "Please select a valid Check-in type in the block settings.";
@@ -928,6 +928,51 @@ namespace RockWeb.Blocks.CheckIn.Manager
             }
 
             return null;
+        }
+
+        private void AddPersonCountByLocation( int locationId, List<int> pendingPeople, List<int> checkedInPeople, List<int> checkedOutPeople )
+        {
+            var navLocation = NavData.Locations.FirstOrDefault( g => g.Id == locationId );
+            if ( navLocation != null )
+            {
+                navLocation.CheckedInPeople = navLocation.CheckedInPeople.Union( checkedInPeople ).ToList();
+                navLocation.CheckedOutPeople = navLocation.PendingPeople.Union( checkedOutPeople ).ToList();
+                navLocation.PendingPeople = navLocation.PendingPeople.Union( pendingPeople ).ToList();
+
+                if ( navLocation.ParentId.HasValue )
+                {
+                    AddPersonCountByLocation( navLocation.ParentId.Value, pendingPeople, checkedInPeople, checkedOutPeople );
+                }
+            }
+        }
+
+        private void AddPersonCountByGroup( int groupId, List<int> pendingPeople, List<int> checkedInPeople, List<int> checkedOutPeople )
+        {
+            var navGroup = NavData.Groups.FirstOrDefault( g => g.Id == groupId );
+            if ( navGroup != null )
+            {
+                navGroup.CheckedInPeople = navGroup.CheckedInPeople.Union( checkedInPeople ).ToList();
+                navGroup.CheckedOutPeople = navGroup.PendingPeople.Union( checkedOutPeople ).ToList();
+                navGroup.PendingPeople = navGroup.PendingPeople.Union( pendingPeople ).ToList();
+
+                AddCountByGroupType( navGroup.GroupTypeId, pendingPeople, checkedInPeople, checkedOutPeople );
+            }
+        }
+
+        private void AddCountByGroupType( int groupTypeId, List<int> pendingPeople, List<int> checkedInPeople, List<int> checkedOutPeople )
+        {
+            var navGroupType = NavData.GroupTypes.FirstOrDefault( g => g.Id == groupTypeId );
+            if ( navGroupType != null )
+            {
+                navGroupType.CheckedInPeople = navGroupType.CheckedInPeople.Union( checkedInPeople ).ToList();
+                navGroupType.CheckedOutPeople = navGroupType.PendingPeople.Union( checkedOutPeople ).ToList();
+                navGroupType.PendingPeople = navGroupType.PendingPeople.Union( pendingPeople ).ToList();
+
+                if ( navGroupType.ParentId.HasValue )
+                {
+                    AddCountByGroupType( navGroupType.ParentId.Value, pendingPeople, checkedInPeople, checkedOutPeople );
+                }
+            }
         }
 
         public GroupType GetParentPurposeGroupType( GroupType groupType, Guid purposeGuid )
@@ -1227,7 +1272,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     }
                 }
 
-                var chartData = new Dictionary<TimeSpan,int>();
+                var chartData = new Dictionary<TimeSpan, int>();
 
                 TimeSpan baseSpan = new TimeSpan( new DateTime( 1970, 1, 1 ).Ticks );
                 foreach ( var kv in chartCounts.OrderBy( c => c.Key ) )
@@ -1240,6 +1285,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 pnlChart.Attributes["onClick"] = upnlContent.GetPostBackEventReference( "R" );
 
                 pnlNavHeading.Visible = item != null;
+                int pendingPeople = navItems.SelectMany( a => a.PendingPeople ).Distinct().Count();
+                int checkedInPeople = navItems.SelectMany( a => a.CheckedInPeople ).Distinct().Count();
+                int checkedOutPeople = navItems.SelectMany( a => a.CheckedOutPeople ).Distinct().Count();
+
                 if ( item != null )
                 {
                     if ( numParts > 0 )
@@ -1252,10 +1301,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     var locationItem = item as NavigationLocation;
                     if ( locationItem != null && locationItem.HasGroups )
                     {
-                        tglHeadingRoom.Visible = true;
-                        tglHeadingRoom.Checked = locationItem.IsActive;
-                        tglHeadingRoom.Attributes["data-key"] = locationItem.Id.ToString();
-
+                        lHeadingStatus.Visible = true;
+                        bool isOpen = locationItem.IsActive;
+                        lHeadingStatus.Text = string.Format( @"<span class=""label label-{0} mr-2"">{1}</span>", isOpen ? "success" : "danger", isOpen ? "open" : "closed" );
                         pnlThreshold.Visible = locationItem.SoftThreshold.HasValue || locationItem.FirmThreshold.HasValue;
                         hfThreshold.Value = locationItem.SoftThreshold.HasValue ? locationItem.SoftThreshold.Value.ToString() : "";
                         lThreshold.Text = locationItem.SoftThreshold.HasValue ? locationItem.SoftThreshold.Value.ToString( "N0" ) : "none";
@@ -1270,14 +1318,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
                             .AsNoTracking()
                             .Where( a =>
                                 a.StartDateTime > dayStart &&
-                                !a.EndDateTime.HasValue &&
                                 a.Occurrence.LocationId.HasValue &&
                                 a.Occurrence.LocationId == locationItem.Id &&
                                 a.DidAttend.HasValue &&
                                 a.DidAttend.Value &&
                                 a.Occurrence.ScheduleId.HasValue )
                             .ToList()
-                            .Where( a => a.IsCurrentlyCheckedIn )
                             .ToList();
 
                         int? scheduleId = CurrentScheduleId.AsIntegerOrNull();
@@ -1299,13 +1345,17 @@ namespace RockWeb.Blocks.CheckIn.Manager
                             }
                         }
 
+                        pendingPeople += item.PendingPeople.Count;
+                        checkedInPeople += item.CheckedInPeople.Count;
+                        checkedOutPeople += item.CheckedOutPeople.Count;
+
                         rptPeople.Visible = true;
                         rptPeople.DataSource = people;
                         rptPeople.DataBind();
                     }
                     else
                     {
-                        tglHeadingRoom.Visible = false;
+                        lHeadingStatus.Visible = false;
                         pnlThreshold.Visible = false;
                         rptPeople.Visible = false;
                     }
@@ -1315,24 +1365,16 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     rptPeople.Visible = false;
                 }
 
+                lCheckedInPeople.Text = checkedInPeople.ToString();
+                lPendingPeople.Text = pendingPeople.ToString();
+                lCheckedOutPeople.Text = checkedOutPeople.ToString();
+
                 rptNavItems.Visible = navItems.Any();
                 rptNavItems.DataSource = navItems
                     .OrderBy( i => i.TypeKey )
                     .ThenBy( i => i.Order )
                     .ThenBy( i => i.Name );
                 rptNavItems.DataBind();
-
-//                string chartShortCode = @"
-//{[ chart type:'line' labels:'{{ Labels }}' xaxistype:'minute' yaxismin:'0' yaxisstepsize:'1' ]}
-//    [[ dataset label:'Room 1' curvedlines:'false' data:'{{ Data }}' fillcolor:'#059BFF' ]] [[ enddataset ]]
-//{[ endchart ]}";
-
-//                var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null );
-//                mergeFields.Add( "Labels", chartData.Keys.Select( a => a.ToString( @"hh\:mm" ) ).ToList().AsDelimited( "," ) );
-//                mergeFields.Add( "Data", chartData.Values.ToList().AsDelimited( "," ) );
-
-//                lChartCanvas.Text = chartShortCode.ResolveMergeFields( mergeFields );
-                RegisterStartupScript();
             }
         }
 
@@ -1358,6 +1400,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
             public List<NavigationLocation> Locations { get; set; }
             public List<NavigationGroupType> GroupTypes { get; set; }
             public List<NavigationGroup> Groups { get; set; }
+            public bool EnablePresence { get; set; }
+            public bool AllowCheckout { get; set; }
 
             public NavigationData()
             {
@@ -1413,6 +1457,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
             public int Order { get; set; }
             public List<int> CurrentPersonIds { get; set; }
             public int CurrentCount { get { return CurrentPersonIds.Count(); } }
+            public List<int> PendingPeople { get; set; }
+            public List<int> CheckedInPeople { get; set; }
+            public List<int> CheckedOutPeople { get; set; }
             public Dictionary<DateTime, List<int>> RecentPersonIds { get; set; }
             public virtual string TypeKey { get { return ""; } }
         }
@@ -1438,6 +1485,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 SoftThreshold = location.SoftRoomThreshold;
                 FirmThreshold = location.FirmRoomThreshold;
                 ChildLocationIds = new List<int>();
+                CheckedInPeople = new List<int>();
+                CheckedOutPeople = new List<int>();
+                PendingPeople = new List<int>();
             }
         }
 
@@ -1458,6 +1508,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 chartTimes.ForEach( t => RecentPersonIds.Add( t, new List<int>() ) );
                 ChildGroupTypeIds = new List<int>();
                 ChildGroupIds = new List<int>();
+                CheckedInPeople = new List<int>();
+                CheckedOutPeople = new List<int>();
+                PendingPeople = new List<int>();
             }
         }
 
@@ -1480,6 +1533,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 GroupTypeId = group.GroupTypeId;
                 ChildLocationIds = new List<int>();
                 ChildGroupIds = new List<int>();
+                CheckedInPeople = new List<int>();
+                CheckedOutPeople = new List<int>();
+                PendingPeople = new List<int>();
             }
         }
 
@@ -1490,20 +1546,17 @@ namespace RockWeb.Blocks.CheckIn.Manager
             public string Name { get; set; }
             public Gender Gender { get; set; }
             public int? PhotoId { get; set; }
-            public DateTime? LastCheckin { get; set; }
-            public bool CheckedInNow { get; set; }
             public string ScheduleGroupNames { get; set; }
             public string Age { get; set; }
-            public bool ShowCancel { get; set; }
+            public DateTime? PresentDateTime { get; set; }
+            public DateTime? CheckedOutDateTime { get; set; }
 
             public PersonResult()
             {
-                ShowCancel = false;
             }
 
             public PersonResult( List<Attendance> attendances )
             {
-                ShowCancel = true;
                 if ( attendances.Any() )
                 {
                     var person = attendances.First().PersonAlias.Person;
@@ -1513,7 +1566,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     Gender = person.Gender;
                     Age = person.Age.ToString() ?? "";
                     PhotoId = person.PhotoId;
-
+                    
                     ScheduleGroupNames = attendances
                         .Select( a => string.Format( "<span class='d-block small text-muted'>{0}{1}{2}</span>",
                                 a.Occurrence.Group.Name,
@@ -1522,6 +1575,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
                         .Distinct()
                         .ToList()
                         .AsDelimited( "\r\n" );
+
+                    var lastAttendance = attendances.OrderByDescending( a => a.StartDateTime ).First();
+                    PresentDateTime = lastAttendance.PresentDateTime;
+                    CheckedOutDateTime = lastAttendance.EndDateTime;
                 }
             }
         }
