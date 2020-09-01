@@ -504,78 +504,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
             BuildNavigationControls();
         }
 
-        /// <summary>
-        /// Handles the ItemCommand event of the rptPeople control.
-        /// </summary>
-        /// <param name="source">The source of the event.</param>
-        /// <param name="e">The <see cref="RepeaterCommandEventArgs"/> instance containing the event data.</param>
-        protected void rptPeople_ItemCommand( object source, RepeaterCommandEventArgs e )
-        {
-            if ( e.CommandName == "Delete" )
-            {
-                int personId = e.CommandArgument.ToString().AsInteger();
-
-                if ( string.IsNullOrWhiteSpace( CurrentNavPath ) || !CurrentNavPath.StartsWith( _configuredMode ) )
-                {
-                    CurrentNavPath = _configuredMode;
-                }
-
-                var pathParts = CurrentNavPath.Split( new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries );
-                int partIndex = pathParts.Length - 1;
-
-                if ( partIndex >= 0 )
-                {
-                    string itemKey = pathParts[partIndex];
-                    if ( itemKey.Length > 0 )
-                    {
-                        string itemType = itemKey.Left( 1 );
-                        int? itemId = itemKey.Length > 1 ? itemKey.Substring( 1 ).AsIntegerOrNull() : null;
-
-                        if ( itemType == "L" && itemId.HasValue )
-                        {
-                            // Only get attendance for last couple days. We'll then check each one based on timezone
-                            // to see if it's active.
-                            var minDate = RockDateTime.Today.AddDays( -1 );
-
-                            using ( var rockContext = new RockContext() )
-                            {
-                                var attendanceService = new AttendanceService( rockContext );
-                                foreach ( var attendance in attendanceService
-                                    .Queryable()
-                                    .Where( a =>
-                                        a.StartDateTime > minDate &&
-                                        !a.EndDateTime.HasValue &&
-                                        a.Occurrence.LocationId.HasValue &&
-                                        a.Occurrence.LocationId.Value == itemId.Value &&
-                                        a.PersonAlias != null &&
-                                        a.PersonAlias.PersonId == personId &&
-                                        a.DidAttend.HasValue &&
-                                        a.DidAttend.Value &&
-                                        a.Occurrence.ScheduleId.HasValue )
-                                    .ToList()
-                                    .Where( a => a.IsCurrentlyCheckedIn ) )
-                                {
-                                    attendanceService.Delete( attendance );
-                                }
-
-                                rockContext.SaveChanges();
-
-                                Rock.CheckIn.KioskLocationAttendance.Remove( itemId.Value );
-                            }
-
-                            int? campusId = CurrentCampusId.AsIntegerOrNull();
-                            if ( campusId.HasValue )
-                            {
-                                int? scheduleId = CurrentScheduleId.AsIntegerOrNull();
-                                NavData = GetNavigationData( CampusCache.Get( campusId.Value ), scheduleId );
-                            }
-                            BuildNavigationControls();
-                        }
-                    }
-                }
-            }
-        }
-
         #endregion
 
         #region Methods
@@ -857,8 +785,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
                         if ( NavData.EnablePresence )
                         {
-                            pendingPeople = groupLoc.Where( a => !a.PresentDateTime.HasValue ).Select( a => a.PersonAlias.PersonId ).ToList();
-                            checkedInPeople = groupLoc.Where( a => a.PresentDateTime.HasValue ).Select( a => a.PersonAlias.PersonId ).ToList();
+                            pendingPeople = groupLoc.Where( a => a.PresentDateTime.HasValue && !a.EndDateTime.HasValue ).Select( a => a.PersonAlias.PersonId ).ToList();
+                            checkedInPeople = groupLoc.Where( a => !a.PresentDateTime.HasValue ).Select( a => a.PersonAlias.PersonId ).ToList();
                         }
                         else
                         {

@@ -175,7 +175,7 @@
                         </ItemTemplate>
                     </asp:Repeater>
 
-                    <asp:Repeater ID="rptPeople" runat="server" OnItemCommand="rptPeople_ItemCommand">
+                    <asp:Repeater ID="rptPeople" runat="server">
                         <ItemTemplate>
                             <li id="liNavItem" runat="server" class="list-group-item d-flex align-items-center cursor-pointer clearfix">
                                 <div class="d-flex align-items-center">
