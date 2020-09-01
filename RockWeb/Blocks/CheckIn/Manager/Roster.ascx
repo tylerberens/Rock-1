@@ -18,7 +18,7 @@
 
             <div class="page-title-addon d-flex flex-wrap justify-content-between align-items-center">
                 <div>
-                    <Rock:LocationPicker ID="lpLocation" runat="server" AllowedPickerModes="Named" CssClass="picker-lg" OnSelectLocation="lpLocation_SelectLocation" />
+                    <Rock:LocationPicker ID="lpLocation" runat="server" AllowedPickerModes="Named" CssClass="picker-lg" OnSelectLocation="lpLocation_SelectLocation" IncludeInactiveNamedLocations="true" />
                 </div>
                 <asp:Panel ID="pnlSubPageNav" runat="server" class="">
                     <Rock:PageNavButtons ID="pbSubPages" runat="server" IncludeCurrentQueryString="true" />
@@ -48,7 +48,7 @@
                                 <Rock:RockBoundField DataField="ServiceTimes" HeaderText="Service Times" HeaderStyle-CssClass="d-none d-sm-table-cell" ItemStyle-CssClass="service-times d-none d-sm-table-cell align-middle" />
                                 <Rock:RockLiteralField ID="lMobileTagAndSchedules" HeaderText="Tag & Schedules" HeaderStyle-CssClass="d-sm-none" ItemStyle-CssClass="tags-and-schedules d-table-cell d-sm-none" />
                                 <Rock:RockLiteralField ID="lCheckInTime" HeaderText="Check-in Time" HeaderStyle-HorizontalAlign="Right" ItemStyle-CssClass="check-in-time" ItemStyle-HorizontalAlign="Right" ColumnPriority="TabletSmall" />
-                                <Rock:RockLiteralField ID="lStatusTag" ItemStyle-CssClass="status-tag" ItemStyle-HorizontalAlign="Right" ColumnPriority="TabletSmall" />
+                                <Rock:RockLiteralField ID="lStatusTag"  ItemStyle-CssClass="status-tag d-none d-sm-table-cell align-middle" ItemStyle-HorizontalAlign="Right" ColumnPriority="TabletSmall" />
                                 <Rock:LinkButtonField ID="lbCancel" ItemStyle-CssClass="" CssClass="btn btn-default js-cancel-checkin" OnClick="lbCancel_Click" />
                                 <Rock:LinkButtonField ID="lbPresent" ItemStyle-CssClass="" CssClass="btn btn-success" OnClick="lbPresent_Click" />
                                 <Rock:LinkButtonField ID="lbCheckOut" ItemStyle-CssClass="" CssClass="btn btn-primary" OnClick="lbCheckOut_Click" />
