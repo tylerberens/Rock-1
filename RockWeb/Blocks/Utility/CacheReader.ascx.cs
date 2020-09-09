@@ -194,7 +194,7 @@ namespace RockWeb.Blocks.Utility
                 }
             }
 
-            lOutput.Text += string.Format( "<p><p><strong>Total Cache Size: {0:n0} KB", totalCacheSize / 1024 );
+            lOutput.Text += string.Format( "<p><p><strong>Total Cache Size: {0:n0} KB</strong>", totalCacheSize / 1024 );
         }
 
         #endregion
