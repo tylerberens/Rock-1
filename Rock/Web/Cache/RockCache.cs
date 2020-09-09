@@ -128,8 +128,8 @@ namespace Rock.Web.Cache
         /// <summary>
         /// Gets or sets the keys for items stored in the object cache. The region is optional, but the key
         /// is required. This list of keys is not guaranteed to be up to date. Some of the items represented
-        /// by the keys could have expired and therefore not be available any longer. All items keys though should
-        /// be in the list though.
+        /// by the keys could have expired and therefore not be available any longer. All item keys though should
+        /// be in the list.
         /// </summary>
         /// <value>
         /// The object cache key references.
