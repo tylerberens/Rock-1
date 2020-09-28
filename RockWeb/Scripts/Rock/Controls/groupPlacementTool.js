@@ -257,6 +257,7 @@
                 var groupMembersURI = Rock.settings.get('baseUrl') + 'api/GroupMembers';
                 var personId = $groupMember.attr('data-person-id');
                 var placementGroupRegistrationInstanceId = $groupMember.attr('data-placementgroup-registrationinstanceid');
+                var $group = $groupMember.closest('.js-placement-group');
 
                 $.ajax({
                     method: "DELETE",
@@ -267,8 +268,10 @@
 
                     self.populateGroupRoleMembers($groupRoleMembers);
                     self.checkVisibleRegistrants();
-                }).fail(function (a, b, c) {
-                    console.log('fail');
+                }).fail(function (jqXHR) {
+                    var $groupAlert = $('.js-placement-group-error', $group);
+                    $groupAlert.find('.js-placement-group-error-text').text('Unable to remove group member: ' + (jqXHR.responseJSON && jqXHR.responseJSON.Message || jqXHR.responseText || jqXHR.status));
+                    $groupAlert.show();
                 });
             },
             /** populates the placed registrants for all the occurrence group-role divs */
