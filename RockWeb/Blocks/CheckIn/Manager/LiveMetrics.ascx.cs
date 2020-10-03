@@ -1245,13 +1245,13 @@ namespace RockWeb.Blocks.CheckIn.Manager
                             .Queryable( "Occurrence.Group,PersonAlias.Person,Occurrence.Schedule,AttendanceCode" )
                             .AsNoTracking()
                             .Where( a =>
+                                a.PersonAliasId.HasValue &&
                                 a.StartDateTime > dayStart &&
                                 a.Occurrence.LocationId.HasValue &&
                                 a.Occurrence.LocationId == locationItem.Id &&
                                 a.DidAttend.HasValue &&
                                 a.DidAttend.Value &&
                                 a.Occurrence.ScheduleId.HasValue )
-                            .ToList()
                             .ToList();
 
                         int? scheduleId = CurrentScheduleId.AsIntegerOrNull();

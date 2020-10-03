@@ -187,7 +187,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void tbSearch_TextChanged( object sender, EventArgs e )
         {
-            if ( tbSearch.Text.Length > 3 )
+            if ( tbSearch.Text.Length > 2 )
             {
                 ShowAttendees();
             }
