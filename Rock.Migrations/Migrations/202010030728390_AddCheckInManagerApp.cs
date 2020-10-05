@@ -52,7 +52,7 @@ namespace Rock.Migrations
             // Add Page Live Metrics to Site:Rock Check-in Manager   
             RockMigrationHelper.AddPage( true, "A4DCE339-9C11-40CA-9A02-D2FE64EA164B","8305704F-928D-4379-967A-253E576E0923","Live Metrics","","04F70D50-5D27-4C12-A76D-B25E6E4CB177","fa fa-chart-bar");
             // Add Page Settings to Site:Rock Check-in Manager 
-            RockMigrationHelper.AddPage( true, "A4DCE339-9C11-40CA-9A02-D2FE64EA164B","8305704F-928D-4379-967A-253E576E0923","Settings","","7484FB24-BAE9-4797-961D-6962D4E9DB76","fa fa-gear-o");
+            RockMigrationHelper.AddPage( true, "A4DCE339-9C11-40CA-9A02-D2FE64EA164B","8305704F-928D-4379-967A-253E576E0923","Settings","","7484FB24-BAE9-4797-961D-6962D4E9DB76","fa fa-cog");
             // Add Page Route for Room Manager      
             RockMigrationHelper.AddPageRoute( "BA04BF01-5244-4637-B12D-7A962D2A9E77", "CheckinManager","0A65FAF2-7F25-4638-9BF7-7F001052F4E3");
             // Add/Update BlockType Live Metrics  
