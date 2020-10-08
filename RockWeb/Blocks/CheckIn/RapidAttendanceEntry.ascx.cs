@@ -756,7 +756,7 @@ namespace RockWeb.Blocks.CheckIn
                     rockContext.SaveChanges();
                 }
 
-                if ( personInput.PersonNote!=null && personInput.PersonNote.Note.IsNotNullOrWhiteSpace() )
+                if ( personInput.PersonNote != null && personInput.PersonNote.Note.IsNotNullOrWhiteSpace() )
                 {
                     NoteService noteService = new NoteService( rockContext );
 
