@@ -17,10 +17,14 @@
 //
 
 using System;
+using System.Data.Entity;
 using System.Web;
 using System.IO;
 using System.Net;
+using System.Linq;
 using Rock.Model;
+using Rock;
+using Rock.Checkr.CheckrApi;
 
 namespace RockWeb.Webhooks
 {
@@ -50,8 +54,6 @@ namespace RockWeb.Webhooks
 
             try
             {
-                var rockContext = new Rock.Data.RockContext();
-
                 if ( !request.UserAgent.StartsWith( "Checkr-Webhook/" ) )
                 {
                     response.Write( "Invalid User-Agent." );
@@ -59,10 +61,22 @@ namespace RockWeb.Webhooks
                     return;
                 }
 
+
                 string postedData = string.Empty;
                 using ( var reader = new StreamReader( request.InputStream ) )
                 {
                     postedData = reader.ReadToEnd();
+                }
+
+                // Check the hash of the request body agaist the value in X-Checkr-Signature
+                var token = GetApiToken();
+                var checkrHash = request.Headers["X-Checkr-Signature"];
+                var securityHash = postedData.HmacSha256Hash( token );
+
+                if ( !checkrHash.Equals( securityHash ) )
+                {
+                    // If the request is not valid then just return.
+                    return;
                 }
 
                 Rock.Checkr.Checkr.SaveWebhookResults( postedData );
@@ -85,6 +99,40 @@ namespace RockWeb.Webhooks
             {
                 return false;
             }
+        }
+
+        private string GetApiToken()
+        {
+            var checkrEntityType = Rock.Web.Cache.EntityTypeCache.Get( typeof( Rock.Checkr.Checkr ) );
+
+            if ( checkrEntityType == null )
+            {
+                return string.Empty;
+            }
+
+            var encryptedToken = string.Empty;
+            var decryptedToken = string.Empty;
+
+            using ( var rockContext = new Rock.Data.RockContext() )
+            {
+                var attributeValueService = new AttributeValueService( rockContext );
+                encryptedToken = attributeValueService.Queryable( "Attribute" ).AsNoTracking()
+                    .Where( v => v.Attribute.EntityTypeId == checkrEntityType.Id )
+                    .Where( v => v.Attribute.Key == "AccessToken" )
+                    .Select( v => v.Value )
+                    .FirstOrDefault();
+            }
+
+            if ( encryptedToken.IsNotNullOrWhiteSpace() )
+            {
+                try
+                {
+                    decryptedToken = Rock.Security.Encryption.DecryptString( encryptedToken );
+                }
+                catch { }
+            }
+
+            return decryptedToken;
         }
     }
 }
