@@ -273,7 +273,7 @@ namespace Rock.SystemGuid
         /// <summary>
         /// The Check-in Manager room settings page
         /// </summary>
-        public const string CHECK_IN_MANAGER_ROOM_SETTINGS = "0416ff62-3252-4a84-85db-79f4cae82c75";
+        public const string CHECK_IN_MANAGER_ROOM_SETTINGS = "0416FF62-3252-4A84-85DB-79F4CAE82C75";
 
         /// <summary>
         /// The Check-in Manager roster page

@@ -24,6 +24,8 @@ namespace Rock.Migrations
     /// </summary>
     public partial class AddCheckInManagerApp : Rock.Migrations.RockMigration
     {
+        private const string OLD_CHECK_IN_MANAGER_BLOCK = "D38C2DA2-4F76-4BA5-9B26-ADA39D98DEDC";
+
         /// <summary>
         /// Operations to be performed during the upgrade process.
         /// </summary>
@@ -46,6 +48,9 @@ namespace Rock.Migrations
 	                    [Guid] IN ('{Rock.SystemGuid.Page.PERSON_PROFILE_CHECK_IN_MANAGER}','{Rock.SystemGuid.Page.CHECK_IN_MANAGER_LOGIN}', '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_SETTINGS}')
                 " );
 
+            
+            RockMigrationHelper.DeleteBlock( OLD_CHECK_IN_MANAGER_BLOCK );
+
 
             // Remove page display options for Check-in Manager Search, Room Manager page, ...
             Sql( $@"UPDATE [Page]
@@ -54,7 +59,9 @@ namespace Rock.Migrations
                     '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_SEARCH}', 
                     '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_ROOM_MANAGER}', 
                     '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_ROSTER}', 
-                    '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_LIVE_METRICS}'
+                    '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_LIVE_METRICS}',
+                    '{Rock.SystemGuid.Page.PERSON_PROFILE_CHECK_IN_MANAGER}',
+                    '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_ROOM_SETTINGS}'
                 )" );
 
 
@@ -191,8 +198,8 @@ END" );
             // BlockType: Page Menu
             // Block Location: Layout=Full Width, Site=Rock Check-in Manager
             // Attribute: Include Current Parameters
-            // Attribute Value: True
-            RockMigrationHelper.AddBlockAttributeValue( "B569F42E-6687-45C4-90A4-CC7D99427372", "EEE71DDE-C6BC-489B-BAA5-1753E322F183", @"True" );
+            // Attribute Value: False
+            RockMigrationHelper.AddBlockAttributeValue( "B569F42E-6687-45C4-90A4-CC7D99427372", "EEE71DDE-C6BC-489B-BAA5-1753E322F183", @"False" );
 
             // Block Attribute Value
             // Block: Page Menu
@@ -223,8 +230,8 @@ END" );
             //   BlockType: Page Menu
             //   Block Location: Layout=Full Width, Site=Rock Check-in Manager
             //   Attribute: Include Current QueryString
-            //   Attribute Value: True
-            RockMigrationHelper.AddBlockAttributeValue( "B569F42E-6687-45C4-90A4-CC7D99427372", "E4CF237D-1D12-4C93-AFD7-78EB296C4B69", @"True" );
+            //   Attribute Value: False
+            RockMigrationHelper.AddBlockAttributeValue( "B569F42E-6687-45C4-90A4-CC7D99427372", "E4CF237D-1D12-4C93-AFD7-78EB296C4B69", @"False" );
 
             // Block Attribute Value
             // Block: Page Menu

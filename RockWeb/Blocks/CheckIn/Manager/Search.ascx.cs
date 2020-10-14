@@ -20,20 +20,14 @@ using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
 using System.Text;
-using System.Web.UI;
-using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
-
-using Newtonsoft.Json;
 
 using Rock;
 using Rock.Attribute;
-using Rock.Chart;
 using Rock.Data;
 using Rock.Lava;
 using Rock.Model;
 using Rock.Web.Cache;
-using Rock.Web.UI.Controls;
 
 namespace RockWeb.Blocks.CheckIn.Manager
 {
@@ -105,7 +99,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         #region Properties
 
         /// <summary>
-        /// The current campus identitifier.
+        /// The current campus identifier.
         /// </summary>
         public int CurrentCampusId
         {

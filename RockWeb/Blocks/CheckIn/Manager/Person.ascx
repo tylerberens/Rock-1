@@ -132,24 +132,25 @@
 
                 <!-- Check-in History -->
                 <asp:Panel ID="pnlCheckinHistory" runat="server" CssClass="panel panel-block">
-                    <Rock:Grid ID="gHistory" runat="server" DisplayType="Light" UseFullStylesForLightGrid="true" AllowPaging="false" CssClass="table-condensed">
+                    <Rock:Grid ID="gHistory" runat="server" DisplayType="Light" UseFullStylesForLightGrid="true" AllowPaging="false" CssClass="table-condensed" OnRowDataBound="gHistory_RowDataBound">
                         <Columns>
                             <Rock:RockTemplateField HeaderText="When">
                                 <ItemTemplate>
-                                    <span><%# ((DateTime)Eval("Date")).ToShortDateString() %></span>
-                                    <span class="d-block small text-muted"><%# Eval("Schedule") %></span>
-                                    <asp:Literal ID="lWhoCheckedIn" runat="server"></asp:Literal>
+                                    <span><asp:Literal ID="lCheckinDate" runat="server" /></span>
+                                    <span class="d-block small text-muted"><asp:Literal ID="lCheckinScheduleName" runat="server" /></span>
+                                    <asp:Literal ID="lWhoCheckedIn" runat="server" />
                                 </ItemTemplate>
                             </Rock:RockTemplateField>
                             <Rock:RockTemplateField HeaderText="Location">
                                 <ItemTemplate>
-                                    <span><%# Eval("Location") %></span>
-                                    <span class="d-block small text-muted"><%# Eval("Group") %></span>
+                                    <span><asp:Literal ID="lLocationName" runat="server" /></span>
+                                    <span class="d-block small text-muted"><asp:Literal ID="lGroupName" runat="server" /></span>
                                 </ItemTemplate>
                             </Rock:RockTemplateField>
                             <Rock:RockTemplateField HeaderText="Code" ItemStyle-CssClass="align-middle">
                                 <ItemTemplate>
-                                    <%# Eval("Code") %> <asp:Literal ID="lActive" runat="server"></asp:Literal><br />
+                                    <asp:Literal ID="lCode" runat="server" />
+                                    <asp:Literal ID="lActiveLabel" runat="server" /><br />
                                 </ItemTemplate>
                             </Rock:RockTemplateField>
                             <Rock:DeleteField OnClick="gHistory_Delete" ButtonCssClass="js-cancel-checkin btn btn-xs btn-danger" Tooltip="Delete This Checkin" />

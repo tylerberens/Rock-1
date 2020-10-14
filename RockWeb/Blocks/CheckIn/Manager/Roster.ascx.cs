@@ -45,7 +45,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
     [GroupTypeField( "Check-in Type",
         Key = AttributeKey.CheckInAreaGuid,
-        Description = "The Check-in Area for the rooms to be managed by this Block. This value can also be overriden through the URL query string 'Area' key (e.g. when navigated to from the Check-in Type selection block).",
+        Description = "The Check-in Area for the rooms to be managed by this Block. This value can also be overridden through the URL query string 'Area' key (e.g. when navigated to from the Check-in Type selection block).",
         IsRequired = false,
         GroupTypePurposeValueGuid = Rock.SystemGuid.DefinedValue.GROUPTYPE_PURPOSE_CHECKIN_TEMPLATE,
         Order = 1 )]
@@ -127,7 +127,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         #region Properties
 
         /// <summary>
-        /// The current campus identitifier.
+        /// The current campus identifier.
         /// </summary>
         public int CurrentCampusId
         {
@@ -663,7 +663,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// Resets control visibily to default values.
+        /// Resets control visibility to default values.
         /// </summary>
         private void ResetControlVisibility()
         {
@@ -789,7 +789,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// Initializes the sub page nav.
+        /// Initializes the sub page navigation.
         /// </summary>
         /// <param name="locationId">The location identifier.</param>
         private void InitializeSubPageNav( int locationId )
@@ -931,7 +931,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             /*
                 If AllowCheckout is false, remove all Attendees whose schedules are not currently active. Per the 'WasSchedule...ActiveForCheckOut()'
                 method below: "Check-out can happen while check-in is active or until the event ends (start time + duration)." This will help to keep
-                the list of 'Present' attendees cleaned up and accurate, based on the room schedules, since the voluteers have no way to manually mark
+                the list of 'Present' attendees cleaned up and accurate, based on the room schedules, since the volunteers have no way to manually mark
                 an Attendee as 'Checked-out'.
 
                 If, on the other hand, AllowCheckout is true, it will be the volunteers' responsibility to click the [Check-out] button when an
@@ -1005,14 +1005,14 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="person">The person.</param>
         private string GetBirthday( Rock.Model.Person person )
         {
-            // If this Person's bday is today, simply return "Today".
+            // If this Person's birthday is today, simply return "Today".
             int daysToBirthday = person.DaysToBirthday;
             if ( daysToBirthday == 0 )
             {
                 return "Today";
             }
 
-            // Otherwise, if their bday falls within the next 6 days, return the abbreviated day of the week (Mon-Sun) on which their bday falls.
+            // Otherwise, if their birthday falls within the next 6 days, return the abbreviated day of the week (Mon-Sun) on which their birthday falls.
             if ( daysToBirthday < 7 )
             {
                 return person.BirthdayDayOfWeekShort;
