@@ -133,12 +133,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             get
             {
-                return ( ViewState[ViewStateKey.CurrentCampusId] as string ).AsInteger();
+                return ViewState[ViewStateKey.CurrentCampusId] as int? ?? 0;
             }
 
             set
             {
-                ViewState[ViewStateKey.CurrentCampusId] = value.ToString();
+                ViewState[ViewStateKey.CurrentCampusId] = value;
             }
         }
 
@@ -149,12 +149,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             get
             {
-                return ( ViewState[ViewStateKey.CurrentLocationId] as string ).AsInteger();
+                return ViewState[ViewStateKey.CurrentLocationId] as int? ?? 0;
             }
 
             set
             {
-                ViewState[ViewStateKey.CurrentLocationId] = value.ToString();
+                ViewState[ViewStateKey.CurrentLocationId] = value;
             }
         }
 
@@ -176,12 +176,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             get
             {
-                return ( ViewState[ViewStateKey.CheckInAreaGuid] as string ).AsGuidOrNull();
+                return ViewState[ViewStateKey.CheckInAreaGuid] as Guid?;
             }
 
             set
             {
-                ViewState[ViewStateKey.CheckInAreaGuid] = value.ToString();
+                ViewState[ViewStateKey.CheckInAreaGuid] = value;
             }
         }
 
@@ -192,12 +192,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             get
             {
-                return ( ViewState[ViewStateKey.AllowCheckout] as string ).AsBoolean();
+                return ViewState[ViewStateKey.AllowCheckout] as bool? ?? false;
             }
 
             set
             {
-                ViewState[ViewStateKey.AllowCheckout] = value.ToString();
+                ViewState[ViewStateKey.AllowCheckout] = value;
             }
         }
 
@@ -208,12 +208,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             get
             {
-                return ( ViewState[ViewStateKey.EnablePresence] as string ).AsBoolean();
+                return ViewState[ViewStateKey.EnablePresence] as bool? ?? false;
             }
 
             set
             {
-                ViewState[ViewStateKey.EnablePresence] = value.ToString();
+                ViewState[ViewStateKey.EnablePresence] = value;
             }
         }
 
@@ -224,15 +224,13 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             get
             {
-                StatusFilter statusFilter;
-                Enum.TryParse( ViewState[ViewStateKey.CurrentStatusFilter] as string, out statusFilter );
-
+                StatusFilter statusFilter = ViewState[ViewStateKey.CurrentStatusFilter] as StatusFilter? ?? StatusFilter.Unknown;
                 return statusFilter;
             }
 
             set
             {
-                ViewState[ViewStateKey.CurrentStatusFilter] = value.ToString();
+                ViewState[ViewStateKey.CurrentStatusFilter] = value;
             }
         }
 
@@ -453,6 +451,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="Rock.Web.UI.Controls.RowEventArgs"/> instance containing the event data.</param>
         protected void gAttendees_RowSelected( object sender, Rock.Web.UI.Controls.RowEventArgs e )
         {
+            // the attendance grid's DataKeyNames="PersonGuid,AttendanceIds". So each row is a PersonGuid, with a list of attendanceIds (usually one attendance, but could be more)
             string personGuid = e.RowKeyValues[0].ToString();
             var queryParams = new Dictionary<string, string>
             {
@@ -473,12 +472,15 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// Handles the Click event of the lbCancel control.
+        /// Handles the Click event of the btnCancel control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="Rock.Web.UI.Controls.RowEventArgs"/> instance containing the event data.</param>
-        protected void lbCancel_Click( object sender, RowEventArgs e )
+        protected void btnCancel_Click( object sender, RowEventArgs e )
         {
+            // the attendance grid's DataKeyNames="PersonGuid,AttendanceIds". So each row is a PersonGuid, with a list of attendanceIds (usually one attendance, but could be more)
+            var personGuid = ( Guid ) e.RowKeyValues[0];
+            var person = new PersonService( new RockContext() ).Get( personGuid );
             var attendanceIds = e.RowKeyValues[1] as List<int>;
             if ( !attendanceIds.Any() )
             {
@@ -505,12 +507,13 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// Handles the Click event of the lbCancel control.
+        /// Handles the Click event of the btnPresent control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="Rock.Web.UI.Controls.RowEventArgs"/> instance containing the event data.</param>
-        protected void lbPresent_Click( object sender, RowEventArgs e )
+        /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
+        protected void btnPresent_Click( object sender, RowEventArgs e )
         {
+            // the attendance grid's DataKeyNames="PersonGuid,AttendanceIds". So each row is a PersonGuid, with a list of attendanceIds (usually one attendance, but could be more)
             var attendanceIds = e.RowKeyValues[1] as List<int>;
             if ( !attendanceIds.Any() )
             {
@@ -536,12 +539,13 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// Handles the Click event of the lbCheckOut control.
+        /// Handles the Click event of the btnCheckOut control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="Rock.Web.UI.Controls.RowEventArgs"/> instance containing the event data.</param>
-        protected void lbCheckOut_Click( object sender, RowEventArgs e )
+        /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
+        protected void btnCheckOut_Click( object sender, RowEventArgs e )
         {
+            // the attendance grid's DataKeyNames="PersonGuid,AttendanceIds". So each row is a PersonGuid, with a list of attendanceIds (usually one attendance, but could be more)
             var attendanceIds = e.RowKeyValues[1] as List<int>;
             if ( !attendanceIds.Any() )
             {
@@ -641,7 +645,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             if ( statusFilter == StatusFilter.Unknown )
             {
                 // If not defined on the ButtonGroup, check for a Block user preference.
-                Enum.TryParse( GetBlockUserPreference( StatusFilterUserPreferenceKey ), out statusFilter );
+                statusFilter = GetBlockUserPreference( StatusFilterUserPreferenceKey ).ConvertToEnumOrNull<StatusFilter>() ?? StatusFilter.Unknown;
 
                 if ( statusFilter == StatusFilter.Unknown )
                 {
@@ -816,9 +820,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <returns></returns>
         private StatusFilter GetStatusFilterValueFromControl()
         {
-            StatusFilter statusFilter;
-            Enum.TryParse( bgStatus.SelectedValue, out statusFilter );
-
+            StatusFilter statusFilter = bgStatus.SelectedValue.ConvertToEnumOrNull<StatusFilter>() ?? StatusFilter.Unknown;
             return statusFilter;
         }
 
@@ -847,7 +849,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             ToggleColumnVisibility();
 
-            gAttendees.DataSource = attendees;
+            var attendeesSorted = attendees.OrderByDescending( a => a.Status == AttendeeStatus.Present ).ThenByDescending( a => a.CheckInTime ).ThenBy( a => a.PersonGuid ).ToList();
+
+            gAttendees.DataSource = attendeesSorted;
             gAttendees.DataBind();
         }
 
@@ -987,7 +991,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 PersonId = person.Id,
                 PersonGuid = person.Guid,
                 Name = person.FullName,
-                ParentNames = Rock.Model.Person.GetFamilySalutation( person, finalSeparator: "and" ),
                 PhotoId = person.PhotoId,
                 Age = person.Age,
                 Gender = person.Gender,
@@ -995,6 +998,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 HasHealthNote = GetHasHealthNote( person ),
                 HasLegalNote = GetHasLegalNote( person )
             };
+
+            if ( person.AgeClassification != AgeClassification.Adult )
+            {
+                attendee.ParentNames = Rock.Model.Person.GetFamilySalutation( person, finalSeparator: "and" );
+            }
 
             return attendee;
         }
@@ -1104,18 +1112,17 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var serviceTimes = gAttendees.ColumnsOfType<RockBoundField>().First( c => c.DataField == "ServiceTimes" );
             var statusTag = gAttendees.ColumnsOfType<RockLiteralField>().First( c => c.ID == "lStatusTag" );
 
+            // The Cancel button is Visible in two different cases
+            //  1) When Presence is not enabled (and they are checked in)
+            //  2) When Presence is enabled, and they are not marked present yet
+            var btnCancel = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnCancel" );
+
             // StatusFilter.Checked-in:
-            var checkInTime = gAttendees.ColumnsOfType<RockLiteralField>().First( c => c.ID == "lCheckInTime" );
-
-            var btnCancel = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "lbCancel" );
-            btnCancel.Text = @"<span class=""d-none d-sm-inline"">Cancel </span><i class=""fa fa-times""></i>";
-
-            var btnPresent = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "lbPresent" );
-            btnPresent.Text = @"<span class=""d-none d-sm-inline"">Present </span><i class=""fa fa-user-check""></i>";
+            var lCheckInTime = gAttendees.ColumnsOfType<RockLiteralField>().First( c => c.ID == "lCheckInTime" );
+            var btnPresent = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnPresent" );
 
             // StatusFilter.Present:
-            var btnCheckOut = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "lbCheckOut" );
-            btnCheckOut.Text = @"<span class=""d-none d-sm-inline"">Check-out </span><i class=""fa fa-user-minus""></i>";
+            var btnCheckOut = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnCheckOut" );
 
             switch ( CurrentStatusFilter )
             {
@@ -1124,10 +1131,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     serviceTimes.Visible = true;
                     statusTag.Visible = true;
 
-                    checkInTime.Visible = false;
+                    lCheckInTime.Visible = false;
+
+                    // only show these action buttons if they are on the CheckedIn or Present Tabs
                     btnCancel.Visible = false;
                     btnPresent.Visible = false;
-
                     btnCheckOut.Visible = false;
 
                     break;
@@ -1136,10 +1144,14 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     serviceTimes.Visible = false;
                     statusTag.Visible = false;
 
-                    checkInTime.Visible = true;
+                    lCheckInTime.Visible = true;
+
+                    // We are on the CheckedIn Tab (which is people that haven't been marked present yet)
+                    // so show Cancel and Present buttons
                     btnCancel.Visible = true;
                     btnPresent.Visible = true;
 
+                    // since that haven't been marked Present yet, they shouldn't have the option to check out (to be marked as not present)
                     btnCheckOut.Visible = false;
 
                     break;
@@ -1148,8 +1160,19 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     serviceTimes.Visible = true;
                     statusTag.Visible = false;
 
-                    checkInTime.Visible = false;
-                    btnCancel.Visible = false;
+                    lCheckInTime.Visible = false;
+                    if ( EnablePresence )
+                    {
+                        // if Presence is enabled, they were marked as present by a human, so it don't show the Cancel option (since the attendee is physically there) 
+                        btnCancel.Visible = false;
+                    }
+                    else
+                    {
+                        // if Presence is not enabled, the attendance records can be canceled (deleted) regardless 
+                        btnCancel.Visible = true;
+                    }
+
+                    // don't show the Present button while on the Present tab, because they have already been marked as present
                     btnPresent.Visible = false;
 
                     btnCheckOut.Visible = AllowCheckout;
@@ -1274,9 +1297,27 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// </summary>
         public enum StatusFilter
         {
+            /// <summary>
+            /// Status filter not set to anything yet
+            /// </summary>
             Unknown = 0,
+
+            /// <summary>
+            /// Don't filter
+            /// </summary>
             All = 1,
+
+            /// <summary>
+            /// Only show attendees that are checked-in, but haven't been marked present
+            /// </summary>
             CheckedIn = 2,
+
+
+            /// <summary>
+            /// Only show attendees are the marked present.
+            /// Note that if Presence is NOT enabled, the attendance records will automatically marked as Present.
+            /// So this would be the default filter mode when Presence is not enabled
+            /// </summary>
             Present = 3
         }
 

@@ -49,9 +49,10 @@
                                 <Rock:RockLiteralField ID="lMobileTagAndSchedules" HeaderText="Tag & Schedules" HeaderStyle-CssClass="d-sm-none" ItemStyle-CssClass="tags-and-schedules d-table-cell d-sm-none" />
                                 <Rock:RockLiteralField ID="lCheckInTime" HeaderText="Check-in Time" HeaderStyle-HorizontalAlign="Right" ItemStyle-CssClass="check-in-time" ItemStyle-HorizontalAlign="Right" ColumnPriority="TabletSmall" />
                                 <Rock:RockLiteralField ID="lStatusTag"  ItemStyle-CssClass="status-tag d-none d-sm-table-cell align-middle" ItemStyle-HorizontalAlign="Right" ColumnPriority="TabletSmall" />
-                                <Rock:LinkButtonField ID="lbCancel" ItemStyle-CssClass="" CssClass="btn btn-default js-cancel-checkin" OnClick="lbCancel_Click" />
-                                <Rock:LinkButtonField ID="lbPresent" ItemStyle-CssClass="" CssClass="btn btn-success" OnClick="lbPresent_Click" />
-                                <Rock:LinkButtonField ID="lbCheckOut" ItemStyle-CssClass="" CssClass="btn btn-primary" OnClick="lbCheckOut_Click" />
+
+                                <Rock:LinkButtonField ID="btnCancel"  ItemStyle-CssClass=""  CssClass="btn btn-default js-cancel-checkin" Text="<i class='fa fa-times'></i>" ToolTip="Cancel" OnClick="btnCancel_Click" />
+                                <Rock:LinkButtonField ID="btnPresent"  ItemStyle-CssClass="" CssClass="btn btn-success" Text="<i class='fa fa-user-check'></i>" ToolTip="Present" OnClick="btnPresent_Click" />
+                                <Rock:LinkButtonField ID="btnCheckOut" ItemStyle-CssClass="" CssClass="btn btn-primary" Text="<i class='fa fa-user-minus'></i>" ToolTip="Check-out" OnClick="btnCheckOut_Click" />
                             </Columns>
                         </Rock:Grid>
                     </div>

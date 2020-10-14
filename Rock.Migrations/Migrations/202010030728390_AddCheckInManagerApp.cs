@@ -61,7 +61,8 @@ namespace Rock.Migrations
                     '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_ROSTER}', 
                     '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_LIVE_METRICS}',
                     '{Rock.SystemGuid.Page.PERSON_PROFILE_CHECK_IN_MANAGER}',
-                    '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_ROOM_SETTINGS}'
+                    '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_ROOM_SETTINGS}',
+                    '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_LOGIN}'
                 )" );
 
 
