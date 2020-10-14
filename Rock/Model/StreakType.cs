@@ -29,7 +29,7 @@ namespace Rock.Model
     /// <summary>
     /// Represents a Streak Type in Rock.
     /// </summary>
-    [RockDomain( "Streaks" )]
+    [RockDomain( "Engagement" )]
     [Table( "StreakType" )]
     [DataContract]
     public partial class StreakType : Model<StreakType>, IHasActiveFlag, ICacheable
@@ -174,20 +174,6 @@ namespace Rock.Model
             set => _streakTypeExclusions = value;
         }
         private ICollection<StreakTypeExclusion> _streakTypeExclusions;
-
-        /// <summary>
-        /// Gets or sets the streak type achievement types.
-        /// </summary>
-        /// <value>
-        /// The streak type achievement types.
-        /// </value>
-        [DataMember]
-        public virtual ICollection<StreakTypeAchievementType> StreakTypeAchievementTypes
-        {
-            get => _streakTypeAchievementTypes ?? ( _streakTypeAchievementTypes = new Collection<StreakTypeAchievementType>() );
-            set => _streakTypeAchievementTypes = value;
-        }
-        private ICollection<StreakTypeAchievementType> _streakTypeAchievementTypes;
 
         #endregion Virtual Properties
     }

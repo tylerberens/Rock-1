@@ -27,6 +27,7 @@ using System.Runtime.Serialization;
 using Ical.Net;
 using Ical.Net.DataTypes;
 
+using Rock;
 using Rock.Data;
 using Rock.Web.Cache;
 
@@ -38,7 +39,7 @@ namespace Rock.Model
     [RockDomain( "Core" )]
     [Table( "Schedule" )]
     [DataContract]
-    public partial class Schedule : Model<Schedule>, ICategorized, IHasActiveFlag
+    public partial class Schedule : Model<Schedule>, ICategorized, IHasActiveFlag, IOrdered
     {
         #region Entity Properties
 
@@ -272,8 +273,48 @@ namespace Rock.Model
         {
             if ( this.IsActive )
             {
-                var occurrences = GetScheduledStartTimes( currentDateTime, currentDateTime.AddYears( 1 ) );
-                return occurrences.Min( o => ( DateTime? ) o );
+                var endDate = currentDateTime.AddYears( 1 );
+
+                var calEvent = GetICalEvent();
+
+                Ical.Net.Interfaces.DataTypes.IRecurrencePattern rrule = null;
+
+                if ( calEvent != null )
+                {
+                    if ( calEvent.RecurrenceRules.Any() )
+                    {
+                        rrule = calEvent.RecurrenceRules[0];
+                    }
+                }
+
+                /* 2020-06-24 MP
+                 * To improve performance, only go out a week (or so) if this is a weekly or daily schedule.
+                 * If this optimization fails to find a next scheduled date, fall back to looking out a full year
+                 */
+                
+                if ( rrule?.Frequency == FrequencyType.Weekly )
+                {
+                    var everyXWeeks = rrule.Interval;
+                    endDate = currentDateTime.AddDays( everyXWeeks * 7 );
+                }
+                else if ( rrule?.Frequency == FrequencyType.Daily )
+                {
+                    var everyXDays = rrule.Interval;
+                    endDate = currentDateTime.AddDays( everyXDays );
+                }
+
+                var occurrences = GetScheduledStartTimes( currentDateTime, endDate );
+                var nextOccurrence = occurrences.Min( o => ( DateTime? ) o );
+                if ( nextOccurrence == null && endDate < currentDateTime.AddYears( 1 ) )
+                {
+                    // if tried an earlier end date, but didn't get a next datetime,
+                    // use the regular way and see if there is a next schedule date within the next year
+                    endDate = currentDateTime.AddYears( 1 );
+                    occurrences = GetScheduledStartTimes( currentDateTime, endDate );
+                    nextOccurrence = occurrences.Min( o => ( DateTime? ) o );
+                }
+                
+                return nextOccurrence;
             }
             else
             {
@@ -388,12 +429,18 @@ namespace Rock.Model
         [Required]
         [DataMember( IsRequired = true )]
         [Previewable]
-        public bool IsActive
-        {
-            get { return _isActive; }
-            set { _isActive = value; }
-        }
-        private bool _isActive = true;
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets the order.
+        /// Use <see cref="ExtensionMethods.OrderByOrderAndNextScheduledDateTime" >List&lt;Schedule&gt;().OrderByOrderAndNextScheduledDateTime</see>
+        /// to get the schedules in the desired order.
+        /// </summary>
+        /// <value>
+        /// The order.
+        /// </value>
+        [DataMember]
+        public int Order { get; set; }
 
         #endregion
 
@@ -442,38 +489,72 @@ namespace Rock.Model
             // of occurrences. The count property in the iCal rule refers to the count of occurrences.
             var endDateRules = calEvent.RecurrenceRules.Where( rule => rule.Count <= 0 );
             var countRules = calEvent.RecurrenceRules.Where( rule => rule.Count > 0 );
-            var endDateRuleApplied = false;
+
+            var hasRuleWithEndDate = endDateRules.Any();
+            var hasRuleWithCount = countRules.Any();
+            var hasDates = calEvent.RecurrenceDates.Any();
+
+            bool adjustEffectiveDateForLastOccurrence = false;
 
             // If there are any recurrence rules with no end date, the Effective End Date is infinity
             // iCal rule.Until will be min value date if it is representing no end date (backwards from Rock using max value)
-            if ( endDateRules.Any( rule => RockDateTime.IsMinDate( rule.Until ) ) )
+            if ( hasRuleWithEndDate )
             {
-                EffectiveEndDate = DateTime.MaxValue;
-                endDateRuleApplied = true;
-            }
-            else if ( endDateRules.Any() )
-            {
-                EffectiveEndDate = endDateRules.Max( rule => rule.Until );
-                endDateRuleApplied = true;
+                if ( endDateRules.Any( rule => RockDateTime.IsMinDate( rule.Until ) ) )
+                {
+                    EffectiveEndDate = DateTime.MaxValue;
+                }
+                else
+                {
+                    EffectiveEndDate = endDateRules.Max( rule => rule.Until );
+                }
             }
 
-            if ( countRules.Any( rule => rule.Count > 999 ) && !endDateRuleApplied )
+            if ( hasRuleWithCount )
             {
-                // If there is a count rule greater than 999 (limit in the UI), and no end date rule was applied,
-                // we don't want to calculate occurrences because it will be too costly. Treat this as no end date.
-                EffectiveEndDate = DateTime.MaxValue;
+                if ( countRules.Any( rule => rule.Count > 999 ) && !hasRuleWithEndDate )
+                {
+                    // If there is a count rule greater than 999 (limit in the UI), and no end date rule was applied,
+                    // we don't want to calculate occurrences because it will be too costly. Treat this as no end date.
+                    EffectiveEndDate = DateTime.MaxValue;
+                }
+                else
+                {
+                    // This case means that there are count rules and they are <= 999. Go ahead and calculate the actual occurrences
+                    // to get the EffectiveEndDate.
+                    adjustEffectiveDateForLastOccurrence = true;
+                }
             }
-            else if ( countRules.Any() )
+
+            // If specific recurrence dates exist, adjust the Effective End Date to the last specified date 
+            // if it occurs after the Effective End Date required by the recurrence rules.
+            if ( hasDates )
             {
-                // This case means that there are count rules and they are <= 999. Go ahead and calculate the actual occurrences
-                // to get the EffectiveEndDate.
+                // If the Schedule does not have any other rules, reset the Effective End Date to ensure it is recalculated.
+                if ( !hasRuleWithEndDate && !hasRuleWithCount )
+                {
+                    EffectiveEndDate = null;
+                }
+
+                adjustEffectiveDateForLastOccurrence = true;
+            }
+
+            if ( adjustEffectiveDateForLastOccurrence
+                 && EffectiveEndDate != DateTime.MaxValue )
+            {
                 var occurrences = GetICalOccurrences( DateTime.MinValue, DateTime.MaxValue );
 
                 if ( occurrences.Any() )
                 {
-                    EffectiveEndDate = occurrences.Any() // It is possible for an event to have no occurrences
+                    var lastOccurrenceDate = occurrences.Any() // It is possible for an event to have no occurrences
                         ? occurrences.OrderByDescending( o => o.Period.StartTime.Date ).First().Period.EndTime.Date
                         : EffectiveStartDate;
+
+                    if ( EffectiveEndDate == null
+                         || lastOccurrenceDate > EffectiveEndDate )
+                    {
+                        EffectiveEndDate = lastOccurrenceDate;
+                    }
                 }
             }
 

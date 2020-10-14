@@ -215,6 +215,7 @@ namespace Rock.Workflow.Action.CheckIn
                                     attendance.CheckedOutByPersonAliasId = null;
                                     attendance.DidAttend = true;
                                     attendance.Note = group.Notes;
+                                    attendance.IsFirstTime = person.FirstTime;
 
                                     /*
                                         7/16/2020 - JH

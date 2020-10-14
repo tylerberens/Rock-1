@@ -1,7 +1,7 @@
 SET NOCOUNT ON
 
 -- NOTE: Set @maxPerson to the number of people you want to add. Setting it as high as 99999 might take a minute or so
-DECLARE @maxPerson INT = 9999
+DECLARE @maxPerson INT = 99999
     ,@genderInt INT
     ,@countryCode nvarchar(3) = null
     ,@personRecordType INT = (
@@ -37,7 +37,6 @@ DECLARE @maxPerson INT = 9999
         FROM DefinedType
         WHERE guid = '2E6540EA-63F0-40FE-BE50-F2A84735E600'
     )
-    ,@campusId int = (select top 1 Id from Campus)
     ,@personId INT
     ,@personGuid UNIQUEIDENTIFIER
     ,@spousePersonId INT
@@ -83,19 +82,19 @@ DECLARE @maxPerson INT = 9999
 	,@geoPoint Geography
 
 BEGIN
-    IF OBJECT_ID('tempdb..#lastNames') IS NOT NULL
-        DROP TABLE #lastNames
+    IF OBJECT_ID('tempdb..#personLastNames') IS NOT NULL
+        DROP TABLE #personLastNames
 
-    IF OBJECT_ID('tempdb..#firstNames') IS NOT NULL
-        DROP TABLE #firstNames
+    IF OBJECT_ID('tempdb..#personFirstNames') IS NOT NULL
+        DROP TABLE #personFirstNames
 
-    CREATE TABLE #firstNames (
+    CREATE TABLE #personFirstNames (
         number INT NOT NULL identity(1, 1)
         ,gender INT NOT NULL
         ,FirstName NVARCHAR(20) NOT NULL
         );
 
-    INSERT INTO #firstNames
+    INSERT INTO #personFirstNames
     VALUES (
         2
         ,N'Brigid'
@@ -4097,7 +4096,7 @@ BEGIN
         ,N'Herbert'
         )
 
-    INSERT INTO #firstNames
+    INSERT INTO #personFirstNames
     VALUES (
         1
         ,N'Maria'
@@ -8099,7 +8098,7 @@ BEGIN
         ,N'Donita'
         )
 
-    INSERT INTO #firstNames
+    INSERT INTO #personFirstNames
     VALUES (
         2
         ,N'Jane'
@@ -8341,13 +8340,13 @@ BEGIN
         ,N'Irving'
         )
 
-    CREATE TABLE #lastNames (
+    CREATE TABLE #personLastNames (
         number INT NOT NULL IDENTITY(1, 1)
         ,surname NVARCHAR(23) NOT NULL
-        ,CONSTRAINT pk_fakenames PRIMARY KEY CLUSTERED (number)
+        ,CONSTRAINT pk_fakepersonnames PRIMARY KEY CLUSTERED (number)
         );
 
-    INSERT INTO #lastNames
+    INSERT INTO #personLastNames
     VALUES (N'Edington')
         ,(N'Mcdonough')
         ,(N'Dorantes')
@@ -9349,7 +9348,7 @@ BEGIN
         ,(N'Ashmore')
         ,(N'Boettcher')
 
-    INSERT INTO #lastNames
+    INSERT INTO #personLastNames
     VALUES (N'Skillern')
         ,(N'Weyandt')
         ,(N'Fallis')
@@ -10351,7 +10350,7 @@ BEGIN
         ,(N'Netherton')
         ,(N'Chatham')
 
-    INSERT INTO #lastNames
+    INSERT INTO #personLastNames
     VALUES (N'Phillips')
         ,(N'Livesay')
         ,(N'Ayala')
@@ -11353,7 +11352,7 @@ BEGIN
         ,(N'Comeau')
         ,(N'Mcnerney')
 
-    INSERT INTO #lastNames
+    INSERT INTO #personLastNames
     VALUES (N'Truesdale')
         ,(N'Courtney')
         ,(N'Vandenberg')
@@ -11999,11 +11998,11 @@ BEGIN
 
     DECLARE @firstNameCount INT = (
             SELECT count(*)
-            FROM #firstNames
+            FROM #personFirstNames
             );
     DECLARE @lastNameCount INT = (
             SELECT count(*)
-            FROM #lastNames
+            FROM #personLastNames
             );
 
     DECLARE @connectionStatusValueId INT;
@@ -12014,15 +12013,15 @@ BEGIN
     WHILE @personCounter < @maxPerson
     BEGIN
         -- get a random firstname
-        SELECT @firstName = #firstNames.FirstName
-            ,@genderInt = #firstNames.gender
-        FROM #firstNames WITH (NOLOCK)
-        WHERE #firstNames.number = ROUND(rand() * @firstNameCount, 0)
+        SELECT @firstName = #personFirstNames.FirstName
+            ,@genderInt = #personFirstNames.gender
+        FROM #personFirstNames WITH (NOLOCK)
+        WHERE #personFirstNames.number = ROUND(rand() * @firstNameCount, 0)
 
         -- get a random lastname
-        SELECT @lastName = #lastNames.surname
-        FROM #lastNames WITH (NOLOCK)
-        WHERE #lastNames.number = ROUND(rand() * @lastNameCount, 0)
+        SELECT @lastName = #personLastNames.surname
+        FROM #personLastNames WITH (NOLOCK)
+        WHERE #personLastNames.number = ROUND(rand() * @lastNameCount, 0)
 
         -- add first member of family
         SET @email = @firstName + '.' + @lastName + '@nowhere.com';
@@ -12093,6 +12092,14 @@ BEGIN
             ,NEWID()
             );
 
+         IF (@personId%10 = 0) BEGIN
+            DECLARE @userName NVARCHAR(255) = concat(@lastName, substring(@firstName, 1, 2));
+            IF NOT EXISTS (SELECT * FROM UserLogin WHERE UserName = @userName) BEGIN
+                INSERT INTO [UserLogin] (UserName, [Password], [EntityTypeId], [PersonId], [Guid]) 
+                    VALUES (@userName, NEWID(),27, @personId, NEWID())
+            END
+         END
+
         SET @phoneNumber = cast(convert(BIGINT, ROUND(rand() * 0095551212, 0) + 6230000000) AS NVARCHAR(20));
         SET @phoneNumberFormatted = '(' + substring(@phoneNumber, 1, 3) + ') ' + substring(@phoneNumber, 4, 3) + '-' + substring(@phoneNumber, 7, 4);
 
@@ -12158,9 +12165,9 @@ BEGIN
                 ELSE 0
                 END
 
-        SELECT TOP 1 @firstName = #firstNames.FirstName
-        FROM #firstNames WITH (NOLOCK)
-        WHERE #firstNames.number >= ROUND(rand() * @firstNameCount, 0)
+        SELECT TOP 1 @firstName = #personFirstNames.FirstName
+        FROM #personFirstNames WITH (NOLOCK)
+        WHERE #personFirstNames.number >= ROUND(rand() * @firstNameCount, 0)
             AND gender = @genderInt
 
         SET @email = @firstName + '.' + @lastName + '@nowhere.com';
@@ -12283,6 +12290,9 @@ BEGIN
             ,@mobilePhone
             );
 
+        declare @randomCampusId int = (select top 1 Id from Campus order by newid())
+
+
 		-- create family
 		INSERT INTO [Group] (
             IsSystem
@@ -12300,7 +12310,7 @@ BEGIN
             ,@lastName + ' Family'
             ,0
             ,1
-            ,@campusId
+            ,@randomCampusId
             ,NEWID()
             ,0
             )
@@ -12358,9 +12368,9 @@ BEGIN
 
 			SELECT @genderInt = floor(rand() * 2) + 1
 
-            SELECT TOP 1 @firstName = #firstNames.FirstName
-                FROM #firstNames WITH (NOLOCK)
-                WHERE #firstNames.number >= ROUND(rand() * @firstNameCount, 0)
+            SELECT TOP 1 @firstName = #personFirstNames.FirstName
+                FROM #personFirstNames WITH (NOLOCK)
+                WHERE #personFirstNames.number >= ROUND(rand() * @firstNameCount, 0)
                 AND gender = @genderInt
 
 			INSERT INTO [Person] (
@@ -12610,11 +12620,14 @@ BEGIN
 
     COMMIT TRANSACTION
 
-    IF OBJECT_ID('tempdb..#lastNames') IS NOT NULL
-        DROP TABLE #lastNames
 
-    IF OBJECT_ID('tempdb..#firstNames') IS NOT NULL
-        DROP TABLE #firstNames
+    
+
+    IF OBJECT_ID('tempdb..#personLastNames') IS NOT NULL
+        DROP TABLE #personLastNames
+
+    IF OBJECT_ID('tempdb..#personFirstNames') IS NOT NULL
+        DROP TABLE #personFirstNames
 
     SELECT COUNT(*) [Total Person Count]
     FROM [Person]

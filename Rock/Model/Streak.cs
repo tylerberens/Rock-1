@@ -33,7 +33,7 @@ namespace Rock.Model
     /// <summary>
     /// Represents a Streak in Rock.
     /// </summary>
-    [RockDomain( "Streaks" )]
+    [RockDomain( "Engagement" )]
     [Table( "Streak" )]
     [DataContract]
     public partial class Streak : Model<Streak>
@@ -168,21 +168,6 @@ namespace Rock.Model
         {
             get => !InactiveDateTime.HasValue;
         }
-
-        /// <summary>
-        /// Gets or sets the streak achievement attempts.
-        /// </summary>
-        /// <value>
-        /// The streak type achievement types.
-        /// </value>
-        [DataMember]
-        [JsonIgnore]
-        public virtual ICollection<StreakAchievementAttempt> StreakAchievementAttempts
-        {
-            get => _streakAchievementAttempts ?? ( _streakAchievementAttempts = new Collection<StreakAchievementAttempt>() );
-            set => _streakAchievementAttempts = value;
-        }
-        private ICollection<StreakAchievementAttempt> _streakAchievementAttempts;
 
         #endregion Virtual Properties
 

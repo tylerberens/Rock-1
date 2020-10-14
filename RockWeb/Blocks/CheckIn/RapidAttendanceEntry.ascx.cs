@@ -433,11 +433,9 @@ namespace RockWeb.Blocks.CheckIn
             rblRole.Visible = true;
             rblRole.Required = true;
 
-            string clearAttendanceScript = string.Format( "$('#{0}').val('false');", hfAttendanceDirty.ClientID );
-            lbSaveAttendance.OnClientClick = clearAttendanceScript;
 
-            string clearPersonScript = string.Format( "$('#{0}').val('false');", hfPersonDirty.ClientID );
-            bbtnSaveContactItems.OnClientClick = clearPersonScript;
+            string clearPersonScript = string.Format( "$('#{0}').val('false'); $('#{1}').val('false');", hfPersonDirty.ClientID, hfAttendanceDirty.ClientID );
+            bbtnSave.OnClientClick = clearPersonScript;
 
             IsAttendanceEnabled = GetAttributeValue( AttributeKey.EnableAttendance ).AsBoolean();
 
@@ -634,11 +632,11 @@ namespace RockWeb.Blocks.CheckIn
         }
 
         /// <summary>
-        /// Handles the Click event of the lbSaveAttendance control.
+        /// Handles the Click event of the bbtnSave control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        protected void lbSaveAttendance_Click( object sender, EventArgs e )
+        protected void bbtnSave_Click( object sender, EventArgs e )
         {
             if ( _attendanceSettingState == null )
             {
@@ -646,9 +644,10 @@ namespace RockWeb.Blocks.CheckIn
             }
 
             hfAttendanceDirty.Value = "false";
+            hfPersonDirty.Value = "false";
+
             var rockContext = new RockContext();
             var attendanceService = new AttendanceService( rockContext );
-
             var group = new GroupService( rockContext ).Get( _attendanceSettingState.GroupId );
             var groupLocation = new GroupLocationService( rockContext ).Get( _attendanceSettingState.GroupLocationId );
             var personService = new PersonService( rockContext );
@@ -656,15 +655,15 @@ namespace RockWeb.Blocks.CheckIn
             for ( int i = 0; i < rcbAttendance.Items.Count; i++ )
             {
                 var personId = rcbAttendance.Items[i].Value.AsInteger();
-                var person = personService.Get( personId );
+                var attendancePerson = personService.Get( personId );
 
                 if ( rcbAttendance.Items[i].Selected )
                 {
-                    var attendance = attendanceService.AddOrUpdate( person.PrimaryAliasId.Value, _attendanceSettingState.AttendanceDate, group.Id, groupLocation.LocationId, _attendanceSettingState.ScheduleId, group.CampusId );
+                    var attendance = attendanceService.AddOrUpdate( attendancePerson.PrimaryAliasId.Value, _attendanceSettingState.AttendanceDate, group.Id, groupLocation.LocationId, _attendanceSettingState.ScheduleId, group.CampusId );
                 }
                 else
                 {
-                    var attendance = attendanceService.Get( _attendanceSettingState.AttendanceDate, groupLocation.LocationId, _attendanceSettingState.ScheduleId, group.Id, person.Id );
+                    var attendance = attendanceService.Get( _attendanceSettingState.AttendanceDate, groupLocation.LocationId, _attendanceSettingState.ScheduleId, group.Id, attendancePerson.Id );
                     if ( attendance != null )
                     {
                         attendanceService.Delete( attendance );
@@ -674,26 +673,8 @@ namespace RockWeb.Blocks.CheckIn
 
             rockContext.SaveChanges();
 
-            //
-            // Flush the attendance cache.
-            //
-            Rock.CheckIn.KioskLocationAttendance.Remove( groupLocation.LocationId );
 
-            ShowMainPanel( SelectedPersonId );
-        }
-
-        /// <summary>
-        /// Handles the Click event of the bbtnSaveContactItems control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        protected void bbtnSaveContactItems_Click( object sender, EventArgs e )
-        {
-            hfPersonDirty.Value = "false";
-
-            var rockContext = new RockContext();
-            var person = new PersonService( rockContext ).Get( hfPersonGuid.Value.AsGuid() );
-
+            var person = personService.Get( hfPersonGuid.Value.AsGuid() );
             if ( GetAttributeValue( AttributeKey.EnablePrayerRequestEntry ).AsBoolean() && tbPrayerRequest.Text.IsNotNullOrWhiteSpace() )
             {
                 PrayerRequest prayerRequest = new PrayerRequest { Id = 0, IsActive = true, IsApproved = true, AllowComments = GetAttributeValue( AttributeKey.DefaultAllowComments ).AsBoolean() };
@@ -729,13 +710,9 @@ namespace RockWeb.Blocks.CheckIn
                 prayerRequest.RequestedByPersonAliasId = person.PrimaryAliasId;
 
                 int? campusId = null;
-                if ( _attendanceSettingState != null )
+                if ( group != null && group.CampusId.HasValue )
                 {
-                    var group = new GroupService( rockContext ).Get( _attendanceSettingState.GroupId );
-                    if ( group != null && group.CampusId.HasValue )
-                    {
-                        campusId = group.CampusId;
-                    }
+                    campusId = group.CampusId;
                 }
                 if ( !campusId.HasValue )
                 {
@@ -772,7 +749,7 @@ namespace RockWeb.Blocks.CheckIn
                 rockContext.SaveChanges();
             }
 
-            if ( rcwNotes.Visible )
+            if ( rcwNotes.Visible && tbNote.Text.IsNotNullOrWhiteSpace() )
             {
                 NoteService noteService = new NoteService( rockContext );
 
@@ -795,22 +772,13 @@ namespace RockWeb.Blocks.CheckIn
             if ( rcbWorkFlowTypes.Visible && rcbWorkFlowTypes.SelectedValues.Any() )
             {
                 var workflowService = new WorkflowService( rockContext );
-                Group group = null;
-                Schedule schedule = null;
+                var schedule = new ScheduleService( rockContext ).Get( _attendanceSettingState.ScheduleId );
                 Location location = null;
-
-                if ( _attendanceSettingState != null )
+                if ( groupLocation != null )
                 {
-                    group = new GroupService( rockContext ).Get( _attendanceSettingState.GroupId );
-                    schedule = new ScheduleService( rockContext ).Get( _attendanceSettingState.ScheduleId );
-
-                    var groupLocation = new GroupLocationService( rockContext ).Get( _attendanceSettingState.GroupLocationId );
-
-                    if ( groupLocation != null )
-                    {
-                        location = groupLocation.Location;
-                    }
+                    location = groupLocation.Location;
                 }
+
                 var personWorkflows = rcbWorkFlowTypes.SelectedValues.AsGuidList();
                 foreach ( var workflowType in personWorkflows )
                 {
@@ -824,6 +792,13 @@ namespace RockWeb.Blocks.CheckIn
                     }
                 }
             }
+
+            //
+            // Flush the attendance cache.
+            //
+            Rock.CheckIn.KioskLocationAttendance.Remove( groupLocation.LocationId );
+
+            ShowMainPanel( SelectedPersonId );
         }
 
 
@@ -1141,7 +1116,13 @@ namespace RockWeb.Blocks.CheckIn
                 return;
             }
 
-            rockContext.WrapTransaction( () =>
+            CommunicationType? selectedCommunicationPreference = null;
+            if ( rblCommunicationPreference.Visible )
+            {
+                selectedCommunicationPreference = rblCommunicationPreference.SelectedValueAsEnum<CommunicationType>();
+            }
+
+            var wrapTransactionResult = rockContext.WrapTransactionIf( () =>
             {
                 var personService = new PersonService( rockContext );
                 var groupMemberService = new GroupMemberService( rockContext );
@@ -1181,9 +1162,9 @@ namespace RockWeb.Blocks.CheckIn
                     {
                         groupMember.Person.Email = tbEmail.Text.Trim();
                         groupMember.Person.IsEmailActive = cbIsEmailActive.Checked;
-                        if ( rblCommunicationPreference.Visible )
+                        if ( rblCommunicationPreference.Visible && selectedCommunicationPreference.HasValue )
                         {
-                            groupMember.Person.CommunicationPreference = rblCommunicationPreference.SelectedValueAsEnum<CommunicationType>();
+                            groupMember.Person.CommunicationPreference = selectedCommunicationPreference.Value;
                         }
                     }
 
@@ -1204,6 +1185,17 @@ namespace RockWeb.Blocks.CheckIn
                     person.LastName = tbLastName.Text;
                     person.SuffixValueId = dvpSuffix.SelectedValueAsInt();
                     person.Gender = rblGender.SelectedValue.ConvertToEnum<Gender>();
+
+                    if ( pnlEmail.Visible )
+                    {
+                        person.Email = tbEmail.Text.Trim();
+                        person.IsEmailActive = cbIsEmailActive.Checked;
+                        if ( rblCommunicationPreference.Visible && selectedCommunicationPreference.HasValue )
+                        {
+                            person.CommunicationPreference = selectedCommunicationPreference.Value;
+                        }
+                    }
+
                     var birthMonth = person.BirthMonth;
                     var birthDay = person.BirthDay;
                     var birthYear = person.BirthYear;
@@ -1328,14 +1320,49 @@ namespace RockWeb.Blocks.CheckIn
                         phoneNumberService.Delete( phoneNumber );
                     }
 
+                    /* 2020-10-06 MDP
+                     To help prevent a person from setting their communication preference to SMS, even if they don't have an SMS number,
+                      we'll require an SMS number in these situations. The goal is to only enforce if they are able to do something about it.
+                      1) The block is configured to show both 'Communication Preference' and 'Phone Numbers'.
+                      2) Communication Preference is set to SMS
+                      
+                     Edge cases
+                       - Both #1 and #2 are true, but no Phone Types are selected in block settings. In this case, still enforce.
+                         Think of this as a block configuration issue (they shouldn't have configured it that way)
+
+                       - Person has an SMS phone number, but the block settings don't show it. We'll see if any of the Person's phone numbers
+                         have SMS, including ones that are not shown. So, they can set communication preference to SMS without getting a warning.
+
+                    NOTE: We might have already done a save changes at this point, but we are in a DB Transaction, so it'll get rolled back if
+                        we return a warning message.
+                     */
+
+                    var showPhoneNumbers = phoneNumberTypeIds.Any();
+                    if ( rblCommunicationPreference.Visible && showPhoneNumbers && selectedCommunicationPreference.HasValue && selectedCommunicationPreference == CommunicationType.SMS )
+                    {
+                        if ( !person.PhoneNumbers.Any( a => a.IsMessagingEnabled ) )
+                        {
+                            nbCommunicationPreferenceWarning.Text = "A phone number with SMS enabled is required when Communication Preference is set to SMS.";
+                            nbCommunicationPreferenceWarning.NotificationBoxType = NotificationBoxType.Warning;
+                            nbCommunicationPreferenceWarning.Visible = true;
+                            return false;
+                        }
+                    }
+
+                    rockContext.SaveChanges();
+
                     person.LoadAttributes();
                     avcPersonAttributes.GetEditValues( person );
-                    rockContext.SaveChanges();
+                    person.SaveAttributeValues();
                 }
+
+                return true;
             } );
 
-            ShowMainPanel( SelectedPersonId );
-
+            if ( wrapTransactionResult )
+            {
+                ShowMainPanel( SelectedPersonId );
+            }
         }
 
         #endregion Edit Members Events
@@ -1345,17 +1372,25 @@ namespace RockWeb.Blocks.CheckIn
         #region Private Methods
 
         /// <summary>
+        /// Get the Unique Rapid Attendance Entry Cookie Key
+        /// </summary>
+        private string GetUniqueRapidAttendanceEntryCookieKey()
+        {
+            return string.Format( "{0}-{1}", ROCK_RAPIDATTENDANCEENTRY, this.BlockId );
+        }
+
+        /// <summary>
         /// Creates the rapid attendance cookie.
         /// </summary>
         private void CreateRapidAttendanceCookie( AttendanceSetting attendanceSetting )
         {
-            HttpCookie httpcookie = new HttpCookie( ROCK_RAPIDATTENDANCEENTRY );
-            httpcookie.Expires = RockDateTime.Now.AddMinutes( 480 );
-            httpcookie.Values.Add( GROUP_ID, attendanceSetting.GroupId.ToString() );
-            httpcookie.Values.Add( LOCATION_ID, attendanceSetting.GroupLocationId.ToString() );
-            httpcookie.Values.Add( SCHEDULE_ID, attendanceSetting.ScheduleId.ToString() );
-            httpcookie.Values.Add( ATTENDANCE_DATE, attendanceSetting.AttendanceDate.ToString() );
-            Response.Cookies.Add( httpcookie );
+            HttpCookie httpCookie = new HttpCookie( GetUniqueRapidAttendanceEntryCookieKey() );
+            httpCookie.Expires = RockDateTime.Now.AddMinutes( 480 );
+            httpCookie.Values.Add( GROUP_ID, attendanceSetting.GroupId.ToString() );
+            httpCookie.Values.Add( LOCATION_ID, attendanceSetting.GroupLocationId.ToString() );
+            httpCookie.Values.Add( SCHEDULE_ID, attendanceSetting.ScheduleId.ToString() );
+            httpCookie.Values.Add( ATTENDANCE_DATE, attendanceSetting.AttendanceDate.ToString() );
+            Rock.Web.UI.RockPage.AddOrUpdateCookie( httpCookie );
         }
 
         /// <summary>
@@ -1363,7 +1398,7 @@ namespace RockWeb.Blocks.CheckIn
         /// </summary>
         private AttendanceSetting GetRapidAttendanceCookie()
         {
-            HttpCookie rapidAttendanceEntryCookie = Request.Cookies[ROCK_RAPIDATTENDANCEENTRY];
+            HttpCookie rapidAttendanceEntryCookie = Request.Cookies[GetUniqueRapidAttendanceEntryCookieKey()];
             if ( rapidAttendanceEntryCookie != null )
             {
                 AttendanceSetting attendanceSetting = new AttendanceSetting();
@@ -1455,7 +1490,7 @@ namespace RockWeb.Blocks.CheckIn
 
                 var group = new GroupService( rockContext ).Get( groupId.Value );
                 var groupLocation = new GroupLocationService( rockContext ).Get( ddlLocation.SelectedValue.AsInteger() );
-                var schedules = groupLocation.Schedules.ToList();
+                var schedules = groupLocation.Schedules.Where( a => a.IsActive ).ToList();
 
                 // TODO: Should keep?
                 if ( group.Schedule != null )
@@ -1509,8 +1544,62 @@ namespace RockWeb.Blocks.CheckIn
             }
             else
             {
-                ShowMainPanel( PageParameter( PageParameterKey.PersonId ).AsIntegerOrNull() );
+                if ( IsAttendanceSettingValid() )
+                {
+                    ShowMainPanel( PageParameter( PageParameterKey.PersonId ).AsIntegerOrNull() );
+                }
+                else
+                {
+                    _attendanceSettingState = null;
+                    SelectedPersonId = PageParameter( PageParameterKey.PersonId ).AsIntegerOrNull();
+                    ShowAttendanceSetting();
+                }
             }
+        }
+
+        /// <summary>
+        /// Determines whether the attendance setting is valid.
+        /// </summary>
+        /// <returns></returns>
+        private bool IsAttendanceSettingValid()
+        {
+            var rockContext = new RockContext();
+            var groupLocation = new GroupLocationService( rockContext ).Get( _attendanceSettingState.GroupLocationId );
+            if ( groupLocation == null )
+            {
+                return false;
+            }
+
+            var schedule = new ScheduleService( rockContext ).Get( _attendanceSettingState.ScheduleId );
+            if ( schedule == null || !schedule.IsActive )
+            {
+                return false;
+            }
+
+            var attendanceGroupGuid = GetAttributeValue( AttributeKey.AttendanceGroup ).AsGuid();
+            if ( attendanceGroupGuid != default( Guid ) )
+            {
+                var groupId = new GroupService( rockContext ).GetId( attendanceGroupGuid );
+                if ( !groupId.HasValue || groupId.Value != _attendanceSettingState.GroupId )
+                {
+                    return false;
+                }
+            }
+            else if ( GetAttributeValue( AttributeKey.ParentGroup ).AsGuid() != default( Guid ) )
+            {
+                var parentGroupGuid = GetAttributeValue( AttributeKey.ParentGroup ).AsGuid();
+
+                var group = new GroupService( rockContext )
+                                .Queryable()
+                                .Where( a => a.ParentGroup.Guid == parentGroupGuid && a.IsActive && a.Id == _attendanceSettingState.GroupId )
+                                .FirstOrDefault();
+                if ( group == null )
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -1959,8 +2048,6 @@ namespace RockWeb.Blocks.CheckIn
                     }
                 }
             }
-
-            bbtnSaveContactItems.Visible = pnlPrayerRequest.Visible || rcbWorkFlowTypes.Visible || rcwNotes.Visible;
         }
 
         /// <summary>
@@ -1999,6 +2086,8 @@ namespace RockWeb.Blocks.CheckIn
             pnlEditMember.Visible = true;
             pnlMainEntry.Visible = false;
             ShowFamilyActionButton( false );
+
+            nbCommunicationPreferenceWarning.Visible = false;
 
             RockContext rockContext = new RockContext();
 

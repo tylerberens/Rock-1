@@ -48,6 +48,12 @@ namespace Rock.SystemGuid
         public const string ACCOUNTS = "2B630A3B-E081-4204-A3E4-17BB3A5F063D";
 
         /// <summary>
+        /// Gets the Achievement Type page guid
+        /// ParentPage: <see cref="ENGAGEMENT"/>
+        /// </summary>
+        public const string ACHIEVEMENT_TYPES = "FCE0D006-F854-4107-9298-667563FA8D77";
+
+        /// <summary>
         /// Gets the Add Transaction page guid
         /// ParentPage: Contributions
         /// </summary>
@@ -582,8 +588,21 @@ namespace Rock.SystemGuid
         public const string CONFIRM = "D73F83B4-E20E-4F95-9A2C-511FB669F44C";
 
         /// <summary>
-        /// Gets the Connections page guid
-        /// ParentPage: Manage
+        /// Gets the Connections board page guid.
+        /// ParentPage: Connections opportunity select
+        /// </summary>
+        public const string CONNECTIONS_BOARD = "4FBCEB52-8892-4035-BDEA-112A494BE81F";
+
+        /// <summary>
+        /// Gets the Connections opportunity select page guid.
+        /// ParentPage: Engagement
+        /// </summary>
+        public const string CONNECTION_OPPORTUNITY_SELECT = "2A0C135A-8421-4125-A484-83C8B4FB3D34";
+
+        /// <summary>
+        /// Gets the Connections page guid. This was the original connections root page that was replaced by
+        /// the connection opportunity select.
+        /// ParentPage: Connections opportunity select
         /// </summary>
         public const string CONNECTIONS = "530860ED-BC73-4A43-8E7C-69533EF2B6AD";
 
@@ -591,6 +610,12 @@ namespace Rock.SystemGuid
         /// The connection request detail page guid
         /// </summary>
         public const string CONNECTION_REQUEST_DETAIL = "50f04e77-8d3b-4268-80ab-bc15dd6cb262";
+
+        /// <summary>
+        /// Connection Type Config Page
+        /// ParentPage: Connections
+        /// </summary>
+        public const string CONNECTION_TYPES = "9CC19684-7AD2-4D4E-A7C4-10DAE56E7FA6";
 
         /// <summary>
         /// Gets the Contact Us page guid
@@ -1984,5 +2009,35 @@ namespace Rock.SystemGuid
         /// The phone number lookup page.
         /// </summary>
         public const string PHONE_NUMBER_LOOKUP = "9F8D906F-ADB6-42AC-9777-D9712A5D097F";
+
+        /// <summary>
+        /// The oidc scopes page.
+        /// </summary>
+        public const string OIDC_SCOPE_LIST = "06FA872A-18B0-431A-917E-6F7B2EA8ED95";
+
+        /// <summary>
+        /// The oidc clients page.
+        /// </summary>
+        public const string OIDC_CLIENT_LIST = "0A18B520-915E-429B-AC49-7A7F73B19BAA";
+
+        /// <summary>
+        /// The oidc give permission page.
+        /// </summary>
+        public const string OIDC_GIVE_PERMISSION = "73941D90-4CA1-46F8-A5D1-5B4BD2E53B3D";
+
+        /// <summary>
+        /// The oidc logout page.
+        /// </summary>
+        public const string OIDC_LOGOUT = "FC20F56F-A7FB-4B89-9C66-98BC43816C8F";
+
+        /// <summary>
+        /// The oidc scope detail page.
+        /// </summary>
+        public const string OIDC_SCOPE_DETAIL = "55E70873-B882-4864-8B97-66F8ED3588C7";
+
+        /// <summary>
+        /// The oidc client detail page.
+        /// </summary>
+        public const string OIDC_CLIENT_DETAIL = "41E6A833-1697-4463-9962-01DFD123D4C9";
     }
 }

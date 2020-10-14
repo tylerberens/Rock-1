@@ -565,8 +565,8 @@ namespace Rock.DownhillCss
         private static string baseStylesWeb = @"";
 
         private static string baseStylesMobile = @"/*
-    Resets
-    -----------------------------------------------------------
+Resets
+-----------------------------------------------------------
 */
 
 /* Fixes frame backgrounds from being black while in dark mode */
@@ -574,6 +574,7 @@ namespace Rock.DownhillCss
 ^editor {
     background-color: transparent;
     color: ?color-text;
+    margin: -5, -10;
 }
 
 ^frame {
@@ -589,7 +590,11 @@ NavigationPage {
 }
 
 ^label {
-    font-size: default;
+    font-size: ?font-size-default;
+    color: ?color-text;
+}
+
+icon {
     color: ?color-text;
 }
 
@@ -674,7 +679,7 @@ NavigationPage {
 
 /* Text Named Sizes */
 .text {
-    font-size: default;
+    font-size: ?font-size-default;
     color: ?color-text;
 }
 
@@ -713,13 +718,13 @@ NavigationPage {
 
 .title {
     font-style: bold;
-    font-size: default;
+    font-size: ?font-size-default;
     line-height: 1;
 }
 
 /* Body Styles */
 .paragraph {
-    font-size: default;
+    font-size: ?font-size-default;
     color: ?color-text;
     line-height: 1.15;
     margin-bottom: 24;
@@ -872,6 +877,21 @@ NavigationPage {
     -----------------------------------------------------------
 */
 
+/* Flyout Styling */
+
+.flyout-menu ^listview {
+    background-color: ?color-brand;
+}
+
+.flyout-menu ^boxview {
+    background-color: #fff;
+    opacity: 0.4;
+}
+
+.flyout-menu-item {
+    font-size: 21;
+}
+
 /* Countdown */
 .countdown-field {
     width: 32;
@@ -963,22 +983,6 @@ NavigationPage {
 
 .divider-thickest {
     height: 8;
-}
-
-/* Forms Styling */
-.form-group {
-    margin: 0 0 12 0;
-}
-
-.form-group .form-group-title {
-    margin: 0 0 5 0;
-    color: ?color-primary;
-    font-size: 12;
-}
-
-.form-field {
-    padding: 12;
-    color: #282828;
 }
 
 /* Buttons */
@@ -1234,6 +1238,10 @@ NavigationPage {
     color: rgba(255,255,255,0.5);
 }
 
+.calendar-monthcalendar {
+    margin-bottom: 32;
+}
+
 .calendar-header {
     font-style: bold;
 }
@@ -1253,7 +1261,7 @@ NavigationPage {
 }
 
 .calendar-events-heading {
-    margin-top: 32;
+    margin-top: 0;
     text-align: center;
     margin-bottom: 16;
 }
@@ -1321,19 +1329,39 @@ NavigationPage {
 }
 
 /* Forms Styles */
+
+.form-group {
+    margin: 0 0 12 0;
+}
+
+.form-group .form-group-title {
+    margin: 0 0 5 0;
+    color: ?color-primary;
+    font-size: 12;
+}
+
+.form-field {
+    padding: 12;
+    color: #282828;
+}
 ^borderlessentry,
 ^datepicker,
 ^checkbox, 
 ^picker,
 ^entry, 
-^switch {
+^switch,
+^editor {
     color: ?color-text;
-    font-size: default;
+    font-size: ?font-size-default;
 }
 
 ^literal {
     line-height: 1.15;
     margin-bottom: 16;
+}
+
+^editor {
+    margin: -5, -10;
 }
 
 /* Field Titles */
@@ -1345,7 +1373,7 @@ fieldgroupheader .title,
 formfield .title {
     color: ?color-text;
     font-style: bold;
-    font-size: default;
+    font-size: ?font-size-default;
 }
 
 fieldgroupheader.error .title,

@@ -22,12 +22,14 @@ using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Web;
-
+using DotLiquid;
 using Rock.Model;
 using Rock.Transactions;
 using Rock.UniversalSearch;
 using Rock.Web.Cache;
+using WebGrease.Css.Extensions;
 using Z.EntityFramework.Plus;
 
 using Audit = Rock.Model.Audit;
@@ -72,10 +74,27 @@ namespace Rock.Data
         public string SourceOfChange { get; set; }
 
         /// <summary>
-        /// Wraps code in a BeginTransaction and CommitTransaction
+        /// Wraps the action in a BeginTransaction and CommitTransaction.
+        /// Note that this will *always* commit the transaction (unless an exception occurs).
+        /// If need to rollback the transaction within your action (for example, to show a validation warning),
+        /// use <see cref="WrapTransactionIf(Func{bool})" /> instead.
         /// </summary>
         /// <param name="action">The action.</param>
         public void WrapTransaction( Action action )
+        {
+            WrapTransactionIf( () =>
+            {
+                action.Invoke();
+                return true;
+            } );
+        }
+
+        /// <summary>
+        /// Wraps code in a BeginTransaction and CommitTransaction.
+        /// If the action returns false, the transaction will be rolled back.
+        /// </summary>
+        /// <param name="action">The action.</param>
+        public bool WrapTransactionIf( Func<bool> action )
         {
             if ( !_transactionInProgress )
             {
@@ -84,8 +103,15 @@ namespace Rock.Data
                 {
                     try
                     {
-                        action.Invoke();
-                        dbContextTransaction.Commit();
+                        if ( action.Invoke() )
+                        {
+                            dbContextTransaction.Commit();
+                        }
+                        else
+                        {
+                            dbContextTransaction.Rollback();
+                            return false;
+                        }
                     }
                     catch
                     {
@@ -97,10 +123,12 @@ namespace Rock.Data
                         _transactionInProgress = false;
                     }
                 }
+
+                return true;
             }
             else
             {
-                action.Invoke();
+                return action.Invoke();
             }
         }
 
@@ -127,14 +155,33 @@ namespace Rock.Data
         /// <returns></returns>
         public int SaveChanges( bool disablePrePostProcessing )
         {
+            var result = SaveChanges( new SaveChangesArgs
+            {
+                DisablePrePostProcessing = disablePrePostProcessing
+            } );
+
+            return result.RecordsUpdated;
+        }
+
+        /// <summary>
+        /// Saves all changes made in this context to the underlying database.  The
+        /// default pre and post processing can also optionally be disabled.  This
+        /// would disable audit records being created, workflows being triggered, and
+        /// any PreSaveChanges() methods being called for changed entities.
+        /// </summary>
+        /// <param name="args">Arguments determining behavior of the save.</param>
+        /// <returns></returns>
+        public SaveChangesResult SaveChanges( SaveChangesArgs args )
+        {
+            var saveChangesResult = new SaveChangesResult();
+
             // Pre and Post processing has been disabled, just call the base
             // SaveChanges() method and return
-            if ( disablePrePostProcessing )
+            if ( args.DisablePrePostProcessing )
             {
-                return base.SaveChanges();
+                saveChangesResult.RecordsUpdated = base.SaveChanges();
+                return saveChangesResult;
             }
-
-            int result = 0;
 
             SaveErrorMessages = new List<string>();
 
@@ -152,7 +199,7 @@ namespace Rock.Data
                 try
                 {
                     // Save the context changes
-                    result = base.SaveChanges();
+                    saveChangesResult.RecordsUpdated = base.SaveChanges();
                 }
                 catch ( System.Data.Entity.Validation.DbEntityValidationException ex )
                 {
@@ -172,10 +219,16 @@ namespace Rock.Data
                 if ( updatedItems.Any() )
                 {
                     RockPostSave( updatedItems, personAlias, enableAuditing );
+
+                    if ( args.IsAchievementsEnabled )
+                    {
+                        var attempts = ProcessAchievements( updatedItems );
+                        saveChangesResult.AchievementAttempts = attempts;
+                    }
                 }
             }
 
-            return result;
+            return saveChangesResult;
         }
 
         /// <summary>
@@ -418,6 +471,46 @@ namespace Rock.Data
             }
         }
 
+        /// <summary>
+        /// Processes achievements, checking if any of the recently updated items (this is post save) caused any <see cref="AchievementType"/> progress.
+        /// </summary>
+        /// <param name="updatedItems">The updated items.</param>
+        private List<AchievementAttempt> ProcessAchievements( List<ContextItem> updatedItems )
+        {
+            var updatedAttempts = new Dictionary<int, AchievementAttempt>();
+
+            foreach ( var item in updatedItems )
+            {
+                var loopUpdatedAttempts = ProcessAchievements( item );
+
+                foreach ( var attempt in loopUpdatedAttempts )
+                {
+                    updatedAttempts[attempt.Id] = attempt;
+                }
+            }
+
+            return updatedAttempts.Values.ToList();
+        }
+
+        /// <summary>
+        /// Processes achievements, checking if any of the recently updated items (this is post save) caused any <see cref="AchievementType"/> progress.
+        /// </summary>
+        /// <param name="updatedItem">The updated item.</param>
+        private List<AchievementAttempt> ProcessAchievements( ContextItem updatedItem )
+        {
+            if ( updatedItem == null )
+            {
+                return new List<AchievementAttempt>();
+            }
+
+            if ( updatedItem.State == EntityState.Detached || updatedItem.State == EntityState.Deleted || updatedItem.Entity == null )
+            {
+                return new List<AchievementAttempt>();
+            }
+
+            return AchievementTypeCache.ProcessAchievements( updatedItem.Entity );
+        }
+
         #region Bulk Operations
 
         /// <summary>
@@ -461,6 +554,14 @@ namespace Rock.Data
 
             EntityFramework.Utilities.Configuration.SqlBulkCopyOptions = System.Data.SqlClient.SqlBulkCopyOptions.CheckConstraints;
             EntityFramework.Utilities.EFBatchOperation.For( this, this.Set<T>() ).InsertAll( records );
+
+            if ( typeof( T ).GetInterfaces().Contains( typeof( IEntity ) ) )
+            {
+                // This logic is normally handled in the SaveChanges method, but since the BulkInsert bypasses those
+                // model hooks, achievements need to be updated here. Also, it is not necessary for this logic to complete before this
+                // transaction can continue processing and exit.
+                new AchievementsProcessingTransaction( records as IEnumerable<IEntity> ).Enqueue();
+            }
         }
 
         /// <summary>

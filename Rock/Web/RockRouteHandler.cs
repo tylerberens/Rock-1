@@ -536,12 +536,6 @@ namespace Rock.Web
                 }
             }
 
-            // If the requesting site uses exclusive routes and we didn't find anything for the site then just return
-            if ( site.EnableExclusiveRoutes )
-            {
-                return;
-            }
-
             // Default to first site/page that is not Exclusive
             foreach ( var pageAndRouteId in pageAndRouteIds )
             {
@@ -633,16 +627,7 @@ namespace Rock.Web
         /// <param name="siteCookie">The siteCookie.</param>
         private void CreateOrUpdateSiteCookie( HttpCookie siteCookie, RequestContext routeRequestContext, PageCache page )
         {
-            if ( siteCookie == null )
-            {
-                siteCookie = new System.Web.HttpCookie( "last_site", page.Layout.SiteId.ToString() );
-            }
-            else
-            {
-                siteCookie.Value = page.Layout.SiteId.ToString();
-            }
-
-            routeRequestContext.HttpContext.Response.SetCookie( siteCookie );
+            Rock.Web.UI.RockPage.AddOrUpdateCookie( "last_site", page.Layout.SiteId.ToString(), null );
         }
 
         /// <summary>

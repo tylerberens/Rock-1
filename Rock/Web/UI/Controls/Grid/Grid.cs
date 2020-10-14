@@ -941,13 +941,16 @@ namespace Rock.Web.UI.Controls
              * ViewState is not yet loaded, so page size is stored in the user preference for the block instead.
              */
 
-            int pageSize = 0;
+            var pageSize = 0;
+            var preferredPageSize = 0;
+            var preferenceKey = string.Empty;
 
             var rockBlock = this.RockBlock();
             if ( rockBlock != null )
             {
-                string preferenceKey = string.Format( "{0}_{1}", PAGE_SIZE_KEY, rockBlock.BlockCache?.Id );
-                pageSize = rockBlock.GetUserPreference( preferenceKey ).AsInteger();
+                preferenceKey = string.Format( "{0}_{1}", PAGE_SIZE_KEY, rockBlock.BlockCache?.Id );
+                preferredPageSize = rockBlock.GetUserPreference( preferenceKey ).AsInteger();
+                pageSize = preferredPageSize;
             }
 
             var availablePageSizes = this.GetAvailablePageSizes();
@@ -973,6 +976,14 @@ namespace Rock.Web.UI.Controls
             if ( pageSize == 0 )
             {
                 pageSize = availablePageSizes.First();
+            }
+
+            // If the preferred page size was modified, store the result.
+            if ( preferredPageSize > 0
+                 && pageSize != preferredPageSize
+                 && rockBlock != null )
+            {
+                rockBlock.SetUserPreference( preferenceKey, pageSize.ToString() );
             }
 
             base.PageSize = pageSize;
@@ -2322,8 +2333,9 @@ $('#{this.ClientID} .{GRID_SELECT_CELL_CSS_CLASS}').on( 'click', function (event
                     if ( dataField is RockTemplateField )
                     {
                         var rockTemplateField = dataField as RockTemplateField;
-                        if ( rockTemplateField.ExcelExportBehavior == ExcelExportBehavior.AlwaysInclude || ( rockTemplateField.Visible == true && rockTemplateField.ExcelExportBehavior == ExcelExportBehavior.IncludeIfVisible ) )
+                        if ( rockTemplateField.ExcelExportBehavior == ExcelExportBehavior.AlwaysInclude )
                         {
+                            // Since we are in ExcelExportSource.DataSource mode, only export RockTemplateField if ExcelExportBehavior is AlwaysInclude
                             visibleFields.Add( fieldOrder++, rockTemplateField );
                         }
 
@@ -4596,7 +4608,7 @@ $('#{this.ClientID} .{GRID_SELECT_CELL_CSS_CLASS}').on( 'click', function (event
                     PageLink[0].CommandName = prevPageIndex.ToString();
 
                     int nextPageIndex = ( currentGroupIndex + 1 ) * 10;
-                    if ( nextPageIndex >= pageCount - 1 )
+                    if ( nextPageIndex > pageCount - 1 )
                     {
                         nextPageIndex = pageCount - 1;
                         PageLinkListItem[PageLinkListItem.Length - 1].Attributes["class"] = "next disabled";

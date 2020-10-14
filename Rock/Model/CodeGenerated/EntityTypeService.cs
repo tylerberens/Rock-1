@@ -112,12 +112,6 @@ namespace Rock.Model
                 return false;
             }  
  
-            if ( new Service<CommunicationRecipient>( Context ).Queryable().Any( a => a.MediumEntityTypeId == item.Id ) )
-            {
-                errorMessage = string.Format( "This {0} is assigned to a {1}.", EntityType.FriendlyTypeName, CommunicationRecipient.FriendlyTypeName );
-                return false;
-            }  
- 
             if ( new Service<CommunicationResponse>( Context ).Queryable().Any( a => a.RelatedMediumEntityTypeId == item.Id ) )
             {
                 errorMessage = string.Format( "This {0} is assigned to a {1}.", EntityType.FriendlyTypeName, CommunicationResponse.FriendlyTypeName );
@@ -354,6 +348,7 @@ namespace Rock.Model
             target.FriendlyName = source.FriendlyName;
             target.IndexDocumentUrl = source.IndexDocumentUrl;
             target.IndexResultTemplate = source.IndexResultTemplate;
+            target.IsAchievementsEnabled = source.IsAchievementsEnabled;
             target.IsCommon = source.IsCommon;
             target.IsEntity = source.IsEntity;
             target.IsIndexingEnabled = source.IsIndexingEnabled;

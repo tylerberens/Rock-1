@@ -152,7 +152,7 @@ namespace RockWeb.Blocks.Event
 
                 var eventItemOccurrence = new EventItemOccurrenceService( new RockContext() ).Get( hfEventItemOccurrenceId.Value.AsInteger() );
                 eventItemOccurrence = eventItemOccurrence ?? new EventItemOccurrence();
-                ShowOccurranceAttributes( eventItemOccurrence, false );
+                ShowOccurrenceAttributes( eventItemOccurrence, false );
             }
         }
 
@@ -437,11 +437,11 @@ namespace RockWeb.Blocks.Event
         #region Edit Panel
 
         /// <summary>
-        /// Shows the occurrance attributes.
+        /// Shows the occurrence attributes.
         /// </summary>
         /// <param name="eventItemOccurrence">The event item occurrence.</param>
         /// <param name="setValues">if set to <c>true</c> [set values].</param>
-        private void ShowOccurranceAttributes( EventItemOccurrence eventItemOccurrence, bool setValues )
+        private void ShowOccurrenceAttributes( EventItemOccurrence eventItemOccurrence, bool setValues )
         {
             wpAttributes.Visible = false;
             phAttributeEdits.Controls.Clear();
@@ -493,17 +493,6 @@ namespace RockWeb.Blocks.Event
         /// </summary>
         private void BindEditRegistrationsRepeater()
         {
-            if ( this.LinkedRegistrationsState == null || !this.LinkedRegistrationsState.Any() )
-            {
-                // if there is no data here then try to populate it
-                var eventItemOccurrence = new EventItemOccurrenceService( new RockContext() ).Get( hfEventItemOccurrenceId.Value.AsInteger() ) ?? new EventItemOccurrence();
-
-                if ( eventItemOccurrence != null )
-                {
-                    LinkedRegistrationsState = eventItemOccurrence.Linkages.ToList();
-                }
-            }
-
             var registrations = LinkedRegistrationsState
                 .Select( r => new
                 {
@@ -607,7 +596,8 @@ namespace RockWeb.Blocks.Event
             SetEditMode( true );
 
             hfEventItemOccurrenceId.Value = eventItemOccurrence.Id.ToString();
-
+            eventItemOccurrence.Linkages = eventItemOccurrence.Linkages ?? new List<EventItemOccurrenceGroupMap>();
+            LinkedRegistrationsState = eventItemOccurrence.Linkages.ToList();
             ddlCampus.SetValue( eventItemOccurrence.CampusId ?? -1 );
             tbLocation.Text = eventItemOccurrence.Location;
 
@@ -626,7 +616,7 @@ namespace RockWeb.Blocks.Event
             pnPhone.Text = eventItemOccurrence.ContactPhone;
             tbEmail.Text = eventItemOccurrence.ContactEmail;
 
-            ShowOccurranceAttributes( eventItemOccurrence, true );
+            ShowOccurrenceAttributes( eventItemOccurrence, true );
 
             htmlOccurrenceNote.Text = eventItemOccurrence.Note;
 
@@ -693,7 +683,6 @@ namespace RockWeb.Blocks.Event
         {
             var rockContext = new RockContext();
             var eventItemOccurrence = new EventItemOccurrenceService( rockContext ).Get( hfEventItemOccurrenceId.Value.AsInteger() );
-
             ShowEditDetails( eventItemOccurrence );
         }
 
@@ -778,8 +767,8 @@ namespace RockWeb.Blocks.Event
                 eventItemOccurrence.Location = tbLocation.Text;
 
                 string iCalendarContent = sbSchedule.iCalendarContent;
-                var calEvent = ScheduleICalHelper.GetCalendarEvent( iCalendarContent );
-                if ( calEvent != null && calEvent.DTStart != null )
+                var calEvent = InetCalendarHelper.GetCalendarEvent( iCalendarContent );
+                if ( calEvent != null && calEvent.DtStart != null )
                 {
                     if ( eventItemOccurrence.Schedule == null )
                     {
@@ -1010,7 +999,7 @@ namespace RockWeb.Blocks.Event
                 }
 
                 foreach ( var template in new RegistrationTemplateService( rockContext )
-                    .Queryable().AsNoTracking().OrderBy( t => t.Name ) )
+                    .Queryable().AsNoTracking().Where( t => t.IsActive == true ).OrderBy( t => t.Name ) )
                 {
                     if ( template.IsAuthorized( Authorization.VIEW, CurrentPerson ) )
                     {

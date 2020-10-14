@@ -42,6 +42,15 @@ namespace RockWeb.Blocks.Mobile
     [Description( "Edits and configures the settings of a mobile page." )]
     public partial class MobilePageDetail : RockBlock
     {
+        #region PageParameterKeys
+        private static class PageParameterKeys
+        {
+            public const string SiteId = "SiteId";
+            public const string Page = "Page";
+            public const string Tab = "Tab";
+        }
+        #endregion PageParameterKeys
+
         #region Properties
 
         /// <summary>
@@ -78,6 +87,17 @@ namespace RockWeb.Blocks.Mobile
             RockPage.AddScriptLink( "~/Scripts/dragula.min.js" );
 
             btnSecurity.EntityTypeId = EntityTypeCache.Get( typeof( Rock.Model.Page ) ).Id;
+
+            if ( pnlEditPage.Visible )
+            {
+                int pageId = PageParameter( PageParameterKeys.Page ).AsInteger();
+                var pageCache = PageCache.Get( pageId );
+
+                if ( pageCache != null )
+                {
+                    BuildDynamicContextControls( pageCache );
+                }
+            }
         }
 
         /// <summary>
@@ -90,8 +110,8 @@ namespace RockWeb.Blocks.Mobile
 
             if ( !IsPostBack )
             {
-                int pageId = PageParameter( "Page" ).AsInteger();
-                int siteId = PageParameter( "SiteId" ).AsInteger();
+                int pageId = PageParameter( PageParameterKeys.Page ).AsInteger();
+                int siteId = PageParameter( PageParameterKeys.SiteId ).AsInteger();
 
                 BlockTypeService.RegisterBlockTypes( Request.MapPath( "~" ), Page );
 
@@ -153,7 +173,7 @@ namespace RockWeb.Blocks.Mobile
         {
             var breadCrumbs = new List<BreadCrumb>();
 
-            int? pageId = PageParameter( pageReference, "Page" ).AsIntegerOrNull();
+            int? pageId = PageParameter( pageReference, PageParameterKeys.Page ).AsIntegerOrNull();
             if ( pageId != null )
             {
                 var page = new PageService( new RockContext() ).Get( pageId.Value );
@@ -630,9 +650,7 @@ namespace RockWeb.Blocks.Mobile
         {
             var page = new PageService( new RockContext() ).Get( pageId );
 
-            //
             // Ensure the page is valid.
-            //
             if ( pageId != 0 )
             {
                 var pageCache = PageCache.Get( pageId );
@@ -641,6 +659,8 @@ namespace RockWeb.Blocks.Mobile
                 {
                     return;
                 }
+
+                BuildDynamicContextControls( pageCache );
             }
 
             if ( page == null )
@@ -651,23 +671,31 @@ namespace RockWeb.Blocks.Mobile
                 };
             }
 
-            //
-            // Ensure user has access to edit this page.
-            //
-            if ( !page.IsAuthorized( Authorization.EDIT, CurrentPerson ) )
+            if ( pageId == 0 )
             {
-                nbError.Text = Rock.Constants.EditModeMessage.NotAuthorizedToEdit( typeof( Rock.Model.Page ).GetFriendlyTypeName() );
-
-                pnlEditPage.Visible = false;
-
-                return;
+                // If this is a new page then we need to check the site permissions
+                var site = SiteCache.Get( PageParameter( PageParameterKeys.SiteId ).AsInteger() );
+                if ( site == null || !site.IsAuthorized( Authorization.EDIT, CurrentPerson ) )
+                {
+                    nbError.Text = Rock.Constants.EditModeMessage.NotAuthorizedToEdit( typeof( Rock.Model.Page ).GetFriendlyTypeName() );
+                    pnlEditPage.Visible = false;
+                    return;
+                }
+            }
+            else
+            {
+                // Ensure user has access to edit this page.
+                if ( !page.IsAuthorized( Authorization.EDIT, CurrentPerson ) )
+                {
+                    nbError.Text = Rock.Constants.EditModeMessage.NotAuthorizedToEdit( typeof( Rock.Model.Page ).GetFriendlyTypeName() );
+                    pnlEditPage.Visible = false;
+                    return;
+                }
             }
 
             var additionalSettings = page.AdditionalSettings.FromJsonOrNull<Rock.Mobile.AdditionalPageSettings>() ?? new Rock.Mobile.AdditionalPageSettings();
 
-            //
             // Set the basic fields of the page.
-            //
             tbName.Text = page.PageTitle;
             tbInternalName.Text = page.InternalName;
             tbDescription.Text = page.Description;
@@ -677,10 +705,8 @@ namespace RockWeb.Blocks.Mobile
             ceCssStyles.Text = additionalSettings.CssStyles;
             imgPageIcon.BinaryFileId = page.IconBinaryFileId;
 
-            //
             // Configure the layout options.
-            //
-            var siteId = PageParameter( "SiteId" ).AsInteger();
+            var siteId = PageParameter( PageParameterKeys.SiteId ).AsInteger();
             ddlLayout.Items.Add( new ListItem() );
             foreach ( var layout in LayoutCache.All().Where( l => l.SiteId == siteId ) )
             {
@@ -692,6 +718,102 @@ namespace RockWeb.Blocks.Mobile
             pnlEditPage.Visible = true;
             pnlDetails.Visible = false;
             pnlBlocks.Visible = false;
+        }
+
+        /// <summary>
+        /// Builds the dynamic context controls.
+        /// </summary>
+        /// <param name="pageCache">The page cache.</param>
+        private void BuildDynamicContextControls( PageCache pageCache )
+        {
+            var blockContexts = new List<BlockContextsInfo>();
+            phContext.Controls.Clear();
+
+            foreach ( var block in pageCache.Blocks )
+            {
+                try
+                {
+                    List<EntityTypeCache> contextTypesRequired = null;
+
+                    var blockCompiledType = block.BlockType.GetCompiledType();
+                    contextTypesRequired = GetContextTypesRequired( block );
+
+                    foreach ( var context in contextTypesRequired )
+                    {
+                        var blockContextsInfo = blockContexts.FirstOrDefault( t => t.EntityTypeName == context.Name );
+                        if ( blockContextsInfo == null )
+                        {
+                            blockContextsInfo = new BlockContextsInfo { EntityTypeName = context.Name, EntityTypeFriendlyName = context.FriendlyName, BlockList = new List<BlockCache>() };
+                            blockContexts.Add( blockContextsInfo );
+                        }
+
+                        blockContextsInfo.BlockList.Add( block );
+                    }
+                }
+                catch
+                {
+                    // if the blocktype can't compile, just ignore it since we are just trying to find out if it had a blockContext
+                }
+            }
+
+            phContextPanel.Visible = blockContexts.Count > 0;
+
+            foreach ( var context in blockContexts.OrderBy( t => t.EntityTypeName ) )
+            {
+                var tbContext = new RockTextBox();
+                tbContext.ID = string.Format( "context_{0}", context.EntityTypeName.Replace( '.', '_' ) );
+                tbContext.Required = false;
+                tbContext.Label = context.EntityTypeFriendlyName + " Parameter Name";
+                tbContext.Help = string.Format( "The page parameter name that contains the id of this context entity. This parameter will be used by the following {0}: {1}",
+                    "block".PluralizeIf( context.BlockList.Count > 1 ), string.Join( ", ", context.BlockList ) );
+                if ( pageCache.PageContexts.ContainsKey( context.EntityTypeName ) )
+                {
+                    tbContext.Text = pageCache.PageContexts[context.EntityTypeName];
+                }
+
+                phContext.Controls.Add( tbContext );
+            }
+        }
+
+        /// <summary>
+        /// Gets a list of any context entities that the block requires.
+        /// </summary>
+        private List<EntityTypeCache> GetContextTypesRequired( BlockCache block )
+        {
+            var contextTypesRequired = new List<EntityTypeCache>();
+
+            int properties = 0;
+            foreach ( var attribute in block.BlockType.GetCompiledType().GetCustomAttributes( typeof( ContextAwareAttribute ), true ) )
+            {
+                var contextAttribute = ( ContextAwareAttribute ) attribute;
+
+                if ( !contextAttribute.Contexts.Any() )
+                {
+                    // If the entity type was not specified in the attribute, look for a property that defines it
+                    string propertyKeyName = string.Format( "ContextEntityType{0}", properties > 0 ? properties.ToString() : string.Empty );
+                    properties++;
+
+                    Guid guid = Guid.Empty;
+                    if ( Guid.TryParse( block.GetAttributeValue( propertyKeyName ), out guid ) )
+                    {
+                        contextTypesRequired.Add( EntityTypeCache.Get( guid ) );
+                    }
+                }
+                else
+                {
+                    foreach ( var context in contextAttribute.Contexts )
+                    {
+                        var entityType = context.EntityType;
+
+                        if ( entityType != null && !contextTypesRequired.Any( e => e.Guid.Equals( entityType.Guid ) ) )
+                        {
+                            contextTypesRequired.Add( entityType );
+                        }
+                    }
+                }
+            }
+
+            return contextTypesRequired;
         }
 
         #endregion
@@ -707,9 +829,10 @@ namespace RockWeb.Blocks.Mobile
         {
             var rockContext = new RockContext();
             var pageService = new PageService( rockContext );
-            int parentPageId = SiteCache.Get( PageParameter( "SiteId" ).AsInteger() ).DefaultPageId.Value;
+            var contextService = new PageContextService( rockContext );
+            int parentPageId = SiteCache.Get( PageParameter( PageParameterKeys.SiteId ).AsInteger() ).DefaultPageId.Value;
 
-            var page = pageService.Get( PageParameter( "Page" ).AsInteger() );
+            var page = pageService.Get( PageParameter( PageParameterKeys.Page ).AsInteger() );
             if ( page == null )
             {
                 page = new Rock.Model.Page();
@@ -740,6 +863,28 @@ namespace RockWeb.Blocks.Mobile
             {
                 oldIconId = page.IconBinaryFileId;
                 page.IconBinaryFileId = imgPageIcon.BinaryFileId;
+            }
+
+            // update PageContexts
+            foreach ( var pageContext in page.PageContexts.ToList() )
+            {
+                contextService.Delete( pageContext );
+            }
+
+            page.PageContexts.Clear();
+            foreach ( var control in phContext.Controls )
+            {
+                if ( control is RockTextBox )
+                {
+                    var tbContext = control as RockTextBox;
+                    if ( !string.IsNullOrWhiteSpace( tbContext.Text ) )
+                    {
+                        var pageContext = new PageContext();
+                        pageContext.Entity = tbContext.ID.Substring( 8 ).Replace( '_', '.' );
+                        pageContext.IdParameter = tbContext.Text;
+                        page.PageContexts.Add( pageContext );
+                    }
+                }
             }
 
             rockContext.WrapTransaction( () =>
@@ -775,8 +920,8 @@ namespace RockWeb.Blocks.Mobile
 
             NavigateToCurrentPage( new Dictionary<string, string>
             {
-                { "SiteId", PageParameter( "SiteId" ) },
-                { "Page", page.Id.ToString() }
+                { PageParameterKeys.SiteId, PageParameter( PageParameterKeys.SiteId ) },
+                { PageParameterKeys.Page, page.Id.ToString() }
             } );
         }
 
@@ -789,8 +934,8 @@ namespace RockWeb.Blocks.Mobile
         {
             NavigateToParentPage( new Dictionary<string, string>
             {
-                { "SiteId", PageParameter( "SiteId" ) },
-                { "Tab", "Pages" }
+                { PageParameterKeys.SiteId, PageParameter( PageParameterKeys.SiteId ) },
+                { PageParameterKeys.Tab, "Pages" }
             } );
         }
 
@@ -818,7 +963,7 @@ namespace RockWeb.Blocks.Mobile
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void lbEdit_Click( object sender, EventArgs e )
         {
-            ShowPageEdit( PageParameter( "Page" ).AsInteger() );
+            ShowPageEdit( PageParameter( PageParameterKeys.Page ).AsInteger() );
         }
 
         /// <summary>
@@ -1073,8 +1218,8 @@ namespace RockWeb.Blocks.Mobile
         protected void ddlPageList_SelectedIndexChanged( object sender, EventArgs e )
         {
             var queryString = new Dictionary<string, string>();
-            queryString.Add( "SiteId", PageParameter( "SiteId" ) );
-            queryString.Add( "Page", ddlPageList.SelectedValue );
+            queryString.Add( PageParameterKeys.SiteId, PageParameter( PageParameterKeys.SiteId ) );
+            queryString.Add( PageParameterKeys.Page, ddlPageList.SelectedValue );
 
             NavigateToCurrentPage( queryString );
         }
@@ -1111,6 +1256,36 @@ namespace RockWeb.Blocks.Mobile
             public string Type { get; set; }
 
             public int Id { get; set; }
+        }
+
+        /// <summary>
+        /// Contains information about entity context needed by blocks.
+        /// </summary>
+        private class BlockContextsInfo
+        {
+            /// <summary>
+            /// Gets or sets the name of the entity type.
+            /// </summary>
+            /// <value>
+            /// The name of the entity type.
+            /// </value>
+            public string EntityTypeName { get; internal set; }
+
+            /// <summary>
+            /// Gets or sets the name of the entity type friendly.
+            /// </summary>
+            /// <value>
+            /// The name of the entity type friendly.
+            /// </value>
+            public string EntityTypeFriendlyName { get; internal set; }
+
+            /// <summary>
+            /// Gets or sets the block list.
+            /// </summary>
+            /// <value>
+            /// The block list.
+            /// </value>
+            public List<BlockCache> BlockList { get; internal set; }
         }
 
         #endregion

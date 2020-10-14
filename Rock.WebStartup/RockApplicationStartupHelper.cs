@@ -326,12 +326,27 @@ namespace Rock.WebStartup
              * and eliminates the need for a Run.Migration file. Now migrations will run as needed in both dev and prod environments.
              */
 
+            // first see if the _MigrationHistory table exists. If it doesn't, then this is probably an empty database
+            bool _migrationHistoryTableExists = DbService.ExecuteScaler(
+                @"SELECT convert(bit, 1) [Exists] 
+                    FROM INFORMATION_SCHEMA.TABLES
+                    WHERE TABLE_SCHEMA = 'dbo'
+                    AND TABLE_NAME = '__MigrationHistory'" ) as bool? ?? false;
+
+            if ( !_migrationHistoryTableExists )
+            {
+                // _MigrationHistory table doesn't exist, so we need to run EF Migrations
+                return true;
+            }
+
             // use reflection to find the last EF Migration (last Rock.Migrations.RockMigration since that is what all of Rock's EF migrations are based on)
             var migrationTypes = Rock.Reflection.SearchAssembly( typeof( Rock.Migrations.RockMigration ).Assembly, typeof( Rock.Migrations.RockMigration ) ).ToList();
             var migrationTypeInstances = migrationTypes.Select( a => Activator.CreateInstance( a.Value ) as IMigrationMetadata ).ToList();
             var lastRockMigrationId = migrationTypeInstances.Max( a => a.Id );
 
-            // now look in __MigrationHistory table to see what the last migration that ran was
+            // Now look in __MigrationHistory table to see what the last migration that ran was.
+            // Note that if you accidentally run an older branch (v11.1) against a database that was created from a newer branch (v12), it'll think you need to run migrations.
+            // But it will end up figuring that out when we ask it to run migrations
             var lastDbMigrationId = DbService.ExecuteScaler( "select max(MigrationId) from __MigrationHistory" ) as string;
 
             // if they aren't the same, run EF Migrations
@@ -360,8 +375,8 @@ namespace Rock.WebStartup
 
                 var lastMigration = pendingMigrations.Last();
 
-                // create a logger, but don't enable any of the logs
-                var migrationLogger = new Rock.Migrations.RockMigrationsLogger() { LogVerbose = false, LogInfo = false, LogWarning = false };
+                // create a logger, and enable the migration output to go to a file
+                var migrationLogger = new Rock.Migrations.RockMigrationsLogger() { LogVerbose = false, LogInfo = true, LogWarning = false };
 
                 var migratorLoggingDecorator = new MigratorLoggingDecorator( migrator, migrationLogger );
 
