@@ -246,5 +246,10 @@ namespace Rock.CheckIn
         /// This cookie should expire 8 hours after last use
         /// </summary>
         public static readonly string AttendanceSessionGuids = "Checkin.AttendanceSessionGuids";
+
+        /// <summary>
+        /// The checkin manager roster configuration
+        /// </summary>
+        public static readonly string CheckinManagerRosterConfiguration = "CheckinManager.RosterConfiguration";
     }
 }

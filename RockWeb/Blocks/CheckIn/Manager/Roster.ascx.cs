@@ -25,6 +25,7 @@ using System.Web.UI.WebControls;
 
 using Rock;
 using Rock.Attribute;
+using Rock.CheckIn;
 using Rock.Data;
 using Rock.Lava;
 using Rock.Model;
@@ -159,17 +160,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// The location identifier user preference key, taking into consideration the currently-selected campus.
-        /// </summary>
-        public string LocationIdUserPreferenceKey
-        {
-            get
-            {
-                return string.Format( "campus-{0}-LocationId", CurrentCampusId );
-            }
-        }
-
-        /// <summary>
         /// The current area unique identifier.
         /// </summary>
         public Guid? CurrentAreaGuid
@@ -234,17 +224,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
             }
         }
 
-        /// <summary>
-        /// The status filter user preference key.
-        /// </summary>
-        public string StatusFilterUserPreferenceKey
-        {
-            get
-            {
-                return "StatusFilter";
-            }
-        }
-
         #endregion Properties
 
         #region Base Control Methods
@@ -301,11 +280,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
             Location location = lpLocation.Location;
             if ( location != null )
             {
-                SetBlockUserPreference( LocationIdUserPreferenceKey, location.Id.ToString(), true );
+                SaveRosterConfigurationToCookie( CurrentCampusId, location.Id );
             }
             else
             {
-                DeleteBlockUserPreference( LocationIdUserPreferenceKey );
+                SaveRosterConfigurationToCookie( CurrentCampusId, null );
             }
         }
 
@@ -317,7 +296,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         protected void bgStatus_SelectedIndexChanged( object sender, EventArgs e )
         {
             StatusFilter statusFilter = GetStatusFilterValueFromControl();
-            SetBlockUserPreference( StatusFilterUserPreferenceKey, statusFilter.ToString( "d" ), true );
+            SaveRosterConfigurationToCookie( statusFilter );
         }
 
         /// <summary>
@@ -621,12 +600,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
                 if ( locationId > 0 )
                 {
-                    SetBlockUserPreference( LocationIdUserPreferenceKey, locationId.ToString(), true );
+                    SaveRosterConfigurationToCookie( CurrentCampusId, locationId );
                 }
                 else
                 {
                     // If still not defined, check for a Block user preference.
-                    locationId = GetBlockUserPreference( LocationIdUserPreferenceKey ).AsInteger();
+                    locationId = GetRosterConfigurationFromCookie().LocationIdFromSelectedCampusId.GetValueOrNull( CurrentCampusId ) ?? 0;
 
                     if ( locationId <= 0 )
                     {
@@ -645,7 +624,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             if ( statusFilter == StatusFilter.Unknown )
             {
                 // If not defined on the ButtonGroup, check for a Block user preference.
-                statusFilter = GetBlockUserPreference( StatusFilterUserPreferenceKey ).ConvertToEnumOrNull<StatusFilter>() ?? StatusFilter.Unknown;
+                statusFilter = GetRosterConfigurationFromCookie().StatusFilter;
 
                 if ( statusFilter == StatusFilter.Unknown )
                 {
@@ -1181,6 +1160,74 @@ namespace RockWeb.Blocks.CheckIn.Manager
             }
         }
 
+        protected void SaveRosterConfigurationToCookie( int campusId, int? locationId )
+        {
+            SaveRosterConfigurationToCookie( campusId, locationId, null );
+        }
+
+        protected void SaveRosterConfigurationToCookie( StatusFilter statusFilter )
+        {
+            SaveRosterConfigurationToCookie( null, null, statusFilter );
+        }
+
+        /// <summary>
+        /// Saves the roster configuration to a cookie.
+        /// </summary>
+        /// <param name="campusId">The campus identifier.</param>
+        /// <param name="locationId">The location identifier.</param>
+        /// <param name="statusFilter">The status filter.</param>
+        protected void SaveRosterConfigurationToCookie( int? campusId, int? locationId, StatusFilter? statusFilter )
+        {
+            CheckinManagerRosterConfiguration checkinManagerRosterConfiguration = GetRosterConfigurationFromCookie();
+            if ( campusId.HasValue )
+            {
+                if ( locationId.HasValue )
+                {
+                    checkinManagerRosterConfiguration.LocationIdFromSelectedCampusId.AddOrReplace( campusId.Value, locationId.Value );
+                }
+                else
+                {
+                    checkinManagerRosterConfiguration.LocationIdFromSelectedCampusId.Remove( campusId.Value );
+                }
+
+            }
+
+            if ( statusFilter.HasValue )
+            {
+                checkinManagerRosterConfiguration.StatusFilter = statusFilter.Value;
+            }
+
+            var checkinManagerRosterConfigurationJson = checkinManagerRosterConfiguration.ToJson( Newtonsoft.Json.Formatting.None );
+            Rock.Web.UI.RockPage.AddOrUpdateCookie( CheckInCookieKey.CheckinManagerRosterConfiguration, checkinManagerRosterConfigurationJson, RockDateTime.Now.AddYears( 1 ) );
+        }
+
+        /// <summary>
+        /// Gets the roster configuration from cookie.
+        /// </summary>
+        /// <returns></returns>
+        protected CheckinManagerRosterConfiguration GetRosterConfigurationFromCookie()
+        {
+            CheckinManagerRosterConfiguration checkinManagerRosterConfiguration = null;
+            var checkinManagerRosterConfigurationCookie = this.Page.Request.Cookies[CheckInCookieKey.CheckinManagerRosterConfiguration];
+            if ( checkinManagerRosterConfigurationCookie != null )
+            {
+                checkinManagerRosterConfiguration = checkinManagerRosterConfigurationCookie.Value.FromJsonOrNull<CheckinManagerRosterConfiguration>();
+            }
+
+            if ( checkinManagerRosterConfiguration == null )
+            {
+                checkinManagerRosterConfiguration = new CheckinManagerRosterConfiguration();
+            }
+
+            if ( checkinManagerRosterConfiguration.LocationIdFromSelectedCampusId == null )
+            {
+                checkinManagerRosterConfiguration.LocationIdFromSelectedCampusId = new Dictionary<int, int>();
+            }
+
+
+            return checkinManagerRosterConfiguration;
+        }
+
         #endregion Internal Methods
 
         #region Helper Classes
@@ -1319,6 +1366,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
             /// So this would be the default filter mode when Presence is not enabled
             /// </summary>
             Present = 3
+        }
+
+        protected class CheckinManagerRosterConfiguration
+        {
+            public Dictionary<int, int> LocationIdFromSelectedCampusId { get; set; }
+            public StatusFilter StatusFilter { get; set; }
         }
 
         #endregion Helper Classes
