@@ -257,6 +257,14 @@ END" );
             //   Attribute: Person Page
             //   Attribute Value: f3062622-c6ad-48f3-add7-7f58e4bd4ef3
             RockMigrationHelper.AddBlockAttributeValue( "1D20FBEE-5378-4485-9965-A92CDCA7FF51", "99ADC091-0C13-46D2-BBA8-3BBFFE31F5B0", @"f3062622-c6ad-48f3-add7-7f58e4bd4ef3" );
+
+            // Add Block Attribute Value
+            //   Block: Person Profile
+            //   BlockType: Person Profile
+            //   Block Location: Page=Person Profile, Site=Rock Check-in Manager
+            //   Attribute: Manager Page
+            //   Attribute Value: ba04bf01-5244-4637-b12d-7a962d2a9e77,a2b6ea1c-9e46-42c8-abe4-0fd32d562b48
+            RockMigrationHelper.AddBlockAttributeValue( "1D33D2F9-D19C-495B-BBC8-4379AEF416FE", "DB666717-A429-4F44-B713-3F57702F3BD6", @"ba04bf01-5244-4637-b12d-7a962d2a9e77,a2b6ea1c-9e46-42c8-abe4-0fd32d562b48" );
         }
 
         /// <summary>

@@ -22,7 +22,9 @@ using System.Data.Entity;
 using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+
 using Newtonsoft.Json;
+
 using Rock;
 using Rock.Attribute;
 using Rock.CheckIn;
@@ -93,6 +95,25 @@ namespace RockWeb.Blocks.CheckIn.Manager
         Category = "Manager Settings",
         Order = 5 )]
 
+    [BadgesField(
+        "Badges - Left",
+        Key = AttributeKey.BadgesLeft,
+        Description = "The badges to display on the left side of the badge bar.",
+        IsRequired = false,
+        DefaultValue = Rock.SystemGuid.Badge.FAMILY_ATTENDANCE,
+        Order = 6 )]
+
+    [BadgesField(
+        "Badges - Right",
+        Key = AttributeKey.BadgesRight,
+        Description = "The badges to display on the right side of the badge bar.",
+        IsRequired = false,
+        DefaultValue =
+            Rock.SystemGuid.Badge.LAST_VISIT_ON_EXTERNAL_SITE + ","
+            + Rock.SystemGuid.Badge.FAMILY_16_WEEK_ATTENDANCE + ","
+            + Rock.SystemGuid.Badge.BAPTISM + ","
+            + Rock.SystemGuid.Badge.IN_SERVING_TEAM,
+        Order = 7 )]
     public partial class Person : Rock.Web.UI.RockBlock
     {
         #region Attribute Keys
@@ -105,6 +126,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
             public const string ChildAttributeCategory = "ChildAttributeCategory";
             public const string AdultAttributeCategory = "AdultAttributeCategory";
             public const string AllowLabelReprinting = "AllowLabelReprinting";
+            public const string BadgesLeft = "BadgesLeft";
+            public const string BadgesRight = "BadgesRight";
         }
 
         #endregion
@@ -157,7 +180,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         // used for public / protected properties
 
         /// <summary>
-        /// This is a potentiall-temporary property, until we decide whether to re-work this Block to allow sending SMS messages to ALL SMS-enabled phone numbers.
+        /// This is a potentially-temporary property, until we decide whether to re-work this Block to allow sending SMS messages to ALL SMS-enabled phone numbers.
         /// As of now, we are only allowing the sending of the first SMS-enabled phone number for a given person.
         /// </summary>
         public int SmsPhoneNumberId
@@ -196,6 +219,28 @@ namespace RockWeb.Blocks.CheckIn.Manager
             this.AddConfigurationUpdateTrigger( upnlContent );
 
             gHistory.DataKeyNames = new string[] { "Id" };
+
+
+            var leftBadgeGuids = GetAttributeValues( AttributeKey.BadgesLeft ).AsGuidList();
+            var rightBadgeGuids = GetAttributeValues( AttributeKey.BadgesRight ).AsGuidList();
+
+            var leftBadges = leftBadgeGuids.Select( a => BadgeCache.Get( a ) ).Where( a => a != null ).OrderBy( a => a.Order ).ToList();
+            var rightBadges = rightBadgeGuids.Select( a => BadgeCache.Get( a ) ).Where( a => a != null ).OrderBy( a => a.Order ).ToList();
+
+            // set BadgeEntity using a new RockContext that won't get manually disposed
+            var badgesEntity = new PersonService( new RockContext() ).Get( GetPersonGuid() );
+            blBadgesLeft.Entity = badgesEntity;
+            blBadgesRight.Entity = badgesEntity;
+
+            foreach ( var badge in leftBadges )
+            {
+                blBadgesLeft.BadgeTypes.Add( badge );
+            }
+
+            foreach ( var badge in rightBadges )
+            {
+                blBadgesRight.BadgeTypes.Add( badge );
+            }
         }
 
         /// <summary>

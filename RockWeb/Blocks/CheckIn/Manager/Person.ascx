@@ -23,7 +23,8 @@
                     <asp:Literal ID="lPhoto" runat="server" />
 
                     <div class="d-flex flex-column align-items-center p-2 pb-3">
-                        <h1 class="title name js-checkin-person-name mt-0 text-center"><asp:Literal ID="lName" runat="server"></asp:Literal></h1>
+                        <h1 class="title name js-checkin-person-name mt-0 text-center">
+                            <asp:Literal ID="lName" runat="server"></asp:Literal></h1>
                         <Rock:HighlightLabel ID="hlCampus" runat="server" LabelType="Campus" />
                     </div>
 
@@ -56,10 +57,10 @@
                         <asp:Literal ID="lEmail" runat="server" />
                     </asp:Panel>
 
-                    <div ID="pnlAdultFields" runat="server" class="adult-attributes border-top border-gray-400 p-2">
+                    <div id="pnlAdultFields" runat="server" class="adult-attributes border-top border-gray-400 p-2">
                         <Rock:AttributeValuesContainer ID="avcAdultAttributes" runat="server" ShowCategoryLabel="false" />
                     </div>
-                    <div ID="pnlChildFields" runat="server" class="child-attributes border-top border-gray-400 p-2">
+                    <div id="pnlChildFields" runat="server" class="child-attributes border-top border-gray-400 p-2">
                         <Rock:AttributeValuesContainer ID="avcChildAttributes" runat="server" ShowCategoryLabel="false" />
                     </div>
 
@@ -128,6 +129,16 @@
                         </div>
 
                     </div>
+                    <div class="personprofilebar-badge">
+                        <div class="row ">
+                            <div class="badge-group col-sm-6">
+                                <Rock:BadgeListControl ID="blBadgesLeft" runat="server" />
+                            </div>
+                            <div class="badge-group col-sm-6">
+                                <Rock:BadgeListControl ID="blBadgesRight" runat="server" />
+                            </div>
+                        <</div>
+                    </div>
                 </div>
 
                 <!-- Check-in History -->
@@ -136,15 +147,19 @@
                         <Columns>
                             <Rock:RockTemplateField HeaderText="When">
                                 <ItemTemplate>
-                                    <span><asp:Literal ID="lCheckinDate" runat="server" /></span>
-                                    <span class="d-block small text-muted"><asp:Literal ID="lCheckinScheduleName" runat="server" /></span>
+                                    <span>
+                                        <asp:Literal ID="lCheckinDate" runat="server" /></span>
+                                    <span class="d-block small text-muted">
+                                        <asp:Literal ID="lCheckinScheduleName" runat="server" /></span>
                                     <asp:Literal ID="lWhoCheckedIn" runat="server" />
                                 </ItemTemplate>
                             </Rock:RockTemplateField>
                             <Rock:RockTemplateField HeaderText="Location">
                                 <ItemTemplate>
-                                    <span><asp:Literal ID="lLocationName" runat="server" /></span>
-                                    <span class="d-block small text-muted"><asp:Literal ID="lGroupName" runat="server" /></span>
+                                    <span>
+                                        <asp:Literal ID="lLocationName" runat="server" /></span>
+                                    <span class="d-block small text-muted">
+                                        <asp:Literal ID="lGroupName" runat="server" /></span>
                                 </ItemTemplate>
                             </Rock:RockTemplateField>
                             <Rock:RockTemplateField HeaderText="Code" ItemStyle-CssClass="align-middle">
