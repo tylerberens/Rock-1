@@ -13,14 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // </copyright>
-//
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
-using System.Text;
 using System.Web.UI.WebControls;
 
 using Rock;
@@ -299,6 +297,102 @@ namespace RockWeb.Blocks.CheckIn.Manager
             SaveRosterConfigurationToCookie( statusFilter );
         }
 
+        #endregion Control Events
+
+        #region Roster Grid Related
+
+        /// <summary>
+        /// Builds the roster for the selected campus and location.
+        /// </summary>
+        private void BuildRoster()
+        {
+            ResetControlVisibility();
+
+            if ( !SetArea() )
+            {
+                return;
+            }
+
+            CampusCache campus = GetCampusFromContext();
+            if ( campus == null )
+            {
+                ShowWarningMessage( "Please select a Campus.", true );
+                return;
+            }
+
+            // If the Campus selection has changed, we need to reload the LocationItemPicker with the Locations specific to that Campus.
+            if ( campus.Id != CurrentCampusId )
+            {
+                CurrentCampusId = campus.Id;
+                lpLocation.NamedPickerRootLocationId = campus.LocationId.GetValueOrDefault();
+            }
+
+            // Check the LocationPicker for the Location ID.
+            int locationId = lpLocation.Location != null
+                ? lpLocation.Location.Id
+                : 0;
+
+            if ( locationId <= 0 )
+            {
+                // If not defined on the LocationPicker, check first for a LocationId Page parameter.
+                locationId = PageParameter( PageParameterKey.LocationId ).AsInteger();
+
+                if ( locationId > 0 )
+                {
+                    // If the Page parameter was set, make sure it's valid for the selected Campus.
+                    if ( !IsLocationWithinCampus( locationId ) )
+                    {
+                        locationId = 0;
+                    }
+                }
+
+                if ( locationId > 0 )
+                {
+                    SaveRosterConfigurationToCookie( CurrentCampusId, locationId );
+                }
+                else
+                {
+                    // If still not defined, check for a Block user preference.
+                    locationId = GetRosterConfigurationFromCookie().LocationIdFromSelectedCampusId.GetValueOrNull( CurrentCampusId ) ?? 0;
+
+                    if ( locationId <= 0 )
+                    {
+                        ShowWarningMessage( "Please select a Location.", false );
+                        return;
+                    }
+                }
+
+                SetLocationControl( locationId );
+            }
+
+            InitializeSubPageNav( locationId );
+
+            // Check the ButtonGroup for the StatusFilter value.
+            StatusFilter statusFilter = GetStatusFilterValueFromControl();
+            if ( statusFilter == StatusFilter.Unknown )
+            {
+                // If not defined on the ButtonGroup, check for a Block user preference.
+                statusFilter = GetRosterConfigurationFromCookie().StatusFilter;
+
+                if ( statusFilter == StatusFilter.Unknown )
+                {
+                    // If we still don't know the value, set it to 'All'.
+                    statusFilter = StatusFilter.All;
+                }
+
+                SetStatusFilterControl( statusFilter );
+            }
+
+            // If the Location or StatusFilter selections have changed, we need to reload the attendees.
+            if ( locationId != CurrentLocationId || statusFilter != CurrentStatusFilter )
+            {
+                CurrentLocationId = locationId;
+                CurrentStatusFilter = statusFilter;
+
+                ShowAttendees();
+            }
+        }
+
         /// <summary>
         /// Handles the RowDataBound event of the gAttendees control.
         /// </summary>
@@ -311,116 +405,35 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 return;
             }
 
-            Attendee attendee = e.Row.DataItem as Attendee;
-
-            string statusClass = string.Empty;
-            string mobileIcon = @"<i class=""fa fa-{0}""></i>";
-            switch ( attendee.Status )
-            {
-                case AttendeeStatus.CheckedIn:
-                    statusClass = "warning";
-                    mobileIcon = "&nbsp;";
-                    break;
-                case AttendeeStatus.Present:
-                    statusClass = "success";
-                    mobileIcon = string.Format( mobileIcon, "check" );
-                    break;
-                case AttendeeStatus.CheckedOut:
-                    statusClass = "danger";
-                    mobileIcon = string.Format( mobileIcon, "minus" );
-                    break;
-            }
+            RosterAttendee attendee = e.Row.DataItem as RosterAttendee;
 
             // Desktop only.
             var lPhoto = e.Row.FindControl( "lPhoto" ) as Literal;
-            if ( lPhoto != null )
-            {
-                var imgTag = Rock.Model.Person.GetPersonPhotoImageTag( attendee.PersonId, attendee.PhotoId, attendee.Age, attendee.Gender, null, 50, 50, attendee.Name, "avatar avatar-lg" );
-                lPhoto.Text = string.Format( @"{0}", imgTag );
-            }
+            lPhoto.Text = attendee.GetPersonPhotoImageHtmlTag();
 
             // Mobile only.
             var lMobileIcon = e.Row.FindControl( "lMobileIcon" ) as Literal;
-            if ( lMobileIcon != null )
-            {
-                lMobileIcon.Text = string.Format( @"<span class=""badge badge-circle badge-{0}"">{1}</span>", statusClass, mobileIcon );
-            }
+            lMobileIcon.Text = attendee.GetStatusIconHtmlTag( true );
 
             // Shared between desktop and mobile.
             var lName = e.Row.FindControl( "lName" ) as Literal;
-            if ( lName != null )
-            {
-                lName.Text = string.Format( @"<div class=""name""><span class=""js-checkin-person-name"">{0}</span><span class=""badges d-sm-none"">{1}</span></div><div class=""parent-name small text-muted"">{2}</div>",
-                    attendee.Name,
-                    GetBadges( attendee, true ),
-                    attendee.ParentNames );
-            }
+            lName.Text = attendee.GetAttendeeNameHtml();
 
             // Desktop only.
             var lBadges = e.Row.FindControl( "lBadges" ) as Literal;
-            if ( lBadges != null )
-            {
-                lBadges.Text = string.Format( "<div>{0}</div>", GetBadges( attendee, false ) );
-            }
+            lBadges.Text = string.Format( "<div>{0}</div>", attendee.GetBadgesHtml( false ) );
 
             // Mobile only.
             var lMobileTagAndSchedules = e.Row.FindControl( "lMobileTagAndSchedules" ) as Literal;
-            if ( lMobileTagAndSchedules != null )
-            {
-                lMobileTagAndSchedules.Text = string.Format( @"<div class=""person-tag"">{0}</div><div class=""small text-muted"">{1}</div>", attendee.Tag, attendee.ServiceTimes );
-            }
+            lMobileTagAndSchedules.Text = attendee.GetMobileTagAndSchedulesHtml();
 
             // Desktop only.
             var lCheckInTime = e.Row.FindControl( "lCheckInTime" ) as Literal;
-            if ( lCheckInTime != null )
-            {
-                lCheckInTime.Text = RockFilters.HumanizeTimeSpan( attendee.CheckInTime, DateTime.Now, unit: "Second" );
-            }
+            lCheckInTime.Text = RockFilters.HumanizeTimeSpan( attendee.CheckInTime, DateTime.Now, unit: "Second" );
 
             // Desktop only.
             var lStatusTag = e.Row.FindControl( "lStatusTag" ) as Literal;
-            if ( lStatusTag != null )
-            {
-                lStatusTag.Text = string.Format( @"<span class=""badge badge-{0}"">{1}</span>", statusClass, attendee.StatusString );
-            }
-        }
-
-        /// <summary>
-        /// Gets the badges markup.
-        /// </summary>
-        /// <param name="attendee">The attendee.</param>
-        /// <returns></returns>
-        private string GetBadges( Attendee attendee, bool isMobile )
-        {
-            var badgesSb = new StringBuilder();
-
-            if ( attendee.IsBirthdayWeek )
-            {
-                if ( isMobile )
-                {
-                    badgesSb.Append( @"&nbsp;<i class=""fa fa-birthday-cake text-success""></i>" );
-                }
-                else
-                {
-                    badgesSb.AppendFormat( @"<div class=""text-center text-success pull-left""><div><i class=""fa fa-birthday-cake fa-2x""></i></div><div style=""font-size: small;"">{0}</div></div>", attendee.Birthday );
-                }
-            }
-
-            var openDiv = isMobile ? string.Empty : @"<div class=""pull-left"">";
-            var closeDiv = isMobile ? string.Empty : "</div>";
-            var fa2x = isMobile ? string.Empty : " fa-2x";
-
-            if ( attendee.HasHealthNote )
-            {
-                badgesSb.AppendFormat( @"{0}&nbsp;<i class=""fa fa-notes-medical{1} text-danger""></i>{2}", openDiv, fa2x, closeDiv );
-            }
-
-            if ( attendee.HasLegalNote )
-            {
-                badgesSb.AppendFormat( @"{0}&nbsp;<i class=""fa fa-clipboard{1}""></i>{2}", openDiv, fa2x, closeDiv );
-            }
-
-            return badgesSb.ToString();
+            lStatusTag.Text = attendee.GetStatusIconHtmlTag( false );
         }
 
         /// <summary>
@@ -449,6 +462,101 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 ShowWarningMessage( "The 'Person Page' Block Attribute must be defined.", true );
             }
         }
+
+        /// <summary>
+        /// Shows the attendees.
+        /// </summary>
+        private void ShowAttendees()
+        {
+            IList<RosterAttendee> attendees = null;
+
+            using ( var rockContext = new RockContext() )
+            {
+                RemoveDisabledStatusFilters();
+
+                attendees = GetAttendees( rockContext );
+            }
+
+            ToggleColumnVisibility();
+
+            var attendeesSorted = attendees.OrderByDescending( a => a.Status == RosterAttendeeStatus.Present ).ThenByDescending( a => a.CheckInTime ).ThenBy( a => a.PersonGuid ).ToList();
+
+            gAttendees.DataSource = attendeesSorted;
+            gAttendees.DataBind();
+        }
+
+        /// <summary>
+        /// Gets the attendees.
+        /// </summary>
+        private IList<RosterAttendee> GetAttendees( RockContext rockContext )
+        {
+            var startDateTime = RockDateTime.Today;
+
+            CampusCache campusCache = CampusCache.Get( CurrentCampusId );
+            DateTime currentDateTime;
+            if ( campusCache != null )
+            {
+                currentDateTime = campusCache.CurrentDateTime;
+            }
+            else
+            {
+                currentDateTime = RockDateTime.Now;
+            }
+
+            // Get all Attendance records for the current day and location.
+            var attendanceQuery = new AttendanceService( rockContext )
+                .Queryable( "AttendanceCode,PersonAlias.Person,Occurrence.Schedule" )
+                .AsNoTracking()
+                .Where( a => a.StartDateTime >= startDateTime &&
+                             a.StartDateTime <= currentDateTime &&
+                             a.PersonAliasId.HasValue &&
+                             a.Occurrence.LocationId == CurrentLocationId &&
+                             a.Occurrence.ScheduleId.HasValue );
+
+            /*
+                If StatusFilter == All, no further filtering is needed.
+                If StatusFilter == Checked-in, only retrieve records that have neither a EndDateTime nor a PresentDateTime value.
+                If StatusFilter == Present, only retrieve records that have a PresentDateTime value but don't have a EndDateTime value.
+            */
+
+            if ( CurrentStatusFilter == StatusFilter.CheckedIn )
+            {
+                attendanceQuery = attendanceQuery
+                    .Where( a => !a.PresentDateTime.HasValue &&
+                                 !a.EndDateTime.HasValue );
+            }
+            else if ( CurrentStatusFilter == StatusFilter.Present )
+            {
+                attendanceQuery = attendanceQuery
+                    .Where( a => a.PresentDateTime.HasValue &&
+                                 !a.EndDateTime.HasValue );
+            }
+
+            List<Attendance> attendances = attendanceQuery.AsNoTracking().ToList();
+
+            /*
+                If AllowCheckout is false, remove all Attendees whose schedules are not currently active. Per the 'WasSchedule...ActiveForCheckOut()'
+                method below: "Check-out can happen while check-in is active or until the event ends (start time + duration)." This will help to keep
+                the list of 'Present' attendees cleaned up and accurate, based on the room schedules, since the volunteers have no way to manually mark
+                an Attendee as 'Checked-out'.
+
+                If, on the other hand, AllowCheckout is true, it will be the volunteers' responsibility to click the [Check-out] button when an
+                Attendee leaves the room, in order to keep the list of 'Present' Attendees in order. This will also allow the volunteers to continue
+                'Checking-out' Attendees in the case that the parents are running late in picking them up.
+            */
+            if ( !AllowCheckout )
+            {
+                attendances = attendances.Where( a => a.Occurrence.Schedule.WasScheduleOrCheckInActiveForCheckOut( currentDateTime ) ).ToList();
+            }
+
+            attendances = attendances.Where( a => a.PersonAlias != null && a.PersonAlias.Person != null ).ToList();
+            var attendees = RosterAttendee.GetFromAttendanceList( attendances );
+            return attendees;
+        }
+
+        #endregion Roster Grid Related
+
+        #region Events
 
         /// <summary>
         /// Handles the Click event of the btnCancel control.
@@ -552,98 +660,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
         #endregion Control Events
 
         #region Internal Methods
-
-        /// <summary>
-        /// Builds the roster for the selected campus and location.
-        /// </summary>
-        private void BuildRoster()
-        {
-            ResetControlVisibility();
-
-            if ( !SetArea() )
-            {
-                return;
-            }
-
-            CampusCache campus = GetCampusFromContext();
-            if ( campus == null )
-            {
-                ShowWarningMessage( "Please select a Campus.", true );
-                return;
-            }
-
-            // If the Campus selection has changed, we need to reload the LocationItemPicker with the Locations specific to that Campus.
-            if ( campus.Id != CurrentCampusId )
-            {
-                CurrentCampusId = campus.Id;
-                lpLocation.NamedPickerRootLocationId = campus.LocationId.GetValueOrDefault();
-            }
-
-            // Check the LocationPicker for the Location ID.
-            int locationId = lpLocation.Location != null
-                ? lpLocation.Location.Id
-                : 0;
-
-            if ( locationId <= 0 )
-            {
-                // If not defined on the LocationPicker, check first for a LocationId Page parameter.
-                locationId = PageParameter( PageParameterKey.LocationId ).AsInteger();
-
-                if ( locationId > 0 )
-                {
-                    // If the Page parameter was set, make sure it's valid for the selected Campus.
-                    if ( !IsLocationWithinCampus( locationId ) )
-                    {
-                        locationId = 0;
-                    }
-                }
-
-                if ( locationId > 0 )
-                {
-                    SaveRosterConfigurationToCookie( CurrentCampusId, locationId );
-                }
-                else
-                {
-                    // If still not defined, check for a Block user preference.
-                    locationId = GetRosterConfigurationFromCookie().LocationIdFromSelectedCampusId.GetValueOrNull( CurrentCampusId ) ?? 0;
-
-                    if ( locationId <= 0 )
-                    {
-                        ShowWarningMessage( "Please select a Location.", false );
-                        return;
-                    }
-                }
-
-                SetLocationControl( locationId );
-            }
-
-            InitializeSubPageNav( locationId );
-
-            // Check the ButtonGroup for the StatusFilter value.
-            StatusFilter statusFilter = GetStatusFilterValueFromControl();
-            if ( statusFilter == StatusFilter.Unknown )
-            {
-                // If not defined on the ButtonGroup, check for a Block user preference.
-                statusFilter = GetRosterConfigurationFromCookie().StatusFilter;
-
-                if ( statusFilter == StatusFilter.Unknown )
-                {
-                    // If we still don't know the value, set it to 'All'.
-                    statusFilter = StatusFilter.All;
-                }
-
-                SetStatusFilterControl( statusFilter );
-            }
-
-            // If the Location or StatusFilter selections have changed, we need to reload the attendees.
-            if ( locationId != CurrentLocationId || statusFilter != CurrentStatusFilter )
-            {
-                CurrentLocationId = locationId;
-                CurrentStatusFilter = statusFilter;
-
-                ShowAttendees();
-            }
-        }
 
         /// <summary>
         /// Resets control visibility to default values.
@@ -813,28 +829,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// Shows the attendees.
-        /// </summary>
-        private void ShowAttendees()
-        {
-            IList<Attendee> attendees = null;
-
-            using ( var rockContext = new RockContext() )
-            {
-                RemoveDisabledStatusFilters();
-
-                attendees = GetAttendees( rockContext );
-            }
-
-            ToggleColumnVisibility();
-
-            var attendeesSorted = attendees.OrderByDescending( a => a.Status == AttendeeStatus.Present ).ThenByDescending( a => a.CheckInTime ).ThenBy( a => a.PersonGuid ).ToList();
-
-            gAttendees.DataSource = attendeesSorted;
-            gAttendees.DataBind();
-        }
-
-        /// <summary>
         /// Removes the disabled status filters.
         /// </summary>
         private void RemoveDisabledStatusFilters()
@@ -845,7 +839,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
             if ( !EnablePresence )
             {
                 // When EnablePresence is false for a given Check-in Area, the [Attendance].[PresentDateTime] value will have already been set upon check-in.
-
                 if ( !AllowCheckout )
                 {
                     // When both EnablePresence and AllowCheckout are false, it doesn't make sense to show the status filters at all.
@@ -867,217 +860,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     CurrentStatusFilter = StatusFilter.Present;
                     SetStatusFilterControl( CurrentStatusFilter );
                 }
-            }
-        }
-
-        /// <summary>
-        /// Gets the attendees.
-        /// </summary>
-        private IList<Attendee> GetAttendees( RockContext rockContext )
-        {
-            var attendees = new List<Attendee>();
-
-            var startDateTime = RockDateTime.Today;
-            var now = GetCampusTime();
-
-            // Get all Attendance records for the current day and location.
-            var attendanceQuery = new AttendanceService( rockContext )
-                .Queryable( "AttendanceCode,PersonAlias.Person,Occurrence.Schedule" )
-                .AsNoTracking()
-                .Where( a => a.StartDateTime >= startDateTime &&
-                             a.StartDateTime <= now &&
-                             a.PersonAliasId.HasValue &&
-                             a.Occurrence.LocationId == CurrentLocationId &&
-                             a.Occurrence.ScheduleId.HasValue );
-
-            /*
-                If StatusFilter == All, no further filtering is needed.
-                If StatusFilter == Checked-in, only retrieve records that have neither a EndDateTime nor a PresentDateTime value.
-                If StatusFilter == Present, only retrieve records that have a PresentDateTime value but don't have a EndDateTime value.
-            */
-
-            if ( CurrentStatusFilter == StatusFilter.CheckedIn )
-            {
-                attendanceQuery = attendanceQuery
-                    .Where( a => !a.PresentDateTime.HasValue &&
-                                 !a.EndDateTime.HasValue );
-            }
-            else if ( CurrentStatusFilter == StatusFilter.Present )
-            {
-                attendanceQuery = attendanceQuery
-                    .Where( a => a.PresentDateTime.HasValue &&
-                                 !a.EndDateTime.HasValue );
-            }
-
-            List<Attendance> attendances = attendanceQuery.ToList();
-
-            /*
-                If AllowCheckout is false, remove all Attendees whose schedules are not currently active. Per the 'WasSchedule...ActiveForCheckOut()'
-                method below: "Check-out can happen while check-in is active or until the event ends (start time + duration)." This will help to keep
-                the list of 'Present' attendees cleaned up and accurate, based on the room schedules, since the volunteers have no way to manually mark
-                an Attendee as 'Checked-out'.
-
-                If, on the other hand, AllowCheckout is true, it will be the volunteers' responsibility to click the [Check-out] button when an
-                Attendee leaves the room, in order to keep the list of 'Present' Attendees in order. This will also allow the volunteers to continue
-                'Checking-out' Attendees in the case that the parents are running late in picking them up.
-            */
-            if ( !AllowCheckout )
-            {
-                attendances = attendances.Where( a => a.Occurrence.Schedule.WasScheduleOrCheckInActiveForCheckOut( now ) ).ToList();
-            }
-
-            foreach ( var attendance in attendances.Where( a => a.PersonAlias != null && a.PersonAlias.Person != null ) )
-            {
-                // Create an Attendee for each unique Person within the Attendance records.
-                var person = attendance.PersonAlias.Person;
-
-                Attendee attendee = attendees.FirstOrDefault( a => a.PersonGuid == person.Guid );
-                if ( attendee == null )
-                {
-                    attendee = CreateAttendee( rockContext, person );
-                    attendees.Add( attendee );
-                }
-
-                // Add the attendance-specific property values.
-                SetAttendanceInfo( attendance, attendee );
-            }
-
-            return attendees;
-        }
-
-        /// <summary>
-        /// Gets the current campus time.
-        /// </summary>
-        private DateTime GetCampusTime()
-        {
-            CampusCache campusCache = CampusCache.Get( CurrentCampusId );
-            return campusCache != null
-                ? campusCache.CurrentDateTime
-                : RockDateTime.Now;
-        }
-
-        /// <summary>
-        /// Creates an attendee.
-        /// </summary>
-        /// <param name="rockContext">The rock context.</param>
-        /// <param name="person">The person.</param>
-        private Attendee CreateAttendee( RockContext rockContext, Rock.Model.Person person )
-        {
-            person.LoadAttributes( rockContext );
-
-            var attendee = new Attendee
-            {
-                PersonId = person.Id,
-                PersonGuid = person.Guid,
-                Name = person.FullName,
-                PhotoId = person.PhotoId,
-                Age = person.Age,
-                Gender = person.Gender,
-                Birthday = GetBirthday( person ),
-                HasHealthNote = GetHasHealthNote( person ),
-                HasLegalNote = GetHasLegalNote( person )
-            };
-
-            if ( person.AgeClassification != AgeClassification.Adult )
-            {
-                attendee.ParentNames = Rock.Model.Person.GetFamilySalutation( person, finalSeparator: "and" );
-            }
-
-            return attendee;
-        }
-
-        /// <summary>
-        /// Gets the birthday (abbreviated day of week).
-        /// </summary>
-        /// <param name="person">The person.</param>
-        private string GetBirthday( Rock.Model.Person person )
-        {
-            // If this Person's birthday is today, simply return "Today".
-            int daysToBirthday = person.DaysToBirthday;
-            if ( daysToBirthday == 0 )
-            {
-                return "Today";
-            }
-
-            // Otherwise, if their birthday falls within the next 6 days, return the abbreviated day of the week (Mon-Sun) on which their birthday falls.
-            if ( daysToBirthday < 7 )
-            {
-                return person.BirthdayDayOfWeekShort;
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Gets whether the person has a health note.
-        /// </summary>
-        /// <param name="person">The person.</param>
-        private bool GetHasHealthNote( Rock.Model.Person person )
-        {
-            string attributeValue = person.GetAttributeValue( EntityAttributeValueKey.Person_Allergy );
-            return attributeValue.IsNotNullOrWhiteSpace();
-        }
-
-        /// <summary>
-        /// Gets whether the person has a legal note.
-        /// </summary>
-        /// <param name="person">The person.</param>
-        private bool GetHasLegalNote( Rock.Model.Person person )
-        {
-            string attributeValue = person.GetAttributeValue( EntityAttributeValueKey.Person_LegalNotes );
-            return attributeValue.IsNotNullOrWhiteSpace();
-        }
-
-        /// <summary>
-        /// Sets the attendance-specific properties.
-        /// </summary>
-        /// <param name="attendance">The attendance.</param>
-        /// <param name="attendee">The attendee.</param>
-        private void SetAttendanceInfo( Attendance attendance, Attendee attendee )
-        {
-            // Keep track of each Attendance ID tied to this Attendee so we can manage them all as a group.
-            attendee.AttendanceIds.Add( attendance.Id );
-
-            // Tag(s).
-            string tag = attendance.AttendanceCode != null
-                ? attendance.AttendanceCode.Code
-                : null;
-
-            if ( tag.IsNotNullOrWhiteSpace() && !attendee.UniqueTags.Contains( tag, StringComparer.OrdinalIgnoreCase ) )
-            {
-                attendee.UniqueTags.Add( tag );
-            }
-
-            // Service Time(s).
-            string serviceTime = attendance.Occurrence != null && attendance.Occurrence.Schedule != null
-                ? attendance.Occurrence.Schedule.Name
-                : null;
-
-            if ( serviceTime.IsNotNullOrWhiteSpace() && !attendee.UniqueServiceTimes.Contains( serviceTime, StringComparer.OrdinalIgnoreCase ) )
-            {
-                attendee.UniqueServiceTimes.Add( serviceTime );
-            }
-
-            // Status: if this Attendee has multiple AttendanceOccurrences, the highest AttendeeStatus value among them wins.
-            AttendeeStatus attendeeStatus = AttendeeStatus.CheckedIn;
-            if ( attendance.EndDateTime.HasValue )
-            {
-                attendeeStatus = AttendeeStatus.CheckedOut;
-            }
-            else if ( attendance.PresentDateTime.HasValue )
-            {
-                attendeeStatus = AttendeeStatus.Present;
-            }
-
-            if ( attendeeStatus > attendee.Status )
-            {
-                attendee.Status = attendeeStatus;
-            }
-
-            // Check-in Time: if this Attendee has multiple AttendanceOccurrences, the latest StartDateTime value among them wins.
-            if ( attendance.StartDateTime > attendee.CheckInTime )
-            {
-                attendee.CheckInTime = attendance.StartDateTime;
             }
         }
 
@@ -1160,11 +942,20 @@ namespace RockWeb.Blocks.CheckIn.Manager
             }
         }
 
+        /// <summary>
+        /// Saves the roster configuration to cookie.
+        /// </summary>
+        /// <param name="campusId">The campus identifier.</param>
+        /// <param name="locationId">The location identifier.</param>
         protected void SaveRosterConfigurationToCookie( int campusId, int? locationId )
         {
             SaveRosterConfigurationToCookie( campusId, locationId, null );
         }
 
+        /// <summary>
+        /// Saves the roster configuration to cookie.
+        /// </summary>
+        /// <param name="statusFilter">The status filter.</param>
         protected void SaveRosterConfigurationToCookie( StatusFilter statusFilter )
         {
             SaveRosterConfigurationToCookie( null, null, statusFilter );
@@ -1189,7 +980,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 {
                     checkinManagerRosterConfiguration.LocationIdFromSelectedCampusId.Remove( campusId.Value );
                 }
-
             }
 
             if ( statusFilter.HasValue )
@@ -1224,120 +1014,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 checkinManagerRosterConfiguration.LocationIdFromSelectedCampusId = new Dictionary<int, int>();
             }
 
-
             return checkinManagerRosterConfiguration;
         }
 
         #endregion Internal Methods
 
         #region Helper Classes
-
-        /// <summary>
-        /// A class to represent an attendee.
-        /// </summary>
-        protected class Attendee
-        {
-            public int PersonId { get; set; }
-
-            public Guid PersonGuid { get; set; }
-
-            private readonly List<int> _attendanceIds = new List<int>();
-
-            public List<int> AttendanceIds
-            {
-                get
-                {
-                    return _attendanceIds;
-                }
-            }
-
-            public string Name { get; set; }
-
-            public string ParentNames { get; set; }
-
-            public int? PhotoId { get; set; }
-
-            public int? Age { get; set; }
-
-            public Gender Gender { get; set; }
-
-            public string Birthday { get; set; }
-
-            public bool IsBirthdayWeek
-            {
-                get
-                {
-                    return Birthday.IsNotNullOrWhiteSpace();
-                }
-            }
-
-            public bool HasHealthNote { get; set; }
-
-            public bool HasLegalNote { get; set; }
-
-            private readonly List<string> _uniqueTags = new List<string>();
-
-            public List<string> UniqueTags
-            {
-                get
-                {
-                    return _uniqueTags;
-                }
-            }
-
-            public string Tag
-            {
-                get
-                {
-                    return string.Join( ", ", UniqueTags );
-                }
-            }
-
-            private readonly List<string> _uniqueServiceTimes = new List<string>();
-
-            public List<string> UniqueServiceTimes
-            {
-                get
-                {
-                    return _uniqueServiceTimes;
-                }
-            }
-
-            public string ServiceTimes
-            {
-                get
-                {
-                    return string.Join( ", ", UniqueServiceTimes );
-                }
-            }
-
-            public AttendeeStatus Status { get; set; }
-
-            public string StatusString
-            {
-                get
-                {
-                    return Status.GetDescription();
-                }
-            }
-
-            public DateTime CheckInTime { get; set; }
-        }
-
-        /// <summary>
-        /// The status of an attendee.
-        /// </summary>
-        protected enum AttendeeStatus
-        {
-            [Description( "Checked-in" )]
-            CheckedIn = 1,
-
-            [Description( "Present" )]
-            Present = 2,
-
-            [Description( "Checked-out" )]
-            CheckedOut = 3
-        }
 
         /// <summary>
         /// The status filter to be applied to attendees displayed.
@@ -1359,7 +1041,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
             /// </summary>
             CheckedIn = 2,
 
-
             /// <summary>
             /// Only show attendees are the marked present.
             /// Note that if Presence is NOT enabled, the attendance records will automatically marked as Present.
@@ -1371,6 +1052,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         protected class CheckinManagerRosterConfiguration
         {
             public Dictionary<int, int> LocationIdFromSelectedCampusId { get; set; }
+
             public StatusFilter StatusFilter { get; set; }
         }
 

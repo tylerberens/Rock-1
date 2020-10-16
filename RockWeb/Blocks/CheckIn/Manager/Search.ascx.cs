@@ -19,11 +19,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
-using System.Text;
 using System.Web.UI.WebControls;
 
 using Rock;
 using Rock.Attribute;
+using Rock.CheckIn;
 using Rock.Data;
 using Rock.Lava;
 using Rock.Model;
@@ -84,18 +84,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         #endregion ViewState Keys
-        #region Entity Attribute Value Keys
 
-        /// <summary>
-        /// Keys to use for entity attribute values.
-        /// </summary>
-        private class EntityAttributeValueKey
-        {
-            public const string Person_Allergy = "Allergy";
-            public const string Person_LegalNotes = "LegalNotes";
-        }
-
-        #endregion Entity Attribute Value Keys
         #region Properties
 
         /// <summary>
@@ -115,16 +104,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         #endregion
-        #region Base Control Methods
 
-        /// <summary>
-        /// Restores the view-state information from a previous user control request that was saved by the <see cref="M:System.Web.UI.UserControl.SaveViewState" /> method.
-        /// </summary>
-        /// <param name="savedState">An <see cref="T:System.Object" /> that represents the user control state to be restored.</param>
-        protected override void LoadViewState( object savedState )
-        {
-            base.LoadViewState( savedState );
-        }
+        #region Base Control Methods
 
         /// <summary>
         /// Raises the <see cref="E:System.Web.UI.Control.Init" /> event.
@@ -150,17 +131,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
             nbWarning.Visible = false;
         }
 
-        /// <summary>
-        /// Saves any user control view-state changes that have occurred since the last page postback.
-        /// </summary>
-        /// <returns>
-        /// Returns the user control's current view state. If there is no view state associated with the control, it returns null.
-        /// </returns>
-        protected override object SaveViewState()
-        {
-            return base.SaveViewState();
-        }
-
         #endregion
 
         #region Events
@@ -172,6 +142,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void Block_BlockUpdated( object sender, EventArgs e )
         {
+            NavigateToCurrentPage();
         }
 
         /// <summary>
@@ -199,78 +170,31 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 return;
             }
 
-            Attendee attendee = e.Row.DataItem as Attendee;
-
-            string statusClass = string.Empty;
-            string mobileIcon = @"<i class=""fa fa-{0}""></i>";
-            switch ( attendee.Status )
-            {
-                case AttendeeStatus.CheckedIn:
-                    statusClass = "warning";
-                    mobileIcon = "&nbsp;";
-                    break;
-                case AttendeeStatus.Present:
-                    statusClass = "success";
-                    mobileIcon = string.Format( mobileIcon, "check" );
-                    break;
-                case AttendeeStatus.CheckedOut:
-                    statusClass = "danger";
-                    mobileIcon = string.Format( mobileIcon, "minus" );
-                    break;
-            }
+            RosterAttendee attendee = e.Row.DataItem as RosterAttendee;
 
             // Desktop only.
             var lPhoto = e.Row.FindControl( "lPhoto" ) as Literal;
-            if ( lPhoto != null )
-            {
-                var imgTag = Rock.Model.Person.GetPersonPhotoImageTag( attendee.PersonId, attendee.PhotoId, attendee.Age, attendee.Gender, null, 50, 50, attendee.Name, "avatar avatar-lg" );
-                lPhoto.Text = string.Format( @"{0}", imgTag );
-            }
+            lPhoto.Text = attendee.GetPersonPhotoImageHtmlTag();
 
             // Mobile only.
             var lMobileIcon = e.Row.FindControl( "lMobileIcon" ) as Literal;
-            if ( lMobileIcon != null )
-            {
-                lMobileIcon.Text = string.Format( @"<span class=""badge badge-circle badge-{0}"">{1}</span>", statusClass, mobileIcon );
-            }
+            lMobileIcon.Text = attendee.GetStatusIconHtmlTag( true );
 
             // Shared between desktop and mobile.
             var lName = e.Row.FindControl( "lName" ) as Literal;
-            if ( lName != null )
-            {
-                lName.Text = string.Format( @"<div class=""name""><span class=""js-checkin-person-name"">{0}</span><span class=""badges d-sm-none"">{1}</span></div><div class=""parent-name small text-muted"">{2}</div>",
-                    attendee.Name,
-                    GetBadges( attendee, true ),
-                    attendee.ParentNames );
-            }
+            lName.Text = attendee.GetAttendeeNameHtml();
 
             // Desktop only.
             var lBadges = e.Row.FindControl( "lBadges" ) as Literal;
-            if ( lBadges != null )
-            {
-                lBadges.Text = string.Format( "<div>{0}</div>", GetBadges( attendee, false ) );
-            }
+            lBadges.Text = string.Format( "<div>{0}</div>", attendee.GetBadgesHtml( false ) );
 
             // Mobile only.
             var lMobileTagAndSchedules = e.Row.FindControl( "lMobileTagAndSchedules" ) as Literal;
-            if ( lMobileTagAndSchedules != null )
-            {
-                lMobileTagAndSchedules.Text = string.Format( @"<div class=""person-tag"">{0}</div><div class=""small text-muted"">{1}</div>", attendee.Tag, attendee.ServiceTimes );
-            }
-
-            // Desktop only.
-            var lCheckInTime = e.Row.FindControl( "lCheckInTime" ) as Literal;
-            if ( lCheckInTime != null )
-            {
-                lCheckInTime.Text = RockFilters.HumanizeTimeSpan( attendee.CheckInTime, DateTime.Now, unit: "Second" );
-            }
+            lMobileTagAndSchedules.Text = attendee.GetMobileTagAndSchedulesHtml();
 
             // Desktop only.
             var lStatusTag = e.Row.FindControl( "lStatusTag" ) as Literal;
-            if ( lStatusTag != null )
-            {
-                lStatusTag.Text = string.Format( @"<span class=""badge badge-{0}"">{1}</span>", statusClass, attendee.StatusString );
-            }
+            lStatusTag.Text = attendee.GetStatusIconHtmlTag( false );
         }
 
         /// <summary>
@@ -297,129 +221,64 @@ namespace RockWeb.Blocks.CheckIn.Manager
         #region Internal Methods
 
         /// <summary>
-        /// Gets the badges markup.
-        /// </summary>
-        /// <param name="attendee">The attendee.</param>
-        /// <returns></returns>
-        private string GetBadges( Attendee attendee, bool isMobile )
-        {
-            var badgesSb = new StringBuilder();
-
-            if ( attendee.IsBirthdayWeek )
-            {
-                if ( isMobile )
-                {
-                    badgesSb.Append( @"&nbsp;<i class=""fa fa-birthday-cake text-success""></i>" );
-                }
-                else
-                {
-                    badgesSb.AppendFormat( @"<div class=""text-center text-success pull-left""><div><i class=""fa fa-birthday-cake fa-2x""></i></div><div style=""font-size: small;"">{0}</div></div>", attendee.Birthday );
-                }
-            }
-
-            var openDiv = isMobile ? string.Empty : @"<div class=""pull-left"">";
-            var closeDiv = isMobile ? string.Empty : "</div>";
-            var fa2x = isMobile ? string.Empty : " fa-2x";
-
-            if ( attendee.HasHealthNote )
-            {
-                badgesSb.AppendFormat( @"{0}&nbsp;<i class=""fa fa-notes-medical{1} text-danger""></i>{2}", openDiv, fa2x, closeDiv );
-            }
-
-            if ( attendee.HasLegalNote )
-            {
-                badgesSb.AppendFormat( @"{0}&nbsp;<i class=""fa fa-clipboard{1}""></i>{2}", openDiv, fa2x, closeDiv );
-            }
-
-            return badgesSb.ToString();
-        }
-
-
-        /// <summary>
-        /// Builds the roster for the selected campus and location.
-        /// </summary>
-        private void BuildRoster()
-        {
-            CampusCache campus = GetCampusFromContext();
-            if ( campus == null )
-            {
-                ShowWarningMessage( "Please select a Campus.", true );
-                return;
-            }
-
-            // If the Campus selection has changed, we need to reload the LocationItemPicker with the Locations specific to that Campus.
-            if ( campus.Id != CurrentCampusId )
-            {
-                CurrentCampusId = campus.Id;
-            }
-
-            ShowAttendees();
-        }
-
-        /// <summary>
-        /// Gets the campus from the current context.
-        /// </summary>
-        private CampusCache GetCampusFromContext()
-        {
-            CampusCache campus = null;
-
-            var campusEntityType = EntityTypeCache.Get( "Rock.Model.Campus" );
-            if ( campusEntityType != null )
-            {
-                var campusContext = RockPage.GetCurrentContext( campusEntityType ) as Campus;
-
-                campus = CampusCache.Get( campusContext );
-            }
-
-            return campus;
-        }
-
-        /// <summary>
         /// Shows the attendees.
         /// </summary>
         private void ShowAttendees()
         {
-            IList<Attendee> attendees = null;
+            IList<RosterAttendee> attendees = null;
 
             using ( var rockContext = new RockContext() )
             {
                 attendees = GetAttendees( rockContext );
             }
 
-            gAttendees.DataSource = attendees;
+            var attendeesSorted = attendees.OrderByDescending( a => a.Status == RosterAttendeeStatus.Present ).ThenByDescending( a => a.CheckInTime ).ThenBy( a => a.PersonGuid ).ToList();
+
+            gAttendees.DataSource = attendeesSorted;
             gAttendees.DataBind();
         }
 
         /// <summary>
         /// Gets the attendees.
         /// </summary>
-        private IList<Attendee> GetAttendees( RockContext rockContext )
+        private IList<RosterAttendee> GetAttendees( RockContext rockContext )
         {
-            var attendees = new List<Attendee>();
-
+            rockContext.SqlLogging( true );
             var startDateTime = RockDateTime.Today;
-            var now = GetCampusTime();
+            CampusCache campusCache = CampusCache.Get( CurrentCampusId );
+            DateTime currentDateTime;
+            if ( campusCache != null )
+            {
+                currentDateTime = campusCache.CurrentDateTime;
+            }
+            else
+            {
+                currentDateTime = RockDateTime.Now;
+            }
 
             // Get all Attendance records for the current day and location.
             var attendanceQuery = new AttendanceService( rockContext )
-                .Queryable( "AttendanceCode,PersonAlias.Person,Occurrence.Schedule" )
-                .AsNoTracking()
-                .Where( a => a.StartDateTime >= startDateTime &&
-                             a.StartDateTime <= now &&
-                             a.PersonAliasId.HasValue &&
-                             a.Occurrence.ScheduleId.HasValue &&
-                             a.PersonAlias != null &&
-                             a.PersonAlias.Person != null );
+                .Queryable()
+                .Include( a => a.AttendanceCode )
+                .Include( a => a.PersonAlias.Person )
+                .Include( a => a.Occurrence.Schedule )
+                .Where( a =>
+                    a.StartDateTime >= startDateTime
+                    && a.StartDateTime <= currentDateTime
+                    && a.PersonAliasId.HasValue
+                    && a.Occurrence.ScheduleId.HasValue
+                    && a.PersonAlias != null
+                    && a.PersonAlias.Person != null );
 
             // Do the person search
             var personService = new PersonService( rockContext );
-            List<Rock.Model.Person> people = null;
+            List<int> personIds = null;
             bool reversed = false;
 
             string searchValue = tbSearch.Text.Trim();
             if ( searchValue.IsNullOrWhiteSpace() )
             {
-                people = new List<Rock.Model.Person>();
+                personIds = new List<int>();
             }
             else
             {
@@ -427,186 +286,41 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 if ( GetAttributeValue( AttributeKey.SearchByCode ).AsBoolean() )
                 {
                     var dayStart = RockDateTime.Today;
-                    var personIds = new AttendanceService( rockContext )
+                    personIds = new AttendanceService( rockContext )
                         .Queryable().Where( a =>
                             a.StartDateTime >= dayStart &&
-                            a.StartDateTime <= now &&
+                            a.StartDateTime <= currentDateTime &&
                             a.AttendanceCode.Code == searchValue )
                         .Select( a => a.PersonAlias.PersonId )
-                        .Distinct();
-                    people = personService.Queryable()
-                        .Where( p => personIds.Contains( p.Id ) )
-                        .ToList();
+                        .Distinct().ToList();
                 }
 
-                if ( people == null || !people.Any() )
+                if ( personIds == null || !personIds.Any() )
                 {
                     // If searching by code was disabled or nobody was found with code, search by name
-                    people = personService
+                    personIds = personService
                         .GetByFullName( searchValue, false, false, false, out reversed )
+                        .AsNoTracking()
+                        .Select( a => a.Id )
                         .ToList();
                 }
             }
 
-            var attendances = people
+            var attendanceQueryList = attendanceQuery.Take(5000).AsNoTracking().ToList();
+
+            var peopleAttendances = personIds
                     .GroupJoin(
-                        attendanceQuery,
-                        p => p.Id,
+                        attendanceQueryList,
+                        pId => pId,
                         a => a.PersonAlias.PersonId,
                         ( p, a ) => a )
                     .SelectMany( a => a )
                     .Distinct()
                     .ToList();
 
-            foreach ( var attendance in attendances )
-            {
-                // Create an Attendee for each unique Person within the Attendance records.
-                var person = attendance.PersonAlias.Person;
-
-                Attendee attendee = attendees.FirstOrDefault( a => a.PersonGuid == person.Guid );
-                if ( attendee == null )
-                {
-                    attendee = CreateAttendee( rockContext, person );
-                    attendees.Add( attendee );
-                }
-
-                // Add the attendance-specific property values.
-                SetAttendanceInfo( attendance, attendee );
-            }
+            var attendees = RosterAttendee.GetFromAttendanceList( peopleAttendances );
 
             return attendees;
-        }
-
-        /// <summary>
-        /// Gets the current campus time.
-        /// </summary>
-        private DateTime GetCampusTime()
-        {
-            CampusCache campusCache = CampusCache.Get( CurrentCampusId );
-            return campusCache != null
-                ? campusCache.CurrentDateTime
-                : RockDateTime.Now;
-        }
-
-        /// <summary>
-        /// Creates an attendee.
-        /// </summary>
-        /// <param name="rockContext">The rock context.</param>
-        /// <param name="person">The person.</param>
-        private Attendee CreateAttendee( RockContext rockContext, Rock.Model.Person person )
-        {
-            person.LoadAttributes( rockContext );
-
-            var attendee = new Attendee
-            {
-                PersonId = person.Id,
-                PersonGuid = person.Guid,
-                Name = person.FullName,
-                ParentNames = Rock.Model.Person.GetFamilySalutation( person, finalSeparator: "and" ),
-                PhotoId = person.PhotoId,
-                Age = person.Age,
-                Gender = person.Gender,
-                Birthday = GetBirthday( person ),
-                HasHealthNote = GetHasHealthNote( person ),
-                HasLegalNote = GetHasLegalNote( person )
-            };
-
-            return attendee;
-        }
-
-        /// <summary>
-        /// Gets the birthday (abbreviated day of week).
-        /// </summary>
-        /// <param name="person">The person.</param>
-        private string GetBirthday( Rock.Model.Person person )
-        {
-            // If this Person's bday is today, simply return "Today".
-            int daysToBirthday = person.DaysToBirthday;
-            if ( daysToBirthday == 0 )
-            {
-                return "Today";
-            }
-
-            // Otherwise, if their bday falls within the next 6 days, return the abbreviated day of the week (Mon-Sun) on which their bday falls.
-            if ( daysToBirthday < 7 )
-            {
-                return person.BirthdayDayOfWeekShort;
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Gets whether the person has a health note.
-        /// </summary>
-        /// <param name="person">The person.</param>
-        private bool GetHasHealthNote( Rock.Model.Person person )
-        {
-            string attributeValue = person.GetAttributeValue( EntityAttributeValueKey.Person_Allergy );
-            return attributeValue.IsNotNullOrWhiteSpace();
-        }
-
-        /// <summary>
-        /// Gets whether the person has a legal note.
-        /// </summary>
-        /// <param name="person">The person.</param>
-        private bool GetHasLegalNote( Rock.Model.Person person )
-        {
-            string attributeValue = person.GetAttributeValue( EntityAttributeValueKey.Person_LegalNotes );
-            return attributeValue.IsNotNullOrWhiteSpace();
-        }
-
-        /// <summary>
-        /// Sets the attendance-specific properties.
-        /// </summary>
-        /// <param name="attendance">The attendance.</param>
-        /// <param name="attendee">The attendee.</param>
-        private void SetAttendanceInfo( Attendance attendance, Attendee attendee )
-        {
-            // Keep track of each Attendance ID tied to this Attendee so we can manage them all as a group.
-            attendee.AttendanceIds.Add( attendance.Id );
-
-            // Tag(s).
-            string tag = attendance.AttendanceCode != null
-                ? attendance.AttendanceCode.Code
-                : null;
-
-            if ( tag.IsNotNullOrWhiteSpace() && !attendee.UniqueTags.Contains( tag, StringComparer.OrdinalIgnoreCase ) )
-            {
-                attendee.UniqueTags.Add( tag );
-            }
-
-            // Service Time(s).
-            string serviceTime = attendance.Occurrence != null && attendance.Occurrence.Schedule != null
-                ? attendance.Occurrence.Schedule.Name
-                : null;
-
-            if ( serviceTime.IsNotNullOrWhiteSpace() && !attendee.UniqueServiceTimes.Contains( serviceTime, StringComparer.OrdinalIgnoreCase ) )
-            {
-                attendee.UniqueServiceTimes.Add( serviceTime );
-            }
-
-            // Status: if this Attendee has multiple AttendanceOccurrences, the highest AttendeeStatus value among them wins.
-            AttendeeStatus attendeeStatus = AttendeeStatus.CheckedIn;
-            if ( attendance.EndDateTime.HasValue )
-            {
-                attendeeStatus = AttendeeStatus.CheckedOut;
-            }
-            else if ( attendance.PresentDateTime.HasValue )
-            {
-                attendeeStatus = AttendeeStatus.Present;
-            }
-
-            if ( attendeeStatus > attendee.Status )
-            {
-                attendee.Status = attendeeStatus;
-            }
-
-            // Check-in Time: if this Attendee has multiple AttendanceOccurrences, the latest StartDateTime value among them wins.
-            if ( attendance.StartDateTime > attendee.CheckInTime )
-            {
-                attendee.CheckInTime = attendance.StartDateTime;
-            }
         }
 
         /// <summary>
@@ -622,116 +336,5 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         #endregion Internal Methods
-
-        #region Helper Classes
-
-        /// <summary>
-        /// A class to represent an attendee.
-        /// </summary>
-        protected class Attendee
-        {
-            public int PersonId { get; set; }
-
-            public Guid PersonGuid { get; set; }
-
-            private readonly List<int> _attendanceIds = new List<int>();
-
-            public List<int> AttendanceIds
-            {
-                get
-                {
-                    return _attendanceIds;
-                }
-            }
-
-            public string Name { get; set; }
-
-            public string ParentNames { get; set; }
-
-            public int? PhotoId { get; set; }
-
-            public int? Age { get; set; }
-
-            public Gender Gender { get; set; }
-
-            public string Birthday { get; set; }
-
-            public bool IsBirthdayWeek
-            {
-                get
-                {
-                    return Birthday.IsNotNullOrWhiteSpace();
-                }
-            }
-
-            public bool HasHealthNote { get; set; }
-
-            public bool HasLegalNote { get; set; }
-
-            private readonly List<string> _uniqueTags = new List<string>();
-
-            public List<string> UniqueTags
-            {
-                get
-                {
-                    return _uniqueTags;
-                }
-            }
-
-            public string Tag
-            {
-                get
-                {
-                    return string.Join( ", ", UniqueTags );
-                }
-            }
-
-            private readonly List<string> _uniqueServiceTimes = new List<string>();
-
-            public List<string> UniqueServiceTimes
-            {
-                get
-                {
-                    return _uniqueServiceTimes;
-                }
-            }
-
-            public string ServiceTimes
-            {
-                get
-                {
-                    return string.Join( ", ", UniqueServiceTimes );
-                }
-            }
-
-            public AttendeeStatus Status { get; set; }
-
-            public string StatusString
-            {
-                get
-                {
-                    return Status.GetDescription();
-                }
-            }
-
-            public DateTime CheckInTime { get; set; }
-        }
-
-        /// <summary>
-        /// The status of an attendee.
-        /// </summary>
-        protected enum AttendeeStatus
-        {
-            [Description( "Checked-in" )]
-            CheckedIn = 1,
-
-            [Description( "Present" )]
-            Present = 2,
-
-            [Description( "Checked-out" )]
-            CheckedOut = 3
-        }
-
-        #endregion Helper Classes
     }
 }

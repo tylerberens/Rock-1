@@ -1,9 +1,5 @@
 ﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="Search.ascx.cs" Inherits="RockWeb.Blocks.CheckIn.Manager.Search" %>
 
-<script type="text/javascript">
-    Sys.Application.add_load(function () {
-    });
-</script>
 <Rock:RockUpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
 
