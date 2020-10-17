@@ -7,7 +7,7 @@
 
         <asp:Panel ID="pnlContent" runat="server" CssClass="checkin-manager">
             <div class="input-group mb-4 w-100">
-                <Rock:RockTextBox ID="tbSearch" runat="server" CssClass="padding-all-sm js-search" PrependText="<i class='fa fa-search'></i>" spellcheck="false" OnTextChanged="tbSearch_TextChanged" AutoPostBack="true"/>
+                <Rock:RockTextBox ID="tbSearch" runat="server" CssClass="padding-all-sm js-search" PrependText="<i class='fa fa-search'></i>" spellcheck="false" onkeydown="javascript:return handleSearchBoxKeyPress(this, event.keyCode);"/>
             </div>
             <div class="grid grid-panel">
                 <Rock:Grid ID="gAttendees" runat="server" DisplayType="Light" UseFullStylesForLightGrid="true" OnRowDataBound="gAttendees_RowDataBound" OnRowSelected="gAttendees_RowSelected" DataKeyNames="PersonGuid,AttendanceIds">
@@ -24,6 +24,22 @@
                 </Rock:Grid>
             </div>
         </asp:Panel>
+
+        <script>
+            // handle onkeypress for the search box
+            function handleSearchBoxKeyPress(element, keyCode) {
+                if (keyCode == 13) {
+                    window.location = "javascript:__doPostBack('<%=upnlContent.ClientID %>', 'search')";
+
+                    // prevent double-postback
+                    $(element).prop('disabled', true)
+                        .attr('disabled', 'disabled')
+                        .addClass('disabled');
+
+                    return true;
+                }
+            }
+        </script>
 
     </ContentTemplate>
 </Rock:RockUpdatePanel>

@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // </copyright>
-//
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -25,14 +24,12 @@ using Rock;
 using Rock.Attribute;
 using Rock.CheckIn;
 using Rock.Data;
-using Rock.Lava;
 using Rock.Model;
 using Rock.Web.Cache;
 
 namespace RockWeb.Blocks.CheckIn.Manager
 {
     /// <summary>
-    /// Block used to search current check-in
     /// </summary>
     [DisplayName( "Search" )]
     [Category( "Check-in > Manager" )]
@@ -51,6 +48,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         Description = "A flag indicating if security codes should also be evaluated in the search box results.",
         Order = 1,
         Key = AttributeKey.SearchByCode )]
+
     #endregion Block Attributes
     public partial class Search : Rock.Web.UI.RockBlock
     {
@@ -128,6 +126,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             base.OnLoad( e );
 
+            if ( this.IsPostBack )
+            {
+                HandleCustomPostback();
+            }
+
             nbWarning.Visible = false;
         }
 
@@ -150,9 +153,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        protected void tbSearch_TextChanged( object sender, EventArgs e )
+        protected void HandleCustomPostback()
         {
-            if ( tbSearch.Text.Length > 2 )
+            var eventArg = this.Request.Params["__EVENTARGUMENT"];
+            if ( eventArg == "search" && tbSearch.Text.Length > 2 )
             {
                 ShowAttendees();
             }
@@ -212,7 +216,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             if ( !NavigateToLinkedPage( AttributeKey.PersonPage, queryParams ) )
             {
-                ShowWarningMessage( "The 'Person Page' Block Attribute must be defined.", true );
+                ShowWarningMessage( "The 'Person Page' Block Attribute must be defined." );
             }
         }
 
@@ -243,7 +247,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// </summary>
         private IList<RosterAttendee> GetAttendees( RockContext rockContext )
         {
-            rockContext.SqlLogging( true );
             var startDateTime = RockDateTime.Today;
             CampusCache campusCache = CampusCache.Get( CurrentCampusId );
             DateTime currentDateTime;
@@ -306,7 +309,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 }
             }
 
-            var attendanceQueryList = attendanceQuery.Take(5000).AsNoTracking().ToList();
+            var attendanceQueryList = attendanceQuery.Take( 5000 ).AsNoTracking().ToList();
 
             var peopleAttendances = personIds
                     .GroupJoin(
@@ -327,8 +330,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// Shows a warning message, and optionally hides the content panels.
         /// </summary>
         /// <param name="warningMessage">The warning message to show.</param>
-        /// <param name="hideLocationPicker">Whether to hide the lpLocation control.</param>
-        private void ShowWarningMessage( string warningMessage, bool hideLocationPicker )
+        private void ShowWarningMessage( string warningMessage )
         {
             nbWarning.Text = warningMessage;
             nbWarning.Visible = true;
