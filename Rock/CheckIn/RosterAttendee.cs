@@ -73,7 +73,15 @@ namespace Rock.CheckIn
         /// <value>
         /// The attendance ids.
         /// </value>
-        public List<int> AttendanceIds { get; private set; } = new List<int>();
+        public int[] AttendanceIds => Attendances.Select( a => a.Id ).ToArray();
+
+        /// <summary>
+        /// Gets or sets the attendances.
+        /// </summary>
+        /// <value>
+        /// The attendances.
+        /// </value>
+        private List<Attendance> Attendances { get; set; } = new List<Attendance>();
 
         /// <summary>
         /// Gets the person's full name.
@@ -366,48 +374,43 @@ namespace Rock.CheckIn
         /// <param name="attendance">The attendance.</param>
         private void SetAttendanceInfo( Attendance attendance )
         {
-            RosterAttendee attendee = this;
-
             // Keep track of each Attendance ID tied to this Attendee so we can manage them all as a group.
-            attendee.AttendanceIds.Add( attendance.Id );
+            this.Attendances.Add( attendance, true );
 
             // Tag(s).
             string tag = attendance.AttendanceCode?.Code;
 
-            if ( tag.IsNotNullOrWhiteSpace() && !attendee.UniqueTags.Contains( tag, StringComparer.OrdinalIgnoreCase ) )
+            if ( tag.IsNotNullOrWhiteSpace() && !this.UniqueTags.Contains( tag, StringComparer.OrdinalIgnoreCase ) )
             {
-                attendee.UniqueTags.Add( tag );
+                this.UniqueTags.Add( tag );
             }
 
             // Service Time(s).
             string serviceTime = attendance.Occurrence?.Schedule?.Name;
 
-            if ( serviceTime.IsNotNullOrWhiteSpace() && !attendee.UniqueServiceTimes.Contains( serviceTime, StringComparer.OrdinalIgnoreCase ) )
+            if ( serviceTime.IsNotNullOrWhiteSpace() && !this.UniqueServiceTimes.Contains( serviceTime, StringComparer.OrdinalIgnoreCase ) )
             {
-                attendee.UniqueServiceTimes.Add( serviceTime );
+                this.UniqueServiceTimes.Add( serviceTime );
             }
 
             // Status: if this Attendee has multiple AttendanceOccurrences, the highest AttendeeStatus value among them wins.
-            RosterAttendeeStatus attendeeStatus = RosterAttendeeStatus.CheckedIn;
-            if ( attendance.EndDateTime.HasValue )
+            var latestAttendance = this.Attendances.OrderByDescending( a => a.StartDateTime ).First();
+            
+            if ( latestAttendance.EndDateTime.HasValue )
             {
-                attendeeStatus = RosterAttendeeStatus.CheckedOut;
+                this.Status = RosterAttendeeStatus.CheckedOut;
             }
-            else if ( attendance.PresentDateTime.HasValue )
+            else if ( latestAttendance.PresentDateTime.HasValue )
             {
-                attendeeStatus = RosterAttendeeStatus.Present;
+                this.Status = RosterAttendeeStatus.Present;
             }
-
-            if ( attendeeStatus > attendee.Status )
+            else
             {
-                attendee.Status = attendeeStatus;
+                this.Status = RosterAttendeeStatus.CheckedIn;
             }
 
             // Check-in Time: if this Attendee has multiple AttendanceOccurrences, the latest StartDateTime value among them wins.
-            if ( attendance.StartDateTime > attendee.CheckInTime )
-            {
-                attendee.CheckInTime = attendance.StartDateTime;
-            }
+            this.CheckInTime = latestAttendance.StartDateTime;
         }
 
         /// <summary>
