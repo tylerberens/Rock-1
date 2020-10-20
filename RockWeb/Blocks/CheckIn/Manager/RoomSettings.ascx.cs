@@ -34,7 +34,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
     [Description( "Block used to open and close classrooms, Etc." )]
     public partial class RoomSettings : Rock.Web.UI.RockBlock
     {
-        #region Page Paramter Keys
+        #region Page Parameter Keys
 
         private class PageParameterKey
         {

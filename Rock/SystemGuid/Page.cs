@@ -262,9 +262,9 @@ namespace Rock.SystemGuid
         public const string CHECK_IN_MANAGER_LOGIN = "31F51DBB-AC84-4724-9219-B46FADAB9CB2";
 
         /// <summary>
-        /// The Settings page under the Check-in Manager page
+        /// The Settings page under the Check-in Manager page (Where Check-in Configuration is selected)
         /// </summary>
-        public const string CHECK_IN_MANAGER_SETTINGS = "7484FB24-BAE9-4797-961D-6962D4E9DB76";
+        public const string CHECK_IN_MANAGER_SETTINGS = "62C70118-0A6F-432A-9D84-A5296655CB9E";
 
         /// <summary>
         /// The Check-in Manager search page
@@ -277,7 +277,7 @@ namespace Rock.SystemGuid
         public const string CHECK_IN_MANAGER_ROOM_MANAGER = "CECB1460-10D4-4054-B5C3-903991CA40AB";
 
         /// <summary>
-        /// The Check-in Manager room settings page
+        /// The Check-in Manager room settings page (Where rooms can be open/closed)
         /// </summary>
         public const string CHECK_IN_MANAGER_ROOM_SETTINGS = "0416FF62-3252-4A84-85DB-79F4CAE82C75";
 
@@ -290,6 +290,8 @@ namespace Rock.SystemGuid
         /// Gets the Check-in Type page guid
         /// ParentPage: 
         /// </summary>
+        [RockObsolete( "1.12" )]
+        [Obsolete( "Use CHECK_IN_MANAGER_SETTINGS instead (same guid)" )]
         public const string CHECK_IN_TYPE = "62C70118-0A6F-432A-9D84-A5296655CB9E";
 
         #region Check-In Pages

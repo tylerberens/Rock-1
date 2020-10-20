@@ -28,6 +28,7 @@ using Newtonsoft.Json;
 using Rock;
 using Rock.Attribute;
 using Rock.Chart;
+using Rock.CheckIn;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
@@ -188,7 +189,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             CampusCache campus = null;
             if ( campusContext != null )
             {
-                campus = CampusCache.Get( campusContext );
+                campus = CampusCache.Get( campusContext.Id );
             }
             else
             {
@@ -581,36 +582,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     // Get all the child locations
                     validLocationids.Add( campus.LocationId.Value );
                     new LocationService( rockContext )
-                        .GetAllDescendents( campus.LocationId.Value )
-                        .Select( l => l.Id )
+                        .GetAllDescendentIds( campus.LocationId.Value )
                         .ToList()
                         .ForEach( l => validLocationids.Add( l ) );
                 }
 
-                var groupTypeTemplateGuid = PageParameter( PageParameterKey.Area ).AsGuidOrNull();
-                if ( !groupTypeTemplateGuid.HasValue )
-                {
-                    groupTypeTemplateGuid = this.GetAttributeValue( AttributeKey.GroupTypeTemplate ).AsGuidOrNull();
-                }
-
-                if ( !groupTypeTemplateGuid.HasValue )
-                {
-                    // Check to see if a specific group was specified
-                    Guid? guid = Rock.SystemGuid.DefinedValue.GROUPTYPE_PURPOSE_CHECKIN_TEMPLATE.AsGuid();
-                    int? groupId = PageParameter( PageParameterKey.Group ).AsIntegerOrNull();
-                    if ( groupId.HasValue && guid.HasValue )
-                    {
-                        var group = new GroupService( rockContext ).Get( groupId.Value );
-                        if ( group != null && group.GroupType != null )
-                        {
-                            var groupType = GetParentPurposeGroupType( group.GroupType, guid.Value );
-                            if ( groupType != null )
-                            {
-                                groupTypeTemplateGuid = groupType.Guid;
-                            }
-                        }
-                    }
-                }
+                Guid? groupTypeTemplateGuid = GetSelectedAreaGuid();
 
                 if ( groupTypeTemplateGuid.HasValue )
                 {
@@ -736,8 +713,20 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
                     groupIds = NavData.Groups.Select( g => g.Id ).ToList();
 
+                    List<int> checkinAreaGroupTypeIds = new List<int>();
+
+                    if ( groupTypeTemplateGuid.HasValue )
+                    {
+                        var checkinAreaGroupTypeId = GroupTypeCache.GetId( groupTypeTemplateGuid.Value );
+                        if ( checkinAreaGroupTypeId != null )
+                        {
+                            checkinAreaGroupTypeIds = new GroupTypeService( new RockContext() ).GetCheckinAreaDescendants( checkinAreaGroupTypeId.Value ).Select( a => a.Id ).ToList();
+                        }
+                    }
+
                     var schedules = new List<Schedule>();
 
+                    // Get all Attendance records for the current day and location, limited by the selected groups within the selected check-in area
                     var attendanceQry = new AttendanceService( rockContext ).Queryable()
                         .Where( a =>
                             a.Occurrence.ScheduleId.HasValue &&
@@ -747,6 +736,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                             a.StartDateTime < now &&
                             a.DidAttend.HasValue &&
                             a.DidAttend.Value &&
+                            checkinAreaGroupTypeIds.Contains( a.Occurrence.Group.GroupTypeId ) &&
                             groupIds.Contains( a.Occurrence.GroupId.Value ) &&
                             locationIds.Contains( a.Occurrence.LocationId.Value ) );
 
@@ -767,7 +757,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                             .ToList();
                     }
 
-                    var attendanceList = attendanceQry.ToList();
+                    var attendanceList = attendanceQry.AsNoTracking().ToList();
 
                     foreach ( var groupLoc in attendanceList
                             .Where( a =>
@@ -858,6 +848,48 @@ namespace RockWeb.Blocks.CheckIn.Manager
             return null;
         }
 
+        private Guid? GetSelectedAreaGuid()
+        {
+            var groupTypeTemplateGuid = PageParameter( PageParameterKey.Area ).AsGuidOrNull();
+
+            if ( !groupTypeTemplateGuid.HasValue )
+            {
+                // Next check if there is an Area cookie (this is usually what would happen)
+                var checkinManagerCheckinAreaGuidCookie = this.Page.Request.Cookies[CheckInCookieKey.CheckinManagerCheckinAreaGuid];
+                if ( checkinManagerCheckinAreaGuidCookie != null )
+                {
+                    groupTypeTemplateGuid = checkinManagerCheckinAreaGuidCookie.Value.AsGuidOrNull();
+                }
+            }
+
+            if ( !groupTypeTemplateGuid.HasValue )
+            {
+                groupTypeTemplateGuid = this.GetAttributeValue( AttributeKey.GroupTypeTemplate ).AsGuidOrNull();
+            }
+
+            if ( !groupTypeTemplateGuid.HasValue )
+            {
+                // Check to see if a specific group was specified
+                Guid? guid = Rock.SystemGuid.DefinedValue.GROUPTYPE_PURPOSE_CHECKIN_TEMPLATE.AsGuid();
+                int? groupId = PageParameter( PageParameterKey.Group ).AsIntegerOrNull();
+                if ( groupId.HasValue && guid.HasValue )
+                {
+                    var groupTypeId = new GroupService( new RockContext() ).GetSelect( groupId.Value, s => s.GroupTypeId );
+                    var groupType = GroupTypeCache.Get( groupTypeId );
+                    if ( groupType != null )
+                    {
+                        var parentGroupType = GetParentPurposeGroupType( groupType, guid.Value );
+                        if ( parentGroupType != null )
+                        {
+                            groupTypeTemplateGuid = parentGroupType.Guid;
+                        }
+                    }
+                }
+            }
+
+            return groupTypeTemplateGuid;
+        }
+
         private void AddPersonCountByLocation( int locationId, List<int> pendingPeople, List<int> checkedInPeople, List<int> checkedOutPeople )
         {
             var navLocation = NavData.Locations.FirstOrDefault( g => g.Id == locationId );
@@ -903,7 +935,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             }
         }
 
-        public GroupType GetParentPurposeGroupType( GroupType groupType, Guid purposeGuid )
+        public GroupTypeCache GetParentPurposeGroupType( GroupTypeCache groupType, Guid purposeGuid )
         {
             if ( groupType != null &&
                 groupType.GroupTypePurposeValue != null &&
@@ -1240,6 +1272,20 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
                         var rockContext = new RockContext();
 
+                        List<int> checkinAreaGroupTypeIds = new List<int>();
+
+                        Guid? groupTypeTemplateGuid = GetSelectedAreaGuid();
+
+                        if ( groupTypeTemplateGuid.HasValue )
+                        {
+                            var checkinAreaGroupTypeId = GroupTypeCache.GetId( groupTypeTemplateGuid.Value );
+                            if ( checkinAreaGroupTypeId != null )
+                            {
+                                checkinAreaGroupTypeIds = new GroupTypeService( new RockContext() ).GetCheckinAreaDescendants( checkinAreaGroupTypeId.Value ).Select( a => a.Id ).ToList();
+                            }
+                        }
+
+                        // Get all Attendance records for the current day and location, limited to groups within the selected check-in area
                         var dayStart = RockDateTime.Today.AddDays( -1 );
                         var attendees = new AttendanceService( rockContext )
                             .Queryable( "Occurrence.Group,PersonAlias.Person,Occurrence.Schedule,AttendanceCode" )
@@ -1249,6 +1295,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
                                 a.StartDateTime > dayStart &&
                                 a.Occurrence.LocationId.HasValue &&
                                 a.Occurrence.LocationId == locationItem.Id &&
+                                a.Occurrence.GroupId.HasValue &&
+                                checkinAreaGroupTypeIds.Contains( a.Occurrence.Group.GroupTypeId ) &&
                                 a.DidAttend.HasValue &&
                                 a.DidAttend.Value &&
                                 a.Occurrence.ScheduleId.HasValue )

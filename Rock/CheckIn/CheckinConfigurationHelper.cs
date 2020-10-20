@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+
 using Rock.Web.Cache;
 
 namespace Rock.CheckIn
@@ -251,5 +252,11 @@ namespace Rock.CheckIn
         /// The checkin manager roster configuration
         /// </summary>
         public static readonly string CheckinManagerRosterConfiguration = "CheckinManager.RosterConfiguration";
+
+        /// <summary>
+        /// Gets or sets the current 'Check-in Configuration' Guid (which is a <see cref="Rock.Model.GroupType" /> Guid).
+        /// For example "Weekly Service Check-in".
+        /// </summary>
+        public static readonly string CheckinManagerCheckinAreaGuid = "CheckinManager.CheckinManagerCheckinAreaGuid";
     }
 }

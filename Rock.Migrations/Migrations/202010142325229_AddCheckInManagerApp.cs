@@ -34,20 +34,29 @@ namespace Rock.Migrations
             CodeGenMigrationsUp();
 
             // Update Check-in Manager page's theme to the new RockManager theme
-            Sql( $@"UPDATE 
-                        [Site]
+            Sql( $@"UPDATE [Site]
                     SET [Theme] = 'RockManager'
-                    WHERE[Guid] = '{Rock.SystemGuid.Site.CHECK_IN_MANAGER}'" );
+                    WHERE [Guid] = '{Rock.SystemGuid.Site.CHECK_IN_MANAGER}'" );
 
             // Make sure CHECK_IN_MANAGER_LOGIN and PERSON_PROFILE_CHECK_IN_MANAGER have Display-Never (They should have already been set to that)
-            // and set the new CHECK_IN_MANAGER_SETTINGS page to Display-Never
-            Sql( $@"UPDATE
-	                    [Page]
+            Sql( $@"UPDATE [Page]
                     SET [DisplayInNavWhen]=2
-                    WHERE
-	                    [Guid] IN ('{Rock.SystemGuid.Page.PERSON_PROFILE_CHECK_IN_MANAGER}','{Rock.SystemGuid.Page.CHECK_IN_MANAGER_LOGIN}', '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_SETTINGS}')
+                    WHERE [Guid] IN ('{Rock.SystemGuid.Page.PERSON_PROFILE_CHECK_IN_MANAGER}','{Rock.SystemGuid.Page.CHECK_IN_MANAGER_LOGIN}')
                 " );
 
+            // Move the 'Check-in Type' page from a TopLevel page to be under CheckinManager instead,
+            // and rename it to 'Settings' and change the icon to fa-gear.
+            // Then make Checkin Manager a top level page
+            Sql( $@"UPDATE [Page] 
+SET 
+    [ParentPageId] = (SELECT TOP 1 [Id] FROM [Page] WHERE [Guid] = '{Rock.SystemGuid.Page.CHECK_IN_MANAGER}'),
+    [InternalName] = 'Settings',
+    [BrowserTitle] = 'Settings',
+    [PageTitle] = 'Settings',
+    [IconCssClass] = 'fa fa-gear',
+    [Order] = (SELECT TOP 1 [Order] FROM [Page] WHERE [Guid] = '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_LIVE_METRICS}')+1
+WHERE [Guid] = '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_SETTINGS}' " );
+            Sql( $"UPDATE [Page] set [ParentPageId] = null WHERE [Guid] = '{Rock.SystemGuid.Page.CHECK_IN_MANAGER}'" );
 
             RockMigrationHelper.DeleteBlock( OLD_CHECK_IN_MANAGER_BLOCK );
 
@@ -99,8 +108,6 @@ END" );
             RockMigrationHelper.AddPage( true, "CECB1460-10D4-4054-B5C3-903991CA40AB", "8305704F-928D-4379-967A-253E576E0923", "Room Settings", "", "0416FF62-3252-4A84-85DB-79F4CAE82C75", "" );
             // Add Page Live Metrics to Site:Rock Check-in Manager   
             RockMigrationHelper.AddPage( true, "A4DCE339-9C11-40CA-9A02-D2FE64EA164B", "8305704F-928D-4379-967A-253E576E0923", "Live Metrics", "", "04F70D50-5D27-4C12-A76D-B25E6E4CB177", "fa fa-chart-bar" );
-            // Add Page Settings to Site:Rock Check-in Manager 
-            RockMigrationHelper.AddPage( true, "A4DCE339-9C11-40CA-9A02-D2FE64EA164B", "8305704F-928D-4379-967A-253E576E0923", "Settings", "", "7484FB24-BAE9-4797-961D-6962D4E9DB76", "fa fa-gear-o" );
             // Add/Update BlockType Live Metrics  
             RockMigrationHelper.UpdateBlockType( "Live Metrics", "Block used to view current check-in counts and locations.", "~/Blocks/CheckIn/Manager/LiveMetrics.ascx", "Check-in > Manager", "A14D43A7-46EE-493E-9993-F89B86DF1604" );
             // Add/Update BlockType Room Settings   
@@ -328,8 +335,6 @@ END" );
             RockMigrationHelper.DeleteBlockType( "A6A21FDE-2C90-44B0-9DF2-30CA248D423D" ); // Calendar Event Item Occurrence View  
             // Delete BlockType Structured Content View              
             RockMigrationHelper.DeleteBlockType( "48561629-F290-45DB-8BF0-EAD590F592B7" ); // Structured Content View  
-            // Delete Page Settings from Site:Rock Check-in Manager              
-            RockMigrationHelper.DeletePage( "7484FB24-BAE9-4797-961D-6962D4E9DB76" );
             // Delete Page Live Metrics from Site:Rock Check-in Manager       
             RockMigrationHelper.DeletePage( "04F70D50-5D27-4C12-A76D-B25E6E4CB177" ); //  Page: Live Metrics, Layout: Full Width, Site: Rock Check-in Manager  
             // Delete Page Room Settings from Site:Rock Check-in Manager              

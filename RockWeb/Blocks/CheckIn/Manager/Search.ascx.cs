@@ -309,7 +309,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 }
             }
 
-            var attendanceQueryList = attendanceQuery.Take( 5000 ).AsNoTracking().ToList();
+            var attendanceQueryList = attendanceQuery.AsNoTracking().ToList();
 
             var peopleAttendances = personIds
                     .GroupJoin(

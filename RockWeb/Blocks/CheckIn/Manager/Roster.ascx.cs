@@ -72,7 +72,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// </summary>
         private class AttributeKey
         {
+            /// <summary>
+            /// Gets or sets the current 'Check-in Configuration' Guid (which is a <see cref="Rock.Model.GroupType" /> Guid).
+            /// For example "Weekly Service Check-in".
+            /// </summary>
             public const string CheckInAreaGuid = "CheckInAreaGuid";
+
             public const string PersonPage = "PersonPage";
             public const string AreaSelectPage = "AreaSelectPage";
         }
@@ -83,7 +88,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
         private class PageParameterKey
         {
+            /// <summary>
+            /// Gets or sets the current 'Check-in Configuration' Guid (which is a <see cref="Rock.Model.GroupType" /> Guid).
+            /// For example "Weekly Service Check-in".
+            /// </summary>
             public const string Area = "Area";
+
             public const string LocationId = "LocationId";
             public const string Person = "Person";
         }
@@ -158,9 +168,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// The current area unique identifier.
+        /// Gets or sets the current 'Check-in Configuration' Guid (which is a <see cref="Rock.Model.GroupType" /> Guid).
+        /// For example "Weekly Service Check-in".
         /// </summary>
-        public Guid? CurrentAreaGuid
+        public Guid? CurrentCheckinAreaGuid
         {
             get
             {
@@ -261,7 +272,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         protected void Block_BlockUpdated( object sender, EventArgs e )
         {
             // Wipe out these values to trigger reloading of data.
-            CurrentAreaGuid = null;
+            CurrentCheckinAreaGuid = null;
             CurrentLocationId = 0;
             CurrentStatusFilter = StatusFilter.Unknown;
 
@@ -503,12 +514,25 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 currentDateTime = RockDateTime.Now;
             }
 
-            // Get all Attendance records for the current day and location.
+            List<int> checkinAreaGroupTypeIds = new List<int>();
+
+            if ( CurrentCheckinAreaGuid.HasValue )
+            {
+                var checkinAreaGroupTypeId = GroupTypeCache.GetId( this.CurrentCheckinAreaGuid.Value );
+                if ( checkinAreaGroupTypeId != null )
+                {
+                    checkinAreaGroupTypeIds = new GroupTypeService( new RockContext() ).GetCheckinAreaDescendants( checkinAreaGroupTypeId.Value ).Select( a => a.Id ).ToList();
+                }
+            }
+
+            // Get all Attendance records for the current day and location, limited by groups within the selected check-in area
             var attendanceQuery = new AttendanceService( rockContext )
                 .Queryable( "AttendanceCode,PersonAlias.Person,Occurrence.Schedule" )
                 .AsNoTracking()
                 .Where( a => a.StartDateTime >= startDateTime &&
                              a.StartDateTime <= currentDateTime &&
+                             a.Occurrence.GroupId.HasValue &&
+                             checkinAreaGroupTypeIds.Contains( a.Occurrence.Group.GroupTypeId ) &&
                              a.PersonAliasId.HasValue &&
                              a.Occurrence.LocationId == CurrentLocationId &&
                              a.Occurrence.ScheduleId.HasValue );
@@ -677,22 +701,32 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// </summary>
         private bool SetArea()
         {
-            if ( CurrentAreaGuid.HasValue )
+            if ( CurrentCheckinAreaGuid.HasValue )
             {
                 // We have already set the Area-related properties on initial page load and placed them in ViewState.
                 return true;
             }
 
             // If a query string parameter is defined, it takes precedence.
-            Guid? areaGuid = PageParameter( PageParameterKey.Area ).AsGuidOrNull();
+            Guid? checkinManagerCheckinAreaGuid = PageParameter( PageParameterKey.Area ).AsGuidOrNull();
 
-            if ( !areaGuid.HasValue )
+            if ( !checkinManagerCheckinAreaGuid.HasValue )
             {
-                // Next, check the Block AttributeValue.
-                areaGuid = this.GetAttributeValue( AttributeKey.CheckInAreaGuid ).AsGuidOrNull();
+                // Next check if there is an Area cookie (this is usually what would happen)
+                var checkinManagerCheckinAreaGuidCookie = this.Page.Request.Cookies[CheckInCookieKey.CheckinManagerCheckinAreaGuid];
+                if ( checkinManagerCheckinAreaGuidCookie != null )
+                {
+                    checkinManagerCheckinAreaGuid = checkinManagerCheckinAreaGuidCookie.Value.AsGuidOrNull();
+                }
             }
 
-            if ( !areaGuid.HasValue )
+            if ( !checkinManagerCheckinAreaGuid.HasValue )
+            {
+                // Next, check the Block AttributeValue.
+                checkinManagerCheckinAreaGuid = this.GetAttributeValue( AttributeKey.CheckInAreaGuid ).AsGuidOrNull();
+            }
+
+            if ( !checkinManagerCheckinAreaGuid.HasValue )
             {
                 // Finally, fall back to the Area select page.
                 if ( !NavigateToLinkedPage( AttributeKey.AreaSelectPage ) )
@@ -704,12 +738,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
             }
 
             // Save the Area Guid in ViewState.
-            CurrentAreaGuid = areaGuid;
+            CurrentCheckinAreaGuid = checkinManagerCheckinAreaGuid;
 
             // Get the GroupType represented by the Check-in Area Guid Block Attribute so we can set the related runtime properties.
             using ( var rockContext = new RockContext() )
             {
-                GroupType area = new GroupTypeService( rockContext ).Get( areaGuid.Value );
+                GroupType area = new GroupTypeService( rockContext ).Get( checkinManagerCheckinAreaGuid.Value );
                 if ( area == null )
                 {
                     ShowWarningMessage( "The specified Check-in Area is not valid.", true );
