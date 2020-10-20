@@ -1542,7 +1542,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     Gender = person.Gender;
                     Age = person.Age.ToString() ?? "";
                     PhotoId = person.PhotoId;
-                    
+
                     ScheduleGroupNames = attendances
                         .Select( a => string.Format( "<span class='d-block small text-muted'>{0}{1}{2}</span>",
                                 a.Occurrence.Group.Name,
