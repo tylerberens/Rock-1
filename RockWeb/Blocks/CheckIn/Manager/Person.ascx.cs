@@ -713,10 +713,24 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
                 string grade = person.GradeFormatted;
                 string[] gradeParts = grade.Split( ' ' );
-                if ( gradeParts.Length == 2 )
+                if ( gradeParts.Length >= 2 )
                 {
-                    grade = string.Format( @"<div class=""text-semibold"">{0}</div><div class=""text-sm text-muted"">{1}</div>", gradeParts[0], gradeParts[1] );
+                    // Note that Grade names might be different in other countries. See  https://separatedbyacommonlanguage.blogspot.com/2006/12/types-of-schools-school-years.html for examples
+                    var firstWord = gradeParts[0];
+                    var remainderWords = gradeParts.Skip( 1 ).ToList().AsDelimited( " " );
+                    if ( firstWord.Equals( "Year", StringComparison.OrdinalIgnoreCase ) )
+                    {
+                        // MDP 2020-10-21 (at request of GJ)
+                        // Special case if formatted grade is 'Year 1', 'Year 2', etc (see https://separatedbyacommonlanguage.blogspot.com/2006/12/types-of-schools-school-years.html)
+                        // Make the word Year on the top
+                        grade = string.Format( @"<div class=""text-semibold"">{0}</div><div class=""text-sm text-muted"">{1}</div>", remainderWords, firstWord );
+                    }
+                    else
+                    {
+                        grade = string.Format( @"<div class=""text-semibold"">{0}</div><div class=""text-sm text-muted"">{1}</div>", firstWord, remainderWords );
+                    }
                 }
+
                 lGrade.Text = grade;
 
                 lEmail.Visible = !string.IsNullOrWhiteSpace( person.Email );
