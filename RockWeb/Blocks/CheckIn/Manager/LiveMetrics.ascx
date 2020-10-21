@@ -53,18 +53,18 @@
         var data = {
             labels: chartLabel,
             datasets: [{
-                label: 'Room 1',
+                label: 'People',
                 fill: false,
                 backgroundColor: '#059BFF',
                 borderColor: '#059BFF',
                 borderWidth: 0,
-                pointRadius: 3,
-                pointBackgroundColor: '#059BFF',
-                pointBorderColor: '#059BFF',
+                pointRadius: 10,
+                pointBackgroundColor: 'rgba(5,155,255,0.0)',
+                pointBorderColor: 'rgba(5,155,255,0.0)',
                 pointBorderWidth: 0,
                 pointHoverBackgroundColor: 'rgba(5,155,255,.6)',
                 pointHoverBorderColor: 'rgba(5,155,255,.6)',
-                pointHoverRadius: '3',
+                pointHoverRadius: '9',
                 lineTension: 0,
                 data: chartData
             }

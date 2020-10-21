@@ -1232,15 +1232,18 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     }
                 }
 
-                var chartData = new Dictionary<TimeSpan, int>();
+                var chartData = new Dictionary<DateTime, int>();
 
                 TimeSpan baseSpan = new TimeSpan( new DateTime( 1970, 1, 1 ).Ticks );
                 foreach ( var kv in chartCounts.OrderBy( c => c.Key ) )
                 {
                     DateTime offsetTime = kv.Key.Subtract( baseSpan );
-                    chartData.Add( offsetTime.TimeOfDay, kv.Value.Count() );
+                    chartData.Add( offsetTime, kv.Value.Count() );
                 }
-                hfChartLabel.Value = JsonConvert.SerializeObject( chartData.Keys.Select( a => a.ToString( @"hh\:mm" ) ).ToList() );
+
+                // Format label values as 9AM or 9:15, and only show label value if minutes are 00, 15, 30, and 45
+                hfChartLabel.Value = JsonConvert.SerializeObject( chartData.Keys.Select( a => ( a.Minute == 0 ) ? a.ToString( @"htt" ) :
+                    ( a.Minute == 15 || a.Minute == 30 || a.Minute == 45 ) ? a.ToString( @"h\:mm" ) : string.Empty ).ToList() );
                 hfChartData.Value = JsonConvert.SerializeObject( chartData.Values.ToList() );
                 pnlChart.Attributes["onClick"] = upnlContent.GetPostBackEventReference( "R" );
 
