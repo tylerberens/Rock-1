@@ -102,13 +102,13 @@
                     <div class="row no-gutters mx-2 d-flex flex-wrap flex-column flex-sm-row">
 
                         <div class="col d-flex flex-grow-1 justify-content-center justify-content-sm-start align-items-center">
-                            <div class="p-2 text-center">
+                            <div class="profile-widget widget-gender p-2 text-center">
                                 <asp:Literal ID="lGender" runat="server" />
                             </div>
-                            <div class="p-2 text-center">
+                            <div class="profile-widget widget-age p-2 text-center">
                                 <asp:Literal ID="lAge" runat="server" />
                             </div>
-                            <div class="p-2 text-center">
+                            <div class="profile-widget widget-grade p-2 text-center">
                                 <asp:Literal ID="lGrade" runat="server" />
                             </div>
                         </div>
