@@ -36,10 +36,19 @@
 
 @body-bg: @gray-100;
 @text-color: @gray-900;
-@text-muted: @gray-700;
+@text-muted: @gray-600;
 
 @adminbar-bg:                 @gray-900;
 @adminbar-text-color:         @gray-200;
+
+
+@font-weight-normal: 400;
+@font-weight-bold: 500;
+@font-weight-bolder: 700;
+
+@headings-font-weight:    700;
+
+@grid-gutter-width:         16px;
 
 // DARK MODE TEST
 
@@ -56,6 +65,10 @@
 // @gray-50: #212529;
 
 /////////
+
+@font-size-h5:            20px;
+@font-size-h6:            @font-size-base; // ~12px
+
 
 @link-color:                  #007acc;                      // The color for all links. #color
 @link-hover-color:            #009ce3;
@@ -83,6 +96,9 @@
 @required-field-color:        #f98080; // Color of the small dot that denotes required fields.
 @control-label-weight: 500;
 
+@label-campus-bg: #E4ECFE;
+@label-campus-color: #473B9F;
+@label-type-bg: #567d8c;
 
 @badge-danger-bg:             #FDE8E7;
 @badge-warning-bg:            #FDF6B2;
@@ -159,7 +175,7 @@
 
 //// Grid Header
 @grid-column-header-bg:             @gray-50; // The background color of the grid header.
-@grid-column-header-text-color:     @gray-500; // The text color of the grid header.
+@grid-column-header-text-color:     @gray-700; // The text color of the grid header.
 @grid-column-header-font-size:      @font-size-small; // The font size of the grid header.
 @grid-column-header-font-weight:    500; // The font weight of the grid header.
 @grid-column-header-border-color:   @grid-border-color; // The border color of the grid header.
@@ -463,7 +479,7 @@
 
 //// Badge Bar
 @persondetails-badge-bg:                @white;
-@persondetails-badge-color:             @gray-500;
+@persondetails-badge-color:             @gray-200;
 @badge-grid-width:                      86px;
 
 //// Family Bar
@@ -486,7 +502,9 @@
 
 
 @font-size-base:              16px;                           // The default text size.
-@font-size-small:             12px;
+@font-size-small:             14px;
+@font-size-sm:                @font-size-small;
+@font-size-xs:                12px;
 @line-height-base:            1.5;
 
 @breadcrumb-bg: transparent;
@@ -523,3 +541,17 @@
 @picker-action-bg:            @gray-50;
 @picker-action-border:        @gray-200;
 @dropdown-border:             @gray-300;
+
+@enable-btn-focus-outline: true;
+// Add Button focus shadow
+.btn-outline-mixin(true) {
+  .button-variant(@color; @background; @border) {
+    &:focus,
+    &:not(:disabled):not(.disabled):active:focus {
+      outline: 0;
+      box-shadow: 0 0 0 @btn-focus-width fade(@border, 50%);
+    }
+  }
+}
+.btn-outline-mixin(false) { }
+.btn-outline-mixin(@enable-btn-focus-outline);

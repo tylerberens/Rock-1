@@ -59,7 +59,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         #region Properties
 
         /// <summary>
-        /// The current campus identitifier.
+        /// The current campus identifier.
         /// </summary>
         public int CurrentCampusId
         {
@@ -255,7 +255,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// Resets control visibily to default values.
+        /// Resets control visibility to default values.
         /// </summary>
         private void ResetControlVisibility()
         {

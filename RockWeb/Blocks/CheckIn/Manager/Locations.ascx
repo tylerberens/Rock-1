@@ -47,14 +47,14 @@
                         <div class="pull-right">
                             <Rock:Toggle ID="tglHeadingRoom" runat="server" OnText="Open" OffText="Close" ButtonSizeCssClass="btn-xs" OnCssClass="btn-success" OffCssClass="btn-danger" OnCheckedChanged="tglRoom_CheckedChanged" />
                         </div>
-                        <asp:Panel ID="pnlThreshold" runat="server" CssClass="pull-right margin-r-md margin-t-sm js-threshold paneleditor">
-                            <span class="paneleditor-label">Threshold:</span>
+                        <asp:Panel ID="pnlThreshold" runat="server" CssClass="location-threshold pull-right d-flex mr-2 js-threshold">
+                            <span class="small align-self-center mr-1">Threshold: </span>
                             <Rock:HiddenFieldWithClass ID="hfThreshold" runat="server" CssClass="js-threshold-hf" />
-                            <asp:Label ID="lThreshold" runat="server" CssClass="js-threshold-view js-threshold-l" />
-                            <a class="btn btn-default btn-xs js-threshold-view js-threshold-btn-edit"><i class="fa fa-edit"></i></a>
-                            <Rock:NumberBox ID="nbThreshold" runat="server" CssClass="input-width-xs js-threshold-edit js-threshold-nb paneleditor-input" NumberType="Integer" style="display:none"></Rock:NumberBox>
-                            <asp:LinkButton id="lbUpdateThreshold" runat="server" CssClass="btn btn-success btn-xs js-threshold-edit js-threshold-btn-save paneleditor-button" OnClick="lbUpdateThreshold_Click" style="display:none"><i class="fa fa-check"></i></asp:LinkButton>
-                            <a class="btn btn-warning btn-xs js-threshold-edit js-threshold-btn-cancel paneleditor-button" style="display:none"><i class="fa fa-ban"></i></a>
+                            <asp:Label ID="lThreshold" runat="server" CssClass="js-threshold-view js-threshold-l small align-self-center mr-2" />
+                            <a class="btn btn-default btn-xs btn-square js-threshold-view js-threshold-btn-edit mr-1"><i class="fa fa-edit"></i></a>
+                            <Rock:NumberBox ID="nbThreshold" runat="server" CssClass="input-xs input-width-xs js-threshold-edit js-threshold-nb mr-1" NumberType="Integer" Style="display: none"></Rock:NumberBox>
+                            <asp:LinkButton ID="lbUpdateThreshold" runat="server" CssClass="btn btn-primary btn-xs btn-square js-threshold-edit js-threshold-btn-save paneleditor-button mr-1" OnClick="lbUpdateThreshold_Click" Style="display: none"><i class="fa fa-check"></i></asp:LinkButton>
+                            <a class="btn btn-default btn-xs btn-square js-threshold-edit js-threshold-btn-cancel paneleditor-button mr-1" style="display: none"><i class="fa fa-ban"></i></a>
                         </asp:Panel>
                     </asp:PlaceHolder>
                 </asp:Panel>
@@ -65,7 +65,7 @@
                             <li id="liNavItem" runat="server" class="list-group-item cursor-pointer">
                                 <div class="content"><%# Eval("Name") %></div>
                                 <div class="pull-right d-flex align-items-center">
-                                    <asp:Label ID="lblCurrentCount" runat="server" CssClass="badge mr-2"/>
+                                    <asp:Label ID="lblCurrentCount" runat="server" CssClass="badge"/>
                                     <Rock:Toggle ID="tglRoom" runat="server" OnText="Open" OffText="Close" ButtonSizeCssClass="btn-xs" OnCssClass="btn-success" OffCssClass="btn-danger" OnCheckedChanged="tglRoom_CheckedChanged"  />
                                     <i class='fa fa-fw fa-chevron-right'></i>
                                 </div>

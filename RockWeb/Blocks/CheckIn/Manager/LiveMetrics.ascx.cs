@@ -425,7 +425,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 var lStatus = e.Item.FindControl( "lStatus" ) as Literal;
                 if ( lStatus != null )
                 {
-                    lStatus.Text = string.Format( "<span class='label label-{0} d-sm-table d-none'>{1}</span>", statusClass, desktopStatus );
+                    lStatus.Text = string.Format( "<span class='badge badge-{0} d-sm-table d-none'>{1}</span>", statusClass, desktopStatus );
                 }
 
 
@@ -1266,7 +1266,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     {
                         lHeadingStatus.Visible = true;
                         bool isOpen = locationItem.IsActive;
-                        lHeadingStatus.Text = string.Format( @"<span class=""label label-{0} mr-2"">{1}</span>", isOpen ? "success" : "danger", isOpen ? "open" : "closed" );
+                        lHeadingStatus.Text = string.Format( @"<span class=""label label-{0}"">{1}</span>", isOpen ? "success" : "danger", isOpen ? "open" : "closed" );
                         pnlThreshold.Visible = locationItem.SoftThreshold.HasValue || locationItem.FirmThreshold.HasValue;
                         hfThreshold.Value = locationItem.SoftThreshold.HasValue ? locationItem.SoftThreshold.Value.ToString() : "";
                         lThreshold.Text = locationItem.SoftThreshold.HasValue ? locationItem.SoftThreshold.Value.ToString( "N0" ) : "none";

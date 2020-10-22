@@ -43,13 +43,9 @@
         <!-- Ajax Error -->
         <div class="alert alert-danger ajax-error no-index" style="display:none"><span class="ajax-error-message"></span></div>
 
-        <div class="row">
-            <Rock:Zone Name="Feature" runat="server" CssClass="col-md-12" />
-        </div>
+        <Rock:Zone Name="Feature" runat="server" />
+        <Rock:Zone Name="Main" runat="server"  />
 
-        <div class="row">
-            <Rock:Zone Name="Main" runat="server" CssClass="col-md-12" />
-        </div>
 
         <div class="row">
             <Rock:Zone Name="Section A" runat="server"  CssClass="col-md-12" />

@@ -16,20 +16,20 @@
 
         <asp:Panel ID="pnlContent" runat="server" CssClass="checkin-roster">
 
-            <div class="page-title-addon d-flex flex-wrap justify-content-between align-items-center">
-                <div>
-                    <Rock:LocationPicker ID="lpLocation" runat="server" AllowedPickerModes="Named" CssClass="picker-lg" OnSelectLocation="lpLocation_SelectLocation" IncludeInactiveNamedLocations="true" />
+            <div class="page-title-inject d-flex flex-wrap justify-content-between align-items-center">
+                <div class="my-2">
+                    <Rock:LocationPicker ID="lpLocation" runat="server" LabelName="Select a Location" AllowedPickerModes="Named" CssClass="picker-lg" OnSelectLocation="lpLocation_SelectLocation" IncludeInactiveNamedLocations="true" />
                 </div>
-                <asp:Panel ID="pnlSubPageNav" runat="server" class="">
+                <asp:Panel ID="pnlSubPageNav" runat="server" CssClass="my-2">
                     <Rock:PageNavButtons ID="pbSubPages" runat="server" IncludeCurrentQueryString="true" />
                 </asp:Panel>
             </div>
 
             <asp:Panel ID="pnlRoster" runat="server" CssClass="panel panel-block">
-                <div class="panel-heading clearfix">
-                    <h1 class="panel-title pull-left">Room Roster</h1>
+                <div class="panel-heading">
+                    <h1 class="panel-title">Room Roster</h1>
                     <div class="pull-right">
-                        <Rock:ButtonGroup ID="bgStatus" runat="server" FormGroupCssClass="toggle-container" SelectedItemClass="btn btn-primary active" UnselectedItemClass="btn btn-default" AutoPostBack="true" OnSelectedIndexChanged="bgStatus_SelectedIndexChanged">
+                        <Rock:ButtonGroup ID="bgStatus" runat="server" FormGroupCssClass="toggle-container" SelectedItemClass="btn btn-info btn-xs" UnselectedItemClass="btn btn-default btn-xs" AutoPostBack="true" OnSelectedIndexChanged="bgStatus_SelectedIndexChanged">
                             <asp:ListItem Text="All" Value="1" />
                             <asp:ListItem Text="Checked-in" Value="2" />
                             <asp:ListItem Text="Present" Value="3" />
@@ -41,18 +41,18 @@
                         <Rock:Grid ID="gAttendees" runat="server" DisplayType="Light" UseFullStylesForLightGrid="true" OnRowDataBound="gAttendees_RowDataBound" OnRowSelected="gAttendees_RowSelected" DataKeyNames="PersonGuid,AttendanceIds">
                             <Columns>
                                 <Rock:RockLiteralField ID="lPhoto" ItemStyle-CssClass="avatar-column" ColumnPriority="TabletSmall" />
-                                <Rock:RockLiteralField ID="lMobileIcon" HeaderStyle-CssClass="d-sm-none" ItemStyle-CssClass="mobile-icon d-table-cell d-sm-none" />
+                                <Rock:RockLiteralField ID="lMobileIcon" HeaderStyle-CssClass="d-table-cell d-sm-none" ItemStyle-CssClass="mobile-icon d-table-cell d-sm-none py-0 align-middle" />
                                 <Rock:RockLiteralField ID="lName" HeaderText="Name" ItemStyle-CssClass="name js-name" />
                                 <Rock:RockLiteralField ID="lBadges" HeaderStyle-CssClass="d-none d-sm-table-cell" ItemStyle-CssClass="badges d-none d-sm-table-cell align-middle" />
                                 <Rock:RockBoundField DataField="Tag" HeaderText="Tag" HeaderStyle-CssClass="d-none d-sm-table-cell" ItemStyle-CssClass="tag d-none d-sm-table-cell align-middle" />
                                 <Rock:RockBoundField DataField="ServiceTimes" HeaderText="Service Times" HeaderStyle-CssClass="d-none d-sm-table-cell" ItemStyle-CssClass="service-times d-none d-sm-table-cell align-middle" />
                                 <Rock:RockLiteralField ID="lMobileTagAndSchedules" HeaderText="Tag & Schedules" HeaderStyle-CssClass="d-sm-none" ItemStyle-CssClass="tags-and-schedules d-table-cell d-sm-none" />
-                                <Rock:RockLiteralField ID="lCheckInTime" HeaderText="Check-in Time" HeaderStyle-HorizontalAlign="Right" ItemStyle-CssClass="check-in-time" ItemStyle-HorizontalAlign="Right" ColumnPriority="TabletSmall" />
-                                <Rock:RockLiteralField ID="lStatusTag"  ItemStyle-CssClass="status-tag d-none d-sm-table-cell align-middle" ItemStyle-HorizontalAlign="Right" ColumnPriority="TabletSmall" />
+                                <Rock:RockLiteralField ID="lCheckInTime" HeaderText="Check-in Time" HeaderStyle-HorizontalAlign="Right" ItemStyle-CssClass="check-in-time align-middle" ItemStyle-HorizontalAlign="Right" ColumnPriority="TabletSmall" />
+                                <Rock:RockLiteralField ID="lStatusTag"  HeaderStyle-CssClass="d-none d-sm-table-cell" ItemStyle-CssClass="status-tag d-none d-sm-table-cell align-middle" ItemStyle-HorizontalAlign="Right" ColumnPriority="TabletSmall" />
 
-                                <Rock:LinkButtonField ID="btnCancel"  ItemStyle-CssClass=""  CssClass="btn btn-default js-cancel-checkin" Text="<i class='fa fa-times'></i>" ToolTip="Cancel" OnClick="btnCancel_Click" />
-                                <Rock:LinkButtonField ID="btnPresent"  ItemStyle-CssClass="" CssClass="btn btn-success" Text="<i class='fa fa-user-check'></i>" ToolTip="Present" OnClick="btnPresent_Click" />
-                                <Rock:LinkButtonField ID="btnCheckOut" ItemStyle-CssClass="" CssClass="btn btn-primary" Text="<i class='fa fa-user-minus'></i>" ToolTip="Check-out" OnClick="btnCheckOut_Click" />
+                                <Rock:LinkButtonField ID="btnCancel"  ItemStyle-CssClass="grid-columnaction"  CssClass="btn btn-danger btn-square js-cancel-checkin" Text="<span class='d-none d-sm-inline'>Cancel</span> <i class='fa fa-times'></i>" OnClick="btnCancel_Click" />
+                                <Rock:LinkButtonField ID="btnPresent"  ItemStyle-CssClass="grid-columnaction" CssClass="btn btn-success btn-square" Text="<span class='d-none d-sm-inline'>Present</span> <i class='fa fa-user-check'></i>" OnClick="btnPresent_Click" />
+                                <Rock:LinkButtonField ID="btnCheckOut" ItemStyle-CssClass="grid-columnaction" CssClass="btn btn-primary btn-square" Text="<span class='d-none d-sm-inline'>Check-out</span> <i class='fa fa-user-minus'></i>" OnClick="btnCheckOut_Click" />
                             </Columns>
                         </Rock:Grid>
                     </div>
