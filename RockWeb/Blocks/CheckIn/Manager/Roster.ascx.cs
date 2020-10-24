@@ -34,7 +34,6 @@ using Rock.Web.UI.Controls;
 namespace RockWeb.Blocks.CheckIn.Manager
 {
     /// <summary>
-    /// Block used to view people currently checked into a classroom, mark a person as 'present' in the classroom, check them out, Etc.
     /// </summary>
     [DisplayName( "Roster" )]
     [Category( "Check-in > Manager" )]
@@ -42,24 +41,34 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
     #region Block Attributes
 
-    [GroupTypeField( "Check-in Type",
-        Key = AttributeKey.CheckInAreaGuid,
-        Description = "The Check-in Area for the rooms to be managed by this Block. This value can also be overridden through the URL query string 'Area' key (e.g. when navigated to from the Check-in Type selection block).",
-        IsRequired = false,
-        GroupTypePurposeValueGuid = Rock.SystemGuid.DefinedValue.GROUPTYPE_PURPOSE_CHECKIN_TEMPLATE,
-        Order = 1 )]
-
-    [LinkedPage( "Person Page",
+    [LinkedPage(
+        "Person Page",
         Key = AttributeKey.PersonPage,
         Description = "The page used to display a selected person's details.",
         IsRequired = true,
+        Order = 1 )]
+
+    [BooleanField(
+        "Show All Areas",
+        Key = AttributeKey.ShowAllAreas,
+        Description = "If enabled, all Check-in Areas will be shown. This setting will be ignored if a specific area is specified in the URL.",
+        DefaultBooleanValue = true,
         Order = 2 )]
 
-    [LinkedPage( "Area Select Page",
+    [LinkedPage(
+        "Area Select Page",
         Key = AttributeKey.AreaSelectPage,
-        Description = "The page to redirect user to if a Check-in Area has not been configured or selected.",
-        IsRequired = true,
+        Description = "If Show All Areas is not enabled, the page to redirect user to if a Check-in Area has not been configured or selected.",
+        IsRequired = false,
         Order = 3 )]
+
+    [GroupTypeField(
+        "Check-in Area",
+        Key = AttributeKey.CheckInAreaGuid,
+        Description = "If Show All Areas is not enabled, the Check-in Area for the rooms to be managed by this Block.",
+        IsRequired = false,
+        GroupTypePurposeValueGuid = Rock.SystemGuid.DefinedValue.GROUPTYPE_PURPOSE_CHECKIN_TEMPLATE,
+        Order = 4 )]
 
     #endregion Block Attributes
 
@@ -72,14 +81,15 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// </summary>
         private class AttributeKey
         {
+            public const string PersonPage = "PersonPage";
+            public const string ShowAllAreas = "ShowAllAreas";
+            public const string AreaSelectPage = "AreaSelectPage";
+
             /// <summary>
             /// Gets or sets the current 'Check-in Configuration' Guid (which is a <see cref="Rock.Model.GroupType" /> Guid).
             /// For example "Weekly Service Check-in".
             /// </summary>
             public const string CheckInAreaGuid = "CheckInAreaGuid";
-
-            public const string PersonPage = "PersonPage";
-            public const string AreaSelectPage = "AreaSelectPage";
         }
 
         #endregion Attribute Keys
@@ -109,9 +119,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             public const string CurrentCampusId = "CurrentCampusId";
             public const string CurrentLocationId = "CurrentLocationId";
-            public const string CheckInAreaGuid = "CheckInAreaGuid";
-            public const string AllowCheckout = "AllowCheckout";
-            public const string EnablePresence = "EnablePresence";
             public const string CurrentStatusFilter = "CurrentStatusFilter";
         }
 
@@ -126,7 +133,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             public const string GroupType_AllowCheckout = "core_checkin_AllowCheckout";
             public const string GroupType_EnablePresence = "core_checkin_EnablePresence";
-
             public const string Person_Allergy = "Allergy";
             public const string Person_LegalNotes = "LegalNotes";
         }
@@ -168,52 +174,56 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// Gets or sets the current 'Check-in Configuration' Guid (which is a <see cref="Rock.Model.GroupType" /> Guid).
+        /// If <seealso cref="AttributeKey.ShowAllAreas"/> is set to false, the 'Check-in Configuration' (which is a <see cref="Rock.Model.GroupType" /> Guid) to limit to
         /// For example "Weekly Service Check-in".
         /// </summary>
-        public Guid? CurrentCheckinAreaGuid
+        public GroupTypeCache GetCheckinAreaFilter()
         {
-            get
+            // If a Check-in Area query string parameter is defined, it takes precedence.
+            Guid? checkinManagerPageParameterCheckinAreaGuid = PageParameter( PageParameterKey.Area ).AsGuidOrNull();
+            if ( checkinManagerPageParameterCheckinAreaGuid.HasValue )
             {
-                return ViewState[ViewStateKey.CheckInAreaGuid] as Guid?;
+                var checkinManagerPageParameterCheckinArea = GroupTypeCache.Get( checkinManagerPageParameterCheckinAreaGuid.Value );
+
+                if ( checkinManagerPageParameterCheckinArea != null )
+                {
+                    return checkinManagerPageParameterCheckinArea;
+                }
             }
 
-            set
+            // if ShowAllAreas is enabled, we won't filter by Check-in Area (unless there was a page parameter)
+            if ( this.GetAttributeValue( AttributeKey.ShowAllAreas ).AsBoolean() )
             {
-                ViewState[ViewStateKey.CheckInAreaGuid] = value;
-            }
-        }
-
-        /// <summary>
-        /// Whether to allow checkout.
-        /// </summary>
-        public bool AllowCheckout
-        {
-            get
-            {
-                return ViewState[ViewStateKey.AllowCheckout] as bool? ?? false;
+                return null;
             }
 
-            set
+            // we ShowAllAreas is false, get the area filter from the cookie
+            var checkinManagerCheckinAreaGuidCookie = this.Page.Request.Cookies[CheckInCookieKey.CheckinManagerCheckinAreaGuid];
+            if ( checkinManagerCheckinAreaGuidCookie != null )
             {
-                ViewState[ViewStateKey.AllowCheckout] = value;
+                var checkinManagerCookieCheckinAreaGuid = checkinManagerCheckinAreaGuidCookie.Value.AsGuidOrNull();
+                if ( checkinManagerCookieCheckinAreaGuid.HasValue )
+                {
+                    var checkinManagerCookieCheckinArea = GroupTypeCache.Get( checkinManagerCookieCheckinAreaGuid.Value );
+                    if ( checkinManagerCookieCheckinArea != null )
+                    {
+                        return checkinManagerCookieCheckinArea;
+                    }
+                }
             }
-        }
 
-        /// <summary>
-        /// Whether to enable presence.
-        /// </summary>
-        public bool EnablePresence
-        {
-            get
+            // Next, check the Block AttributeValue.
+            var checkinManagerBlockAttributeCheckinAreaGuid = this.GetAttributeValue( AttributeKey.CheckInAreaGuid ).AsGuidOrNull();
+            if ( checkinManagerBlockAttributeCheckinAreaGuid.HasValue )
             {
-                return ViewState[ViewStateKey.EnablePresence] as bool? ?? false;
+                var checkinManagerBlockAttributeCheckinArea = GroupTypeCache.Get( checkinManagerBlockAttributeCheckinAreaGuid.Value );
+                if ( checkinManagerBlockAttributeCheckinArea != null )
+                {
+                    return checkinManagerBlockAttributeCheckinArea;
+                }
             }
 
-            set
-            {
-                ViewState[ViewStateKey.EnablePresence] = value;
-            }
+            return null;
         }
 
         /// <summary>
@@ -271,12 +281,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void Block_BlockUpdated( object sender, EventArgs e )
         {
-            // Wipe out these values to trigger reloading of data.
-            CurrentCheckinAreaGuid = null;
-            CurrentLocationId = 0;
-            CurrentStatusFilter = StatusFilter.Unknown;
-
-            BuildRoster();
+            NavigateToCurrentPage();
         }
 
         /// <summary>
@@ -319,9 +324,23 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             ResetControlVisibility();
 
-            if ( !SetArea() )
+            // if ShowAllAreas is false, the CheckinAreaFilter is required
+            if ( this.GetAttributeValue( AttributeKey.ShowAllAreas ).AsBoolean() == false )
             {
-                return;
+                var checkinAreaFilter = GetCheckinAreaFilter();
+                if ( checkinAreaFilter == null )
+                {
+                    if ( NavigateToLinkedPage( AttributeKey.AreaSelectPage ) )
+                    {
+                        // we are navigating to get the Area Filter, which will get the Area cookie
+                        return;
+                    }
+                    else
+                    {
+                        ShowWarningMessage( "The 'Area Select Page' Block Attribute must be defined.", true );
+                        return;
+                    }
+                }
             }
 
             CampusCache campus = GetCampusFromContext();
@@ -439,12 +458,54 @@ namespace RockWeb.Blocks.CheckIn.Manager
             lMobileTagAndSchedules.Text = attendee.GetMobileTagAndSchedulesHtml();
 
             // Desktop only.
-            var lCheckInTime = e.Row.FindControl( "lCheckInTime" ) as Literal;
-            lCheckInTime.Text = RockFilters.HumanizeTimeSpan( attendee.CheckInTime, DateTime.Now, unit: "Second" );
+            // Show how it has been since they have checked in (and not yet marked present)
+            var lElapsedCheckInTime = e.Row.FindControl( "lElapsedCheckInTime" ) as Literal;
+            lElapsedCheckInTime.Text = RockFilters.HumanizeTimeSpan( attendee.CheckInTime, DateTime.Now, unit: "Second" );
 
             // Desktop only.
             var lStatusTag = e.Row.FindControl( "lStatusTag" ) as Literal;
             lStatusTag.Text = attendee.GetStatusIconHtmlTag( false );
+            lElapsedCheckInTime.Visible = CurrentStatusFilter == StatusFilter.CheckedIn;
+        }
+
+        /// <summary>
+        /// Handles the DataBound event of the btnCancel control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
+        protected void btnCancel_DataBound( object sender, RowEventArgs e )
+        {
+            var rosterAttendee = e.Row.DataItem as RosterAttendee;
+            var btnCancel = sender as LinkButton;
+
+            // Cancel button will be visible in two cases
+            // 1) They are on the CheckedIn tab (which would only show attendees that checked-in (but not yet present) in "Enable Presence" rooms
+            // 2) They are on the Present Tab in a room that doesn't have Presence Enable
+            btnCancel.Visible = ( CurrentStatusFilter == StatusFilter.CheckedIn ) || ( rosterAttendee.RoomHasEnablePresence == false && CurrentStatusFilter == StatusFilter.Present );
+        }
+
+        /// <summary>
+        /// Handles the DataBound event of the btnCheckOut control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
+        protected void btnCheckOut_DataBound( object sender, RowEventArgs e )
+        {
+            var rosterAttendee = e.Row.DataItem as RosterAttendee;
+            var btnCheckoutLinkButton = sender as LinkButton;
+            btnCheckoutLinkButton.Visible = rosterAttendee.RoomHasAllowCheckout;
+        }
+
+        /// <summary>
+        /// Handles the DataBound event of the btnPresent control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
+        protected void btnPresent_DataBound( object sender, RowEventArgs e )
+        {
+            var rosterAttendee = e.Row.DataItem as RosterAttendee;
+            var btnPresentLinkButton = sender as LinkButton;
+            btnPresentLinkButton.Visible = rosterAttendee.RoomHasEnablePresence;
         }
 
         /// <summary>
@@ -483,8 +544,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             using ( var rockContext = new RockContext() )
             {
-                RemoveDisabledStatusFilters();
-
                 attendees = GetAttendees( rockContext );
             }
 
@@ -514,28 +573,23 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 currentDateTime = RockDateTime.Now;
             }
 
-            List<int> checkinAreaGroupTypeIds = new List<int>();
+            // Get all Attendance records for the current day and location
+            var attendanceQuery = new AttendanceService( rockContext ).Queryable().Where( a =>
+                a.StartDateTime >= startDateTime
+                && a.StartDateTime <= currentDateTime
+                && a.Occurrence.GroupId.HasValue
+                && a.PersonAliasId.HasValue
+                && a.Occurrence.LocationId == CurrentLocationId
+                && a.Occurrence.ScheduleId.HasValue );
 
-            if ( CurrentCheckinAreaGuid.HasValue )
+            var checkinAreaFilter = this.GetCheckinAreaFilter();
+
+            if ( checkinAreaFilter != null )
             {
-                var checkinAreaGroupTypeId = GroupTypeCache.GetId( this.CurrentCheckinAreaGuid.Value );
-                if ( checkinAreaGroupTypeId != null )
-                {
-                    checkinAreaGroupTypeIds = new GroupTypeService( new RockContext() ).GetCheckinAreaDescendants( checkinAreaGroupTypeId.Value ).Select( a => a.Id ).ToList();
-                }
+                // if there is a checkin area filter, limit to groups within the selected check-in area
+                var checkinAreaGroupTypeIds = new GroupTypeService( new RockContext() ).GetCheckinAreaDescendants( checkinAreaFilter.Id ).Select( a => a.Id ).ToList();
+                attendanceQuery = attendanceQuery.Where( a => checkinAreaGroupTypeIds.Contains( a.Occurrence.Group.GroupTypeId ) );
             }
-
-            // Get all Attendance records for the current day and location, limited by groups within the selected check-in area
-            var attendanceQuery = new AttendanceService( rockContext )
-                .Queryable( "AttendanceCode,PersonAlias.Person,Occurrence.Schedule" )
-                .AsNoTracking()
-                .Where( a => a.StartDateTime >= startDateTime &&
-                             a.StartDateTime <= currentDateTime &&
-                             a.Occurrence.GroupId.HasValue &&
-                             checkinAreaGroupTypeIds.Contains( a.Occurrence.Group.GroupTypeId ) &&
-                             a.PersonAliasId.HasValue &&
-                             a.Occurrence.LocationId == CurrentLocationId &&
-                             a.Occurrence.ScheduleId.HasValue );
 
             /*
                 If StatusFilter == All, no further filtering is needed.
@@ -543,38 +597,62 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 If StatusFilter == Present, only retrieve records that have a PresentDateTime value but don't have a EndDateTime value.
             */
 
+            var unfilteredAttendanceCheckinAreas = attendanceQuery.Select( a => a.Occurrence.Group.GroupTypeId ).ToList().Select( a => GroupTypeCache.Get( a ) ).ToArray();
+
+            RemoveUnneededStatusFilters( unfilteredAttendanceCheckinAreas );
+
             if ( CurrentStatusFilter == StatusFilter.CheckedIn )
             {
-                attendanceQuery = attendanceQuery
-                    .Where( a => !a.PresentDateTime.HasValue &&
-                                 !a.EndDateTime.HasValue );
+                attendanceQuery = attendanceQuery.Where( a => !a.PresentDateTime.HasValue && !a.EndDateTime.HasValue );
             }
             else if ( CurrentStatusFilter == StatusFilter.Present )
             {
-                attendanceQuery = attendanceQuery
-                    .Where( a => a.PresentDateTime.HasValue &&
-                                 !a.EndDateTime.HasValue );
+                attendanceQuery = attendanceQuery.Where( a => a.PresentDateTime.HasValue && !a.EndDateTime.HasValue );
             }
 
-            List<Attendance> attendances = attendanceQuery.AsNoTracking().ToList();
+            var attendanceList = attendanceQuery
+                .Include( a => a.AttendanceCode )
+                .Include( a => a.PersonAlias.Person )
+                .Include( a => a.Occurrence.Schedule )
+                .Include( a => a.Occurrence.Group )
+                .AsNoTracking()
+                .ToList();
 
-            /*
-                If AllowCheckout is false, remove all Attendees whose schedules are not currently active. Per the 'WasSchedule...ActiveForCheckOut()'
-                method below: "Check-out can happen while check-in is active or until the event ends (start time + duration)." This will help to keep
-                the list of 'Present' attendees cleaned up and accurate, based on the room schedules, since the volunteers have no way to manually mark
-                an Attendee as 'Checked-out'.
+            var groupTypeIds = attendanceList.Select( a => a.Occurrence.Group.GroupTypeId ).Distinct().ToList();
+            var groupTypes = groupTypeIds.Select( a => GroupTypeCache.Get( a ) );
+            var groupTypeIdsWithAllowCheckout = groupTypes
+                .Where( gt => gt.GetAttributeValue( EntityAttributeValueKey.GroupType_AllowCheckout ).AsBoolean() )
+                .Where( a => a != null )
+                .Select( a => a.Id )
+                .Distinct();
 
-                If, on the other hand, AllowCheckout is true, it will be the volunteers' responsibility to click the [Check-out] button when an
-                Attendee leaves the room, in order to keep the list of 'Present' Attendees in order. This will also allow the volunteers to continue
-                'Checking-out' Attendees in the case that the parents are running late in picking them up.
-            */
-            if ( !AllowCheckout )
+            attendanceList = attendanceList.Where( a =>
             {
-                attendances = attendances.Where( a => a.Occurrence.Schedule.WasScheduleOrCheckInActiveForCheckOut( currentDateTime ) ).ToList();
-            }
+                var allowCheckout = groupTypeIdsWithAllowCheckout.Contains( a.Occurrence.Group.GroupTypeId );
+                if ( !allowCheckout )
+                {
+                    /* 
+                        If AllowCheckout is false, remove all Attendees whose schedules are not currently active. Per the 'WasSchedule...ActiveForCheckOut()'
+                        method below: "Check-out can happen while check-in is active or until the event ends (start time + duration)." This will help to keep
+                        the list of 'Present' attendees cleaned up and accurate, based on the room schedules, since the volunteers have no way to manually mark
+                        an Attendee as 'Checked-out'.
 
-            attendances = attendances.Where( a => a.PersonAlias != null && a.PersonAlias.Person != null ).ToList();
-            var attendees = RosterAttendee.GetFromAttendanceList( attendances );
+                        If, on the other hand, AllowCheckout is true, it will be the volunteers' responsibility to click the [Check-out] button when an
+                        Attendee leaves the room, in order to keep the list of 'Present' Attendees in order. This will also allow the volunteers to continue
+                        'Checking-out' Attendees in the case that the parents are running late in picking them up.
+                    */
+
+                    return a.Occurrence.Schedule.WasScheduleOrCheckInActiveForCheckOut( currentDateTime );
+                }
+                else
+                {
+                    return true;
+                }
+            } ).ToList();
+
+            attendanceList = attendanceList.Where( a => a.PersonAlias != null && a.PersonAlias.Person != null ).ToList();
+            var attendees = RosterAttendee.GetFromAttendanceList( attendanceList );
+
             return attendees;
         }
 
@@ -592,7 +670,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             // the attendance grid's DataKeyNames="PersonGuid,AttendanceIds". So each row is a PersonGuid, with a list of attendanceIds (usually one attendance, but could be more)
             var personGuid = ( Guid ) e.RowKeyValues[0];
             var person = new PersonService( new RockContext() ).Get( personGuid );
-            var attendanceIds = e.RowKeyValues[1] as List<int>;
+            var attendanceIds = GetRowAttendanceIds( e );
             if ( !attendanceIds.Any() )
             {
                 return;
@@ -617,6 +695,13 @@ namespace RockWeb.Blocks.CheckIn.Manager
             ShowAttendees();
         }
 
+        private int[] GetRowAttendanceIds( RowEventArgs rowEventArgs )
+        {
+            // the attendance grid's DataKeyNames="PersonGuid,AttendanceIds". So each row is a PersonGuid, with a list of attendanceIds (usually one attendance, but could be more)
+            var attendanceIds = rowEventArgs.RowKeyValues[1] as int[];
+            return attendanceIds;
+        }
+
         /// <summary>
         /// Handles the Click event of the btnPresent control.
         /// </summary>
@@ -624,8 +709,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
         protected void btnPresent_Click( object sender, RowEventArgs e )
         {
-            // the attendance grid's DataKeyNames="PersonGuid,AttendanceIds". So each row is a PersonGuid, with a list of attendanceIds (usually one attendance, but could be more)
-            var attendanceIds = e.RowKeyValues[1] as List<int>;
+            var attendanceIds = GetRowAttendanceIds( e );
             if ( !attendanceIds.Any() )
             {
                 return;
@@ -657,7 +741,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         protected void btnCheckOut_Click( object sender, RowEventArgs e )
         {
             // the attendance grid's DataKeyNames="PersonGuid,AttendanceIds". So each row is a PersonGuid, with a list of attendanceIds (usually one attendance, but could be more)
-            var attendanceIds = e.RowKeyValues[1] as List<int>;
+            var attendanceIds = GetRowAttendanceIds( e );
             if ( !attendanceIds.Any() )
             {
                 return;
@@ -694,70 +778,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
             lpLocation.Visible = true;
             pnlSubPageNav.Visible = true;
             pnlRoster.Visible = true;
-        }
-
-        /// <summary>
-        /// Sets the area.
-        /// </summary>
-        private bool SetArea()
-        {
-            if ( CurrentCheckinAreaGuid.HasValue )
-            {
-                // We have already set the Area-related properties on initial page load and placed them in ViewState.
-                return true;
-            }
-
-            // If a query string parameter is defined, it takes precedence.
-            Guid? checkinManagerCheckinAreaGuid = PageParameter( PageParameterKey.Area ).AsGuidOrNull();
-
-            if ( !checkinManagerCheckinAreaGuid.HasValue )
-            {
-                // Next check if there is an Area cookie (this is usually what would happen)
-                var checkinManagerCheckinAreaGuidCookie = this.Page.Request.Cookies[CheckInCookieKey.CheckinManagerCheckinAreaGuid];
-                if ( checkinManagerCheckinAreaGuidCookie != null )
-                {
-                    checkinManagerCheckinAreaGuid = checkinManagerCheckinAreaGuidCookie.Value.AsGuidOrNull();
-                }
-            }
-
-            if ( !checkinManagerCheckinAreaGuid.HasValue )
-            {
-                // Next, check the Block AttributeValue.
-                checkinManagerCheckinAreaGuid = this.GetAttributeValue( AttributeKey.CheckInAreaGuid ).AsGuidOrNull();
-            }
-
-            if ( !checkinManagerCheckinAreaGuid.HasValue )
-            {
-                // Finally, fall back to the Area select page.
-                if ( !NavigateToLinkedPage( AttributeKey.AreaSelectPage ) )
-                {
-                    ShowWarningMessage( "The 'Area Select Page' Block Attribute must be defined.", true );
-                }
-
-                return false;
-            }
-
-            // Save the Area Guid in ViewState.
-            CurrentCheckinAreaGuid = checkinManagerCheckinAreaGuid;
-
-            // Get the GroupType represented by the Check-in Area Guid Block Attribute so we can set the related runtime properties.
-            using ( var rockContext = new RockContext() )
-            {
-                GroupType area = new GroupTypeService( rockContext ).Get( checkinManagerCheckinAreaGuid.Value );
-                if ( area == null )
-                {
-                    ShowWarningMessage( "The specified Check-in Area is not valid.", true );
-                    return false;
-                }
-
-                area.LoadAttributes( rockContext );
-
-                // Save the following Area-related values in ViewState.
-                EnablePresence = area.GetAttributeValue( EntityAttributeValueKey.GroupType_EnablePresence ).AsBoolean();
-                AllowCheckout = area.GetAttributeValue( EntityAttributeValueKey.GroupType_AllowCheckout ).AsBoolean();
-            }
-
-            return true;
         }
 
         /// <summary>
@@ -863,19 +883,26 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// Removes the disabled status filters.
+        /// Removes the unneeded status filters based on the whether any of the rooms have EnablePresence and/or AllowCheckout
         /// </summary>
-        private void RemoveDisabledStatusFilters()
+        /// <param name="attendees">The attendees.</param>
+        private void RemoveUnneededStatusFilters( GroupTypeCache[] checkinAreas )
         {
             // Reset the visibility, just in case the control was previously hidden.
             bgStatus.Visible = true;
 
-            if ( !EnablePresence )
+            var checkinConfigurationTypes = checkinAreas.Select( a => a.GetCheckInConfigurationType() );
+
+            var showPresenceControls = checkinConfigurationTypes.Any( a => a != null && a.GetAttributeValue( EntityAttributeValueKey.GroupType_EnablePresence ).AsBoolean() );
+            var showAllowCheckoutControls = checkinConfigurationTypes.Any( a => a != null && a.GetAttributeValue( EntityAttributeValueKey.GroupType_AllowCheckout ).AsBoolean() );
+
+            if ( !showPresenceControls )
             {
                 // When EnablePresence is false for a given Check-in Area, the [Attendance].[PresentDateTime] value will have already been set upon check-in.
-                if ( !AllowCheckout )
+                if ( !showAllowCheckoutControls )
                 {
-                    // When both EnablePresence and AllowCheckout are false, it doesn't make sense to show the status filters at all.
+                    // If there aren't any attendees that are in rooms that have EnabledPresence or AllowCheckout,
+                    // it doesn't make sense to show the status filters at all.
                     bgStatus.Visible = false;
                     CurrentStatusFilter = StatusFilter.Present;
 
@@ -898,82 +925,40 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// Toggles the column visibility within the gAttendees grid.
+        /// Toggles the column visibility within the gAttendees grid based on the current filter
         /// </summary>
         private void ToggleColumnVisibility()
         {
             // StatusFilter.All:
-            var mobileIcon = gAttendees.ColumnsOfType<RockLiteralField>().First( c => c.ID == "lMobileIcon" );
-            var serviceTimes = gAttendees.ColumnsOfType<RockBoundField>().First( c => c.DataField == "ServiceTimes" );
-            var statusTag = gAttendees.ColumnsOfType<RockLiteralField>().First( c => c.ID == "lStatusTag" );
-
-            // The Cancel button is Visible in two different cases
-            //  1) When Presence is not enabled (and they are checked in)
-            //  2) When Presence is enabled, and they are not marked present yet
-            var btnCancel = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnCancel" );
+            var mobileIconField = gAttendees.ColumnsOfType<RockLiteralField>().First( c => c.ID == "lMobileIcon" );
+            var serviceTimesField = gAttendees.ColumnsOfType<RockBoundField>().First( c => c.DataField == "ServiceTimes" );
+            var statusTagField = gAttendees.ColumnsOfType<RockLiteralField>().First( c => c.ID == "lStatusTag" );
+            var btnCancelField = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnCancel" );
 
             // StatusFilter.Checked-in:
-            var lCheckInTime = gAttendees.ColumnsOfType<RockLiteralField>().First( c => c.ID == "lCheckInTime" );
-            var btnPresent = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnPresent" );
+            var lElapsedCheckInTimeField = gAttendees.ColumnsOfType<RockLiteralField>().First( c => c.ID == "lElapsedCheckInTime" );
+            var btnPresentField = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnPresent" );
 
             // StatusFilter.Present:
-            var btnCheckOut = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnCheckOut" );
+            var btnCheckOutField = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnCheckOut" );
 
-            switch ( CurrentStatusFilter )
-            {
-                case StatusFilter.All:
-                    mobileIcon.Visible = true;
-                    serviceTimes.Visible = true;
-                    statusTag.Visible = true;
+            mobileIconField.Visible = CurrentStatusFilter == StatusFilter.All;
+            serviceTimesField.Visible = CurrentStatusFilter == StatusFilter.All || CurrentStatusFilter == StatusFilter.Present;
+            statusTagField.Visible = CurrentStatusFilter == StatusFilter.All;
 
-                    lCheckInTime.Visible = false;
+            lElapsedCheckInTimeField.Visible = CurrentStatusFilter == StatusFilter.CheckedIn;
 
-                    // only show these action buttons if they are on the CheckedIn or Present Tabs
-                    btnCancel.Visible = false;
-                    btnPresent.Visible = false;
-                    btnCheckOut.Visible = false;
+            // only show the CancelField Column if they are on the CheckedIn or Present tab
+            // The actual button's visibility will be determined per row in the btnCancel_OnDatabound event
+            btnCancelField.Visible = CurrentStatusFilter == StatusFilter.CheckedIn || CurrentStatusFilter == StatusFilter.Present;
 
-                    break;
-                case StatusFilter.CheckedIn:
-                    mobileIcon.Visible = false;
-                    serviceTimes.Visible = false;
-                    statusTag.Visible = false;
+            // only show the PresentField Column if they are on the CheckedIn tab
+            // The actual button's visibility will be determined per row in the btnPresent_OnDatabound event
+            btnPresentField.Visible = CurrentStatusFilter == StatusFilter.CheckedIn;
 
-                    lCheckInTime.Visible = true;
-
-                    // We are on the CheckedIn Tab (which is people that haven't been marked present yet)
-                    // so show Cancel and Present buttons
-                    btnCancel.Visible = true;
-                    btnPresent.Visible = true;
-
-                    // since that haven't been marked Present yet, they shouldn't have the option to check out (to be marked as not present)
-                    btnCheckOut.Visible = false;
-
-                    break;
-                case StatusFilter.Present:
-                    mobileIcon.Visible = false;
-                    serviceTimes.Visible = true;
-                    statusTag.Visible = false;
-
-                    lCheckInTime.Visible = false;
-                    if ( EnablePresence )
-                    {
-                        // if Presence is enabled, they were marked as present by a human, so it don't show the Cancel option (since the attendee is physically there) 
-                        btnCancel.Visible = false;
-                    }
-                    else
-                    {
-                        // if Presence is not enabled, the attendance records can be canceled (deleted) regardless 
-                        btnCancel.Visible = true;
-                    }
-
-                    // don't show the Present button while on the Present tab, because they have already been marked as present
-                    btnPresent.Visible = false;
-
-                    btnCheckOut.Visible = AllowCheckout;
-
-                    break;
-            }
+            // only show these action button's Column if they are on the Present Tab
+            // The actual button's visibility will be determined per row in the btnCheckout_OnDatabound event
+            btnCheckOutField.Visible = CurrentStatusFilter == StatusFilter.Present;
         }
 
         /// <summary>

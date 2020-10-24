@@ -47,12 +47,12 @@
                                 <Rock:RockBoundField DataField="Tag" HeaderText="Tag" HeaderStyle-CssClass="d-none d-sm-table-cell" ItemStyle-CssClass="tag d-none d-sm-table-cell align-middle" />
                                 <Rock:RockBoundField DataField="ServiceTimes" HeaderText="Service Times" HeaderStyle-CssClass="d-none d-sm-table-cell" ItemStyle-CssClass="service-times d-none d-sm-table-cell align-middle" />
                                 <Rock:RockLiteralField ID="lMobileTagAndSchedules" HeaderText="Tag & Schedules" HeaderStyle-CssClass="d-sm-none" ItemStyle-CssClass="tags-and-schedules d-table-cell d-sm-none" />
-                                <Rock:RockLiteralField ID="lCheckInTime" HeaderText="Check-in Time" HeaderStyle-HorizontalAlign="Right" ItemStyle-CssClass="check-in-time align-middle" ItemStyle-HorizontalAlign="Right" ColumnPriority="TabletSmall" />
+                                <Rock:RockLiteralField ID="lElapsedCheckInTime" HeaderText="Check-in Time" HeaderStyle-HorizontalAlign="Right" ItemStyle-CssClass="check-in-time align-middle" ItemStyle-HorizontalAlign="Right" ColumnPriority="TabletSmall" />
                                 <Rock:RockLiteralField ID="lStatusTag"  HeaderStyle-CssClass="d-none d-sm-table-cell" ItemStyle-CssClass="status-tag d-none d-sm-table-cell align-middle" ItemStyle-HorizontalAlign="Right" ColumnPriority="TabletSmall" />
 
-                                <Rock:LinkButtonField ID="btnCancel"  ItemStyle-CssClass="grid-columnaction"  CssClass="btn btn-danger btn-square js-cancel-checkin" Text="<span class='d-none d-sm-inline'>Cancel</span> <i class='fa fa-times'></i>" OnClick="btnCancel_Click" />
-                                <Rock:LinkButtonField ID="btnPresent"  ItemStyle-CssClass="grid-columnaction" CssClass="btn btn-success btn-square" Text="<span class='d-none d-sm-inline'>Present</span> <i class='fa fa-user-check'></i>" OnClick="btnPresent_Click" />
-                                <Rock:LinkButtonField ID="btnCheckOut" ItemStyle-CssClass="grid-columnaction" CssClass="btn btn-primary btn-square" Text="<span class='d-none d-sm-inline'>Check-out</span> <i class='fa fa-user-minus'></i>" OnClick="btnCheckOut_Click" />
+                                <Rock:LinkButtonField ID="btnCancel"  ItemStyle-CssClass="grid-columnaction"  CssClass="btn btn-danger btn-square js-cancel-checkin" Text="<span class='d-none d-sm-inline'>Cancel</span> <i class='fa fa-times'></i>" OnClick="btnCancel_Click" OnDataBound="btnCancel_DataBound" />
+                                <Rock:LinkButtonField ID="btnPresent"  ItemStyle-CssClass="grid-columnaction" CssClass="btn btn-success btn-square" Text="<span class='d-none d-sm-inline'>Present</span> <i class='fa fa-user-check'></i>" OnClick="btnPresent_Click" OnDataBound="btnPresent_DataBound" />
+                                <Rock:LinkButtonField ID="btnCheckOut" ItemStyle-CssClass="grid-columnaction" CssClass="btn btn-primary btn-square" Text="<span class='d-none d-sm-inline'>Check-out</span> <i class='fa fa-user-minus'></i>" OnClick="btnCheckOut_Click" OnDataBound="btnCheckOut_DataBound" />
                             </Columns>
                         </Rock:Grid>
                     </div>

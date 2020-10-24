@@ -21,6 +21,7 @@ using System.Linq;
 using System.Text;
 
 using Rock.Model;
+using Rock.Web.Cache;
 
 namespace Rock.CheckIn
 {
@@ -230,6 +231,22 @@ namespace Rock.CheckIn
         public RosterAttendeeStatus Status { get; private set; }
 
         /// <summary>
+        /// Gets a value indicating whether this attendee's room has Enable Presence;
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [room has enable presence]; otherwise, <c>false</c>.
+        /// </value>
+        public bool RoomHasEnablePresence { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating whether this attendee's room has Allow Checkout
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [room has allow checkout]; otherwise, <c>false</c>.
+        /// </value>
+        public bool RoomHasAllowCheckout { get; private set; }
+
+        /// <summary>
         /// Gets the status string.
         /// </summary>
         /// <value>
@@ -395,7 +412,7 @@ namespace Rock.CheckIn
 
             // Status: if this Attendee has multiple AttendanceOccurrences, the highest AttendeeStatus value among them wins.
             var latestAttendance = this.Attendances.OrderByDescending( a => a.StartDateTime ).First();
-            
+
             if ( latestAttendance.EndDateTime.HasValue )
             {
                 this.Status = RosterAttendeeStatus.CheckedOut;
@@ -439,6 +456,12 @@ namespace Rock.CheckIn
 
         #region Static methods
 
+        private class EntityAttributeValueKey
+        {
+            public const string GroupType_AllowCheckout = "core_checkin_AllowCheckout";
+            public const string GroupType_EnablePresence = "core_checkin_EnablePresence";
+        }
+
         /// <summary>
         /// Returns a list of <see cref="RosterAttendee"/> from the attendance list
         /// </summary>
@@ -446,6 +469,29 @@ namespace Rock.CheckIn
         /// <returns></returns>
         public static IList<RosterAttendee> GetFromAttendanceList( IList<Attendance> attendanceList )
         {
+            var groupTypeIds = attendanceList.Select( a => a.Occurrence.Group.GroupTypeId ).Distinct();
+            var groupTypes = groupTypeIds.Select( a => GroupTypeCache.Get( a ) ).Where( a => a != null );
+
+            var groupTypeIdsWithAllowCheckout = groupTypes
+                .Where( gt =>
+                {
+                    var checkinConfigurationType = gt.GetCheckInConfigurationType();
+                    var allowCheckout = checkinConfigurationType?.GetAttributeValue( EntityAttributeValueKey.GroupType_AllowCheckout ).AsBoolean() ?? false;
+                    return allowCheckout;
+                } )
+                .Select( a => a.Id )
+                .Distinct();
+
+            var groupTypeIdsWithEnablePresence = groupTypes
+                .Where( gt =>
+                {
+                    var checkinConfigurationType = gt.GetCheckInConfigurationType();
+                    var enablePresence = checkinConfigurationType?.GetAttributeValue( EntityAttributeValueKey.GroupType_EnablePresence ).AsBoolean() ?? false;
+                    return enablePresence;
+                } )
+                .Select( a => a.Id )
+                .Distinct();
+
             var attendees = new List<RosterAttendee>();
             foreach ( var attendance in attendanceList )
             {
@@ -458,6 +504,9 @@ namespace Rock.CheckIn
                     attendee = new RosterAttendee( person );
                     attendees.Add( attendee );
                 }
+
+                attendee.RoomHasAllowCheckout = groupTypeIdsWithAllowCheckout.Contains( attendance.Occurrence.Group.GroupTypeId );
+                attendee.RoomHasEnablePresence = groupTypeIdsWithEnablePresence.Contains( attendance.Occurrence.Group.GroupTypeId );
 
                 // Add the attendance-specific property values.
                 attendee.SetAttendanceInfo( attendance );
