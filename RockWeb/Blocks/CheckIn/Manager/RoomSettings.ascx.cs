@@ -15,6 +15,7 @@
 // </copyright>
 //
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 
@@ -141,11 +142,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
             Location location = lpLocation.Location;
             if ( location != null )
             {
-                CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( this.CurrentCampusId, location.Id );
+                SetSelectedLocation( location.Id );
             }
             else
             {
-                CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( this.CurrentCampusId, null );
+                SetSelectedLocation( 0 );
             }
         }
 
@@ -228,10 +229,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     }
                 }
 
-                SetLocationControl( locationId );
+                SetSelectedLocation( locationId );
             }
 
-            InitializeSubPageNav();
+            InitializeSubPageNav( locationId );
 
             // If the Location changed, we need to reload the settings.
             if ( locationId != CurrentLocationId )
@@ -299,18 +300,36 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// Sets the value of the lpLocation control.
+        /// Sets the selected location
         /// </summary>
         /// <param name="locationId">The identifier of the location.</param>
-        private void SetLocationControl( int locationId )
+        private void SetSelectedLocation( int? locationId )
         {
-            using ( var rockContext = new RockContext() )
+            if ( locationId.HasValue && locationId > 0 )
             {
-                Location location = new LocationService( rockContext ).Get( locationId );
-                if ( location != null )
+                CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( CurrentCampusId, locationId );
+                var pageParameterLocationId = this.PageParameter( PageParameterKey.LocationId ).AsIntegerOrNull();
+                if ( !pageParameterLocationId.HasValue || pageParameterLocationId.Value != locationId )
                 {
-                    lpLocation.Location = location;
+                    var additionalQueryParameters = new Dictionary<string, string>();
+                    additionalQueryParameters.Add( PageParameterKey.LocationId, locationId.ToString() );
+                    NavigateToCurrentPageReference( additionalQueryParameters );
+                    return;
                 }
+
+                using ( var rockContext = new RockContext() )
+                {
+                    Location location = new LocationService( rockContext ).Get( locationId.Value );
+                    if ( location != null )
+                    {
+                        lpLocation.Location = location;
+                    }
+                }
+            }
+            else
+            {
+                lpLocation.Location = null;
+                CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( CurrentCampusId, null );
             }
         }
 
@@ -318,7 +337,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// Initializes the sub page navigation.
         /// </summary>
         /// <param name="locationId">The location identifier.</param>
-        private void InitializeSubPageNav()
+        private void InitializeSubPageNav( int locationId )
         {
             RockPage rockPage = this.Page as RockPage;
             if ( rockPage != null )
@@ -330,14 +349,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 }
             }
 
-            var pageParameterLocationId = this.PageParameter( PageParameterKey.LocationId ).AsIntegerOrNull();
-            if ( pageParameterLocationId.HasValue )
+            pbSubPages.QueryStringParametersToAdd = new NameValueCollection
             {
-                pbSubPages.QueryStringParametersToAdd = new NameValueCollection
-                {
-                    { PageParameterKey.LocationId, pageParameterLocationId.ToString() }
-                };
-            }
+                { PageParameterKey.LocationId, locationId.ToString() }
+            };
         }
 
         /// <summary>

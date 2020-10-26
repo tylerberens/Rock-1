@@ -288,11 +288,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
             Location location = lpLocation.Location;
             if ( location != null )
             {
-                CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( CurrentCampusId, location.Id );
+                SetSelectedLocation( location.Id );
             }
             else
             {
-                CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( CurrentCampusId, null );
+                SetSelectedLocation( 0 );
             }
         }
 
@@ -386,10 +386,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     }
                 }
 
-                SetLocationControl( locationId );
+                SetSelectedLocation( locationId );
             }
 
-            InitializeSubPageNav();
+            InitializeSubPageNav( locationId );
 
             // Check the ButtonGroup for the StatusFilter value.
             RosterStatusFilter statusFilter = GetStatusFilterValueFromControl();
@@ -662,8 +662,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
         protected void btnCancel_Click( object sender, RowEventArgs e )
         {
             // the attendance grid's DataKeyNames="PersonGuid,AttendanceIds". So each row is a PersonGuid, with a list of attendanceIds (usually one attendance, but could be more)
-            var personGuid = ( Guid ) e.RowKeyValues[0];
-            var person = new PersonService( new RockContext() ).Get( personGuid );
             var attendanceIds = GetRowAttendanceIds( e );
             if ( !attendanceIds.Any() )
             {
@@ -689,6 +687,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
             ShowAttendees();
         }
 
+        /// <summary>
+        /// Gets the row attendance ids.
+        /// </summary>
+        /// <param name="rowEventArgs">The <see cref="RowEventArgs"/> instance containing the event data.</param>
+        /// <returns></returns>
         private int[] GetRowAttendanceIds( RowEventArgs rowEventArgs )
         {
             // the attendance grid's DataKeyNames="PersonGuid,AttendanceIds". So each row is a PersonGuid, with a list of attendanceIds (usually one attendance, but could be more)
@@ -820,18 +823,36 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// Sets the value of the lpLocation control.
+        /// Sets the selected location
         /// </summary>
         /// <param name="locationId">The identifier of the location.</param>
-        private void SetLocationControl( int locationId )
+        private void SetSelectedLocation( int? locationId )
         {
-            using ( var rockContext = new RockContext() )
+            if ( locationId.HasValue && locationId > 0 )
             {
-                Location location = new LocationService( rockContext ).Get( locationId );
-                if ( location != null )
+                CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( CurrentCampusId, locationId );
+                var pageParameterLocationId = this.PageParameter( PageParameterKey.LocationId ).AsIntegerOrNull();
+                if ( !pageParameterLocationId.HasValue || pageParameterLocationId.Value != locationId )
                 {
-                    lpLocation.Location = location;
+                    var additionalQueryParameters = new Dictionary<string, string>();
+                    additionalQueryParameters.Add( PageParameterKey.LocationId, locationId.ToString() );
+                    NavigateToCurrentPageReference( additionalQueryParameters );
+                    return;
                 }
+
+                using ( var rockContext = new RockContext() )
+                {
+                    Location location = new LocationService( rockContext ).Get( locationId.Value );
+                    if ( location != null )
+                    {
+                        lpLocation.Location = location;
+                    }
+                }
+            }
+            else
+            {
+                lpLocation.Location = null;
+                CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( CurrentCampusId, null );
             }
         }
 
@@ -839,7 +860,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// Initializes the sub page navigation.
         /// </summary>
         /// <param name="locationId">The location identifier.</param>
-        private void InitializeSubPageNav()
+        private void InitializeSubPageNav( int locationId)
         {
             RockPage rockPage = this.Page as RockPage;
             if ( rockPage != null )
@@ -851,14 +872,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 }
             }
 
-            var pageParameterLocationId = this.PageParameter( PageParameterKey.LocationId ).AsIntegerOrNull();
-            if ( pageParameterLocationId.HasValue )
+            pbSubPages.QueryStringParametersToAdd = new NameValueCollection
             {
-                pbSubPages.QueryStringParametersToAdd = new NameValueCollection
-                {
-                    { PageParameterKey.LocationId, pageParameterLocationId.ToString() }
-                };
-            }
+                { PageParameterKey.LocationId, locationId.ToString() }
+            };
         }
 
         /// <summary>
@@ -958,8 +975,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
             // The actual button's visibility will be determined per row in the btnCheckout_OnDatabound event
             btnCheckOutField.Visible = CurrentStatusFilter == RosterStatusFilter.Present;
         }
-
-
 
         #endregion Internal Methods
     }
