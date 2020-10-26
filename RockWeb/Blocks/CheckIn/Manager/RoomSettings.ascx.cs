@@ -19,6 +19,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 
 using Rock;
+using Rock.CheckIn;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
@@ -27,7 +28,6 @@ using Rock.Web.UI;
 namespace RockWeb.Blocks.CheckIn.Manager
 {
     /// <summary>
-    /// Block used to open and close classrooms, Etc.
     /// </summary>
     [DisplayName( "Room Settings" )]
     [Category( "Check-in > Manager" )]
@@ -90,17 +90,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
             }
         }
 
-        /// <summary>
-        /// The location identifier user preference key, taking into consideration the currently-selected campus.
-        /// </summary>
-        public string LocationIdUserPreferenceKey
-        {
-            get
-            {
-                return string.Format( "campus-{0}-LocationId", CurrentCampusId );
-            }
-        }
-
         #endregion Properties
 
         #region Base Control Methods
@@ -139,7 +128,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void Block_BlockUpdated( object sender, EventArgs e )
         {
-            // The page lifecycle will show the settings.
+            // The page LifeCycle will show the settings.
         }
 
         /// <summary>
@@ -152,11 +141,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
             Location location = lpLocation.Location;
             if ( location != null )
             {
-                SetBlockUserPreference( LocationIdUserPreferenceKey, location.Id.ToString(), true );
+                CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( this.CurrentCampusId, location.Id );
             }
             else
             {
-                DeleteBlockUserPreference( LocationIdUserPreferenceKey );
+                CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( this.CurrentCampusId, null );
             }
         }
 
@@ -226,12 +215,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
                 if ( locationId > 0 )
                 {
-                    SetBlockUserPreference( LocationIdUserPreferenceKey, locationId.ToString(), true );
+                    CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( this.CurrentCampusId, locationId );
                 }
                 else
                 {
-                    // If still not defined, check for a Block user preference.
-                    locationId = GetBlockUserPreference( LocationIdUserPreferenceKey ).AsInteger();
+                    locationId = CheckinManagerHelper.GetCheckinManagerConfigurationFromCookie().LocationIdFromSelectedCampusId.GetValueOrNull( this.CurrentCampusId ) ?? 0;
 
                     if ( locationId <= 0 )
                     {
@@ -243,7 +231,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 SetLocationControl( locationId );
             }
 
-            InitializeSubPageNav( locationId );
+            InitializeSubPageNav();
 
             // If the Location changed, we need to reload the settings.
             if ( locationId != CurrentLocationId )
@@ -327,10 +315,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// Initializes the sub page nav.
+        /// Initializes the sub page navigation.
         /// </summary>
         /// <param name="locationId">The location identifier.</param>
-        private void InitializeSubPageNav( int locationId )
+        private void InitializeSubPageNav()
         {
             RockPage rockPage = this.Page as RockPage;
             if ( rockPage != null )
@@ -342,10 +330,14 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 }
             }
 
-            pbSubPages.QueryStringParametersToAdd = new NameValueCollection
+            var pageParameterLocationId = this.PageParameter( PageParameterKey.LocationId ).AsIntegerOrNull();
+            if ( pageParameterLocationId.HasValue )
             {
-                { PageParameterKey.LocationId, locationId.ToString() }
-            };
+                pbSubPages.QueryStringParametersToAdd = new NameValueCollection
+                {
+                    { PageParameterKey.LocationId, pageParameterLocationId.ToString() }
+                };
+            }
         }
 
         /// <summary>

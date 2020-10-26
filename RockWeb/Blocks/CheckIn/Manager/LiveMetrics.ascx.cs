@@ -37,7 +37,6 @@ using Rock.Web.UI.Controls;
 namespace RockWeb.Blocks.CheckIn.Manager
 {
     /// <summary>
-    /// Block used to view current check-in counts and locations
     /// </summary>
     [DisplayName( "Live Metrics" )]
     [Category( "Check-in > Manager" )]
@@ -107,7 +106,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         #region Page Parameter Keys
 
         /// <summary>
-        /// Keys for page params
+        /// Keys for page parameters
         /// </summary>
         private static class PageParameterKey
         {
@@ -255,7 +254,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// Saves any user control view-state changes that have occurred since the last page postback.
+        /// Saves any user control view-state changes that have occurred since the last page PostBack.
         /// </summary>
         /// <returns>
         /// Returns the user control's current view state. If there is no view state associated with the control, it returns null.
@@ -671,7 +670,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                             .ToList();
                     }
 
-                    // Remove any grouptype without groups or child group types
+                    // Remove any GroupType without groups or child group types
                     var emptyGroupTypeIds = NavData.GroupTypes
                         .Where( t => !t.ChildGroupIds.Any() && !t.ChildGroupTypeIds.Any() )
                         .Select( t => t.Id )
@@ -848,6 +847,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
             return null;
         }
 
+        /// <summary>
+        /// Gets the selected area unique identifier.
+        /// </summary>
+        /// <returns></returns>
         private Guid? GetSelectedAreaGuid()
         {
             var groupTypeTemplateGuid = PageParameter( PageParameterKey.Area ).AsGuidOrNull();
@@ -855,11 +858,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             if ( !groupTypeTemplateGuid.HasValue )
             {
                 // Next check if there is an Area cookie (this is usually what would happen)
-                var checkinManagerCheckinAreaGuidCookie = this.Page.Request.Cookies[CheckInCookieKey.CheckinManagerCheckinAreaGuid];
-                if ( checkinManagerCheckinAreaGuidCookie != null )
-                {
-                    groupTypeTemplateGuid = checkinManagerCheckinAreaGuidCookie.Value.AsGuidOrNull();
-                }
+                groupTypeTemplateGuid = CheckinManagerHelper.GetCheckinManagerConfigurationFromCookie().CheckinAreaGuid;
             }
 
             if ( !groupTypeTemplateGuid.HasValue )

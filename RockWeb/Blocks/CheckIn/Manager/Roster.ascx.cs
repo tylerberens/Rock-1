@@ -133,8 +133,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             public const string GroupType_AllowCheckout = "core_checkin_AllowCheckout";
             public const string GroupType_EnablePresence = "core_checkin_EnablePresence";
-            public const string Person_Allergy = "Allergy";
-            public const string Person_LegalNotes = "LegalNotes";
         }
 
         #endregion Entity Attribute Value Keys
@@ -198,17 +196,13 @@ namespace RockWeb.Blocks.CheckIn.Manager
             }
 
             // we ShowAllAreas is false, get the area filter from the cookie
-            var checkinManagerCheckinAreaGuidCookie = this.Page.Request.Cookies[CheckInCookieKey.CheckinManagerCheckinAreaGuid];
-            if ( checkinManagerCheckinAreaGuidCookie != null )
+            var checkinManagerCookieCheckinAreaGuid = CheckinManagerHelper.GetCheckinManagerConfigurationFromCookie().CheckinAreaGuid;
+            if ( checkinManagerCookieCheckinAreaGuid != null )
             {
-                var checkinManagerCookieCheckinAreaGuid = checkinManagerCheckinAreaGuidCookie.Value.AsGuidOrNull();
-                if ( checkinManagerCookieCheckinAreaGuid.HasValue )
+                var checkinManagerCookieCheckinArea = GroupTypeCache.Get( checkinManagerCookieCheckinAreaGuid.Value );
+                if ( checkinManagerCookieCheckinArea != null )
                 {
-                    var checkinManagerCookieCheckinArea = GroupTypeCache.Get( checkinManagerCookieCheckinAreaGuid.Value );
-                    if ( checkinManagerCookieCheckinArea != null )
-                    {
-                        return checkinManagerCookieCheckinArea;
-                    }
+                    return checkinManagerCookieCheckinArea;
                 }
             }
 
@@ -229,11 +223,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <summary>
         /// The current status filter.
         /// </summary>
-        public StatusFilter CurrentStatusFilter
+        public RosterStatusFilter CurrentStatusFilter
         {
             get
             {
-                StatusFilter statusFilter = ViewState[ViewStateKey.CurrentStatusFilter] as StatusFilter? ?? StatusFilter.Unknown;
+                RosterStatusFilter statusFilter = ViewState[ViewStateKey.CurrentStatusFilter] as RosterStatusFilter? ?? RosterStatusFilter.Unknown;
                 return statusFilter;
             }
 
@@ -294,11 +288,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
             Location location = lpLocation.Location;
             if ( location != null )
             {
-                SaveRosterConfigurationToCookie( CurrentCampusId, location.Id );
+                CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( CurrentCampusId, location.Id );
             }
             else
             {
-                SaveRosterConfigurationToCookie( CurrentCampusId, null );
+                CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( CurrentCampusId, null );
             }
         }
 
@@ -309,8 +303,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void bgStatus_SelectedIndexChanged( object sender, EventArgs e )
         {
-            StatusFilter statusFilter = GetStatusFilterValueFromControl();
-            SaveRosterConfigurationToCookie( statusFilter );
+            RosterStatusFilter statusFilter = GetStatusFilterValueFromControl();
+            CheckinManagerHelper.SaveRosterConfigurationToCookie( statusFilter );
         }
 
         #endregion Control Events
@@ -378,12 +372,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
                 if ( locationId > 0 )
                 {
-                    SaveRosterConfigurationToCookie( CurrentCampusId, locationId );
+                    CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( CurrentCampusId, locationId );
                 }
                 else
                 {
                     // If still not defined, check for a Block user preference.
-                    locationId = GetRosterConfigurationFromCookie().LocationIdFromSelectedCampusId.GetValueOrNull( CurrentCampusId ) ?? 0;
+                    locationId = CheckinManagerHelper.GetCheckinManagerConfigurationFromCookie().LocationIdFromSelectedCampusId.GetValueOrNull( CurrentCampusId ) ?? 0;
 
                     if ( locationId <= 0 )
                     {
@@ -395,19 +389,19 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 SetLocationControl( locationId );
             }
 
-            InitializeSubPageNav( locationId );
+            InitializeSubPageNav();
 
             // Check the ButtonGroup for the StatusFilter value.
-            StatusFilter statusFilter = GetStatusFilterValueFromControl();
-            if ( statusFilter == StatusFilter.Unknown )
+            RosterStatusFilter statusFilter = GetStatusFilterValueFromControl();
+            if ( statusFilter == RosterStatusFilter.Unknown )
             {
                 // If not defined on the ButtonGroup, check for a Block user preference.
-                statusFilter = GetRosterConfigurationFromCookie().StatusFilter;
+                statusFilter = CheckinManagerHelper.GetCheckinManagerConfigurationFromCookie().RosterStatusFilter;
 
-                if ( statusFilter == StatusFilter.Unknown )
+                if ( statusFilter == RosterStatusFilter.Unknown )
                 {
                     // If we still don't know the value, set it to 'All'.
-                    statusFilter = StatusFilter.All;
+                    statusFilter = RosterStatusFilter.All;
                 }
 
                 SetStatusFilterControl( statusFilter );
@@ -465,7 +459,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             // Desktop only.
             var lStatusTag = e.Row.FindControl( "lStatusTag" ) as Literal;
             lStatusTag.Text = attendee.GetStatusIconHtmlTag( false );
-            lElapsedCheckInTime.Visible = CurrentStatusFilter == StatusFilter.CheckedIn;
+            lElapsedCheckInTime.Visible = CurrentStatusFilter == RosterStatusFilter.CheckedIn;
         }
 
         /// <summary>
@@ -481,7 +475,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             // Cancel button will be visible in two cases
             // 1) They are on the CheckedIn tab (which would only show attendees that checked-in (but not yet present) in "Enable Presence" rooms
             // 2) They are on the Present Tab in a room that doesn't have Presence Enable
-            btnCancel.Visible = ( CurrentStatusFilter == StatusFilter.CheckedIn ) || ( rosterAttendee.RoomHasEnablePresence == false && CurrentStatusFilter == StatusFilter.Present );
+            btnCancel.Visible = ( CurrentStatusFilter == RosterStatusFilter.CheckedIn ) || ( rosterAttendee.RoomHasEnablePresence == false && CurrentStatusFilter == RosterStatusFilter.Present );
         }
 
         /// <summary>
@@ -601,11 +595,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             RemoveUnneededStatusFilters( unfilteredAttendanceCheckinAreas );
 
-            if ( CurrentStatusFilter == StatusFilter.CheckedIn )
+            if ( CurrentStatusFilter == RosterStatusFilter.CheckedIn )
             {
                 attendanceQuery = attendanceQuery.Where( a => !a.PresentDateTime.HasValue && !a.EndDateTime.HasValue );
             }
-            else if ( CurrentStatusFilter == StatusFilter.Present )
+            else if ( CurrentStatusFilter == RosterStatusFilter.Present )
             {
                 attendanceQuery = attendanceQuery.Where( a => a.PresentDateTime.HasValue && !a.EndDateTime.HasValue );
             }
@@ -845,7 +839,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// Initializes the sub page navigation.
         /// </summary>
         /// <param name="locationId">The location identifier.</param>
-        private void InitializeSubPageNav( int locationId )
+        private void InitializeSubPageNav()
         {
             RockPage rockPage = this.Page as RockPage;
             if ( rockPage != null )
@@ -857,19 +851,23 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 }
             }
 
-            pbSubPages.QueryStringParametersToAdd = new NameValueCollection
+            var pageParameterLocationId = this.PageParameter( PageParameterKey.LocationId ).AsIntegerOrNull();
+            if ( pageParameterLocationId.HasValue )
             {
-                { PageParameterKey.LocationId, locationId.ToString() }
-            };
+                pbSubPages.QueryStringParametersToAdd = new NameValueCollection
+                {
+                    { PageParameterKey.LocationId, pageParameterLocationId.ToString() }
+                };
+            }
         }
 
         /// <summary>
         /// Gets the status filter value from the bgStatus control.
         /// </summary>
         /// <returns></returns>
-        private StatusFilter GetStatusFilterValueFromControl()
+        private RosterStatusFilter GetStatusFilterValueFromControl()
         {
-            StatusFilter statusFilter = bgStatus.SelectedValue.ConvertToEnumOrNull<StatusFilter>() ?? StatusFilter.Unknown;
+            RosterStatusFilter statusFilter = bgStatus.SelectedValue.ConvertToEnumOrNull<RosterStatusFilter>() ?? RosterStatusFilter.Unknown;
             return statusFilter;
         }
 
@@ -877,7 +875,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// Sets the value of the bgStatus control.
         /// </summary>
         /// <param name="statusFilter">The status filter.</param>
-        private void SetStatusFilterControl( StatusFilter statusFilter )
+        private void SetStatusFilterControl( RosterStatusFilter statusFilter )
         {
             bgStatus.SelectedValue = statusFilter.ToString( "d" );
         }
@@ -904,21 +902,21 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     // If there aren't any attendees that are in rooms that have EnabledPresence or AllowCheckout,
                     // it doesn't make sense to show the status filters at all.
                     bgStatus.Visible = false;
-                    CurrentStatusFilter = StatusFilter.Present;
+                    CurrentStatusFilter = RosterStatusFilter.Present;
 
                     return;
                 }
 
                 // If EnablePresence is false, it doesn't make sense to show the 'Checked-in' filter.
-                var checkedInItem = bgStatus.Items.FindByValue( StatusFilter.CheckedIn.ToString( "d" ) );
+                var checkedInItem = bgStatus.Items.FindByValue( RosterStatusFilter.CheckedIn.ToString( "d" ) );
                 if ( checkedInItem != null )
                 {
                     bgStatus.Items.Remove( checkedInItem );
                 }
 
-                if ( CurrentStatusFilter == StatusFilter.CheckedIn )
+                if ( CurrentStatusFilter == RosterStatusFilter.CheckedIn )
                 {
-                    CurrentStatusFilter = StatusFilter.Present;
+                    CurrentStatusFilter = RosterStatusFilter.Present;
                     SetStatusFilterControl( CurrentStatusFilter );
                 }
             }
@@ -942,139 +940,27 @@ namespace RockWeb.Blocks.CheckIn.Manager
             // StatusFilter.Present:
             var btnCheckOutField = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnCheckOut" );
 
-            mobileIconField.Visible = CurrentStatusFilter == StatusFilter.All;
-            serviceTimesField.Visible = CurrentStatusFilter == StatusFilter.All || CurrentStatusFilter == StatusFilter.Present;
-            statusTagField.Visible = CurrentStatusFilter == StatusFilter.All;
+            mobileIconField.Visible = CurrentStatusFilter == RosterStatusFilter.All;
+            serviceTimesField.Visible = CurrentStatusFilter == RosterStatusFilter.All || CurrentStatusFilter == RosterStatusFilter.Present;
+            statusTagField.Visible = CurrentStatusFilter == RosterStatusFilter.All;
 
-            lElapsedCheckInTimeField.Visible = CurrentStatusFilter == StatusFilter.CheckedIn;
+            lElapsedCheckInTimeField.Visible = CurrentStatusFilter == RosterStatusFilter.CheckedIn;
 
             // only show the CancelField Column if they are on the CheckedIn or Present tab
             // The actual button's visibility will be determined per row in the btnCancel_OnDatabound event
-            btnCancelField.Visible = CurrentStatusFilter == StatusFilter.CheckedIn || CurrentStatusFilter == StatusFilter.Present;
+            btnCancelField.Visible = CurrentStatusFilter == RosterStatusFilter.CheckedIn || CurrentStatusFilter == RosterStatusFilter.Present;
 
             // only show the PresentField Column if they are on the CheckedIn tab
             // The actual button's visibility will be determined per row in the btnPresent_OnDatabound event
-            btnPresentField.Visible = CurrentStatusFilter == StatusFilter.CheckedIn;
+            btnPresentField.Visible = CurrentStatusFilter == RosterStatusFilter.CheckedIn;
 
             // only show these action button's Column if they are on the Present Tab
             // The actual button's visibility will be determined per row in the btnCheckout_OnDatabound event
-            btnCheckOutField.Visible = CurrentStatusFilter == StatusFilter.Present;
+            btnCheckOutField.Visible = CurrentStatusFilter == RosterStatusFilter.Present;
         }
 
-        /// <summary>
-        /// Saves the roster configuration to cookie.
-        /// </summary>
-        /// <param name="campusId">The campus identifier.</param>
-        /// <param name="locationId">The location identifier.</param>
-        protected void SaveRosterConfigurationToCookie( int campusId, int? locationId )
-        {
-            SaveRosterConfigurationToCookie( campusId, locationId, null );
-        }
 
-        /// <summary>
-        /// Saves the roster configuration to cookie.
-        /// </summary>
-        /// <param name="statusFilter">The status filter.</param>
-        protected void SaveRosterConfigurationToCookie( StatusFilter statusFilter )
-        {
-            SaveRosterConfigurationToCookie( null, null, statusFilter );
-        }
-
-        /// <summary>
-        /// Saves the roster configuration to a cookie.
-        /// </summary>
-        /// <param name="campusId">The campus identifier.</param>
-        /// <param name="locationId">The location identifier.</param>
-        /// <param name="statusFilter">The status filter.</param>
-        protected void SaveRosterConfigurationToCookie( int? campusId, int? locationId, StatusFilter? statusFilter )
-        {
-            CheckinManagerRosterConfiguration checkinManagerRosterConfiguration = GetRosterConfigurationFromCookie();
-            if ( campusId.HasValue )
-            {
-                if ( locationId.HasValue )
-                {
-                    checkinManagerRosterConfiguration.LocationIdFromSelectedCampusId.AddOrReplace( campusId.Value, locationId.Value );
-                }
-                else
-                {
-                    checkinManagerRosterConfiguration.LocationIdFromSelectedCampusId.Remove( campusId.Value );
-                }
-            }
-
-            if ( statusFilter.HasValue )
-            {
-                checkinManagerRosterConfiguration.StatusFilter = statusFilter.Value;
-            }
-
-            var checkinManagerRosterConfigurationJson = checkinManagerRosterConfiguration.ToJson( Newtonsoft.Json.Formatting.None );
-            Rock.Web.UI.RockPage.AddOrUpdateCookie( CheckInCookieKey.CheckinManagerRosterConfiguration, checkinManagerRosterConfigurationJson, RockDateTime.Now.AddYears( 1 ) );
-        }
-
-        /// <summary>
-        /// Gets the roster configuration from cookie.
-        /// </summary>
-        /// <returns></returns>
-        protected CheckinManagerRosterConfiguration GetRosterConfigurationFromCookie()
-        {
-            CheckinManagerRosterConfiguration checkinManagerRosterConfiguration = null;
-            var checkinManagerRosterConfigurationCookie = this.Page.Request.Cookies[CheckInCookieKey.CheckinManagerRosterConfiguration];
-            if ( checkinManagerRosterConfigurationCookie != null )
-            {
-                checkinManagerRosterConfiguration = checkinManagerRosterConfigurationCookie.Value.FromJsonOrNull<CheckinManagerRosterConfiguration>();
-            }
-
-            if ( checkinManagerRosterConfiguration == null )
-            {
-                checkinManagerRosterConfiguration = new CheckinManagerRosterConfiguration();
-            }
-
-            if ( checkinManagerRosterConfiguration.LocationIdFromSelectedCampusId == null )
-            {
-                checkinManagerRosterConfiguration.LocationIdFromSelectedCampusId = new Dictionary<int, int>();
-            }
-
-            return checkinManagerRosterConfiguration;
-        }
 
         #endregion Internal Methods
-
-        #region Helper Classes
-
-        /// <summary>
-        /// The status filter to be applied to attendees displayed.
-        /// </summary>
-        public enum StatusFilter
-        {
-            /// <summary>
-            /// Status filter not set to anything yet
-            /// </summary>
-            Unknown = 0,
-
-            /// <summary>
-            /// Don't filter
-            /// </summary>
-            All = 1,
-
-            /// <summary>
-            /// Only show attendees that are checked-in, but haven't been marked present
-            /// </summary>
-            CheckedIn = 2,
-
-            /// <summary>
-            /// Only show attendees are the marked present.
-            /// Note that if Presence is NOT enabled, the attendance records will automatically marked as Present.
-            /// So this would be the default filter mode when Presence is not enabled
-            /// </summary>
-            Present = 3
-        }
-
-        protected class CheckinManagerRosterConfiguration
-        {
-            public Dictionary<int, int> LocationIdFromSelectedCampusId { get; set; }
-
-            public StatusFilter StatusFilter { get; set; }
-        }
-
-        #endregion Helper Classes
     }
 }

@@ -248,15 +248,6 @@ namespace Rock.CheckIn
         /// </summary>
         public static readonly string AttendanceSessionGuids = "Checkin.AttendanceSessionGuids";
 
-        /// <summary>
-        /// The checkin manager roster configuration
-        /// </summary>
-        public static readonly string CheckinManagerRosterConfiguration = "CheckinManager.RosterConfiguration";
-
-        /// <summary>
-        /// Gets or sets the current 'Check-in Configuration' Guid (which is a <see cref="Rock.Model.GroupType" /> Guid).
-        /// For example "Weekly Service Check-in".
-        /// </summary>
-        public static readonly string CheckinManagerCheckinAreaGuid = "CheckinManager.CheckinManagerCheckinAreaGuid";
+        
     }
 }
