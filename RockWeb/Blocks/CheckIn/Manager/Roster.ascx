@@ -12,7 +12,6 @@
 <Rock:RockUpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
 
-        <Rock:NotificationBox ID="nbWarning" runat="server" NotificationBoxType="Warning" />
 
         <asp:Panel ID="pnlContent" runat="server" CssClass="checkin-roster">
 
@@ -24,6 +23,8 @@
                     <Rock:PageNavButtons ID="pbSubPages" runat="server" IncludeCurrentQueryString="true" />
                 </asp:Panel>
             </div>
+
+            <Rock:NotificationBox ID="nbWarning" runat="server" NotificationBoxType="Warning" />
 
             <asp:Panel ID="pnlRoster" runat="server" CssClass="panel panel-block">
                 <div class="panel-heading">
