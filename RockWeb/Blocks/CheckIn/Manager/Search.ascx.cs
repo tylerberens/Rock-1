@@ -229,17 +229,16 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// </summary>
         private void ShowAttendees()
         {
-            IList<RosterAttendee> attendees = null;
-
+            pnlSearchResults.Visible = true;
             using ( var rockContext = new RockContext() )
             {
-                attendees = GetAttendees( rockContext );
+                var attendees = GetAttendees( rockContext );
+
+                var attendeesSorted = attendees.OrderByDescending( a => a.Status == RosterAttendeeStatus.Present ).ThenByDescending( a => a.CheckInTime ).ThenBy( a => a.PersonGuid ).ToList();
+
+                gAttendees.DataSource = attendeesSorted;
+                gAttendees.DataBind();
             }
-
-            var attendeesSorted = attendees.OrderByDescending( a => a.Status == RosterAttendeeStatus.Present ).ThenByDescending( a => a.CheckInTime ).ThenBy( a => a.PersonGuid ).ToList();
-
-            gAttendees.DataSource = attendeesSorted;
-            gAttendees.DataBind();
         }
 
         /// <summary>

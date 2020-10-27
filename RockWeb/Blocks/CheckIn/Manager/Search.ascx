@@ -10,7 +10,7 @@
                 <Rock:RockTextBox ID="tbSearch" runat="server" CssClass="js-search" PrependText="<i class='fa fa-search'></i>" spellcheck="false" onkeydown="javascript:return handleSearchBoxKeyPress(this, event.keyCode);"/>
             </div>
 
-            <div class="panel panel-block">
+            <asp:Panel ID="pnlSearchResults" runat="server" CssClass="panel panel-block" Visible="false">
                 <div class="panel-body">
                     <div class="grid grid-panel">
                         <Rock:Grid ID="gAttendees" runat="server" DisplayType="Light" UseFullStylesForLightGrid="true" OnRowDataBound="gAttendees_RowDataBound" OnRowSelected="gAttendees_RowSelected" DataKeyNames="PersonGuid,AttendanceIds">
@@ -27,7 +27,7 @@
                         </Rock:Grid>
                     </div>
                 </div>
-            </div>
+            </asp:Panel>
         </asp:Panel>
 
         <script>
