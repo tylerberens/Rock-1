@@ -40,7 +40,6 @@ using Rock.Web.UI.Controls;
 namespace RockWeb.Blocks.CheckIn.Manager
 {
     /// <summary>
-    /// Block used to display person and details about recent check-ins
     /// </summary>
     [DisplayName( "Person Profile" )]
     [Category( "Check-in > Manager" )]
