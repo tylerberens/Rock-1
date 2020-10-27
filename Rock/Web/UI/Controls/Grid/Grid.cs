@@ -4793,7 +4793,7 @@ $('#{this.ClientID} .{GRID_SELECT_CELL_CSS_CLASS}').on( 'click', function (event
         DataSource,
 
         /// <summary>
-        /// The the columns and formatting that is displayed in output
+        /// The columns and formatting that is displayed in output
         /// </summary>
         ColumnOutput
     }
