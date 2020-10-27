@@ -60,12 +60,10 @@ WHERE [Guid] = '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_SETTINGS}' " );
 
             RockMigrationHelper.DeleteBlock( OLD_CHECK_IN_MANAGER_BLOCK );
 
-
-            // Remove page display options for Check-in Manager Search, Room Manager page, ...
+            // Remove page display options for Check-in Room Manager page,etc
             Sql( $@"UPDATE [Page]
                 SET [PageDisplayBreadCrumb] = 0, [PageDisplayDescription] = 0, [PageDisplayIcon] = 0, [PageDisplayTitle] = 0
                 WHERE [Guid] IN ( 
-                    '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_SEARCH}', 
                     '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_ROOM_MANAGER}', 
                     '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_ROSTER}', 
                     '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_LIVE_METRICS}',
@@ -74,6 +72,12 @@ WHERE [Guid] = '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_SETTINGS}' " );
                     '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_LOGIN}'
                 )" );
 
+            // Remove page display options, except for Page Title for Check-in Manager Search
+            Sql( $@"UPDATE [Page]
+                SET [PageDisplayBreadCrumb] = 0, [PageDisplayDescription] = 0, [PageDisplayIcon] = 0, [PageDisplayTitle] = 1
+                WHERE [Guid] IN ( 
+                    '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_SEARCH}'
+                )" );
 
             // Update CheckinManager route to go to new Roster Page
             Sql( $@"
