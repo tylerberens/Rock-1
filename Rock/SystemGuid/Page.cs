@@ -262,6 +262,11 @@ namespace Rock.SystemGuid
         public const string CHECK_IN_MANAGER_LOGIN = "31F51DBB-AC84-4724-9219-B46FADAB9CB2";
 
         /// <summary>
+        /// The Logout page under the Check-in Manager page
+        /// </summary>
+        public const string CHECK_IN_MANAGER_LOGOUT = "9762DE9F-F431-4108-9F1A-AE88DFEB3289";
+
+        /// <summary>
         /// The Settings page under the Check-in Manager page (Where Check-in Configuration is selected)
         /// </summary>
         public const string CHECK_IN_MANAGER_SETTINGS = "62C70118-0A6F-432A-9D84-A5296655CB9E";

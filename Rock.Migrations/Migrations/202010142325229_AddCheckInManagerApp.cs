@@ -69,7 +69,8 @@ WHERE [Guid] = '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_SETTINGS}' " );
                     '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_LIVE_METRICS}',
                     '{Rock.SystemGuid.Page.PERSON_PROFILE_CHECK_IN_MANAGER}',
                     '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_ROOM_SETTINGS}',
-                    '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_LOGIN}'
+                    '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_LOGIN}',
+                    '{Rock.SystemGuid.Page.CHECK_IN_MANAGER_LOGOUT}'
                 )" );
 
             // Remove page display options, except for Page Title for Check-in Manager Search
@@ -276,6 +277,48 @@ END" );
             //   Attribute: Manager Page
             //   Attribute Value: ba04bf01-5244-4637-b12d-7a962d2a9e77,a2b6ea1c-9e46-42c8-abe4-0fd32d562b48
             RockMigrationHelper.AddBlockAttributeValue( "1D33D2F9-D19C-495B-BBC8-4379AEF416FE", "DB666717-A429-4F44-B713-3F57702F3BD6", @"ba04bf01-5244-4637-b12d-7a962d2a9e77,a2b6ea1c-9e46-42c8-abe4-0fd32d562b48" );
+
+            // Add Page Logout to Site:Rock Check-in Manager
+            RockMigrationHelper.AddPage( true, "CECB1460-10D4-4054-B5C3-903991CA40AB", "8305704F-928D-4379-967A-253E576E0923", "Logout", "", "9762DE9F-F431-4108-9F1A-AE88DFEB3289", "" );
+
+            // Add Page Route for Logout
+            RockMigrationHelper.AddPageRoute( "9762DE9F-F431-4108-9F1A-AE88DFEB3289", "checkinmanager/logout", "36ED7574-0310-4A8F-9A30-11A82B74C525" );
+
+            // Add Block Logout to Page: Logout, Site: Rock Check-in Manager
+            RockMigrationHelper.AddBlock( true, "9762DE9F-F431-4108-9F1A-AE88DFEB3289".AsGuid(), null, "A5FA7C3C-A238-4E0B-95DE-B540144321EC".AsGuid(), "CCB87054-8AA3-4F44-AA48-19BD028C4190".AsGuid(), "Logout", "Main", @"", @"", 0, "80D16848-7EF2-4452-B2C6-480EDC8268C3" );
+
+            // Attribute for BlockType: Person Profile:Badges - Left
+            RockMigrationHelper.AddOrUpdateBlockTypeAttribute( "48BBB7A7-1E1D-461E-9B64-E9CAD815E9E1", "602F273B-7EC2-42E6-9AA7-A36A268192A3", "Badges - Left", "BadgesLeft", "Badges - Left", @"The badges to display on the left side of the badge bar.", 6, @"3F7D648D-D6BA-4F03-931C-AFBDFA24BBD8", "5729E01A-89C4-47C3-B706-7E6B63B7D210" );
+
+            // Attribute for BlockType: Person Profile:Badges - Right
+            RockMigrationHelper.AddOrUpdateBlockTypeAttribute( "48BBB7A7-1E1D-461E-9B64-E9CAD815E9E1", "602F273B-7EC2-42E6-9AA7-A36A268192A3", "Badges - Right", "BadgesRight", "Badges - Right", @"The badges to display on the right side of the badge bar.", 7, @"8A9AD88E-359F-46FD-9BA1-8B0603644F17,66972BFF-42CD-49AB-9A7A-E1B9DECA4EBA,66972BFF-42CD-49AB-9A7A-E1B9DECA4EBE,E0455598-82B0-4F49-B806-C3A41C71E9DA", "4181A399-8ADB-4A4E-84FF-4E916AE62CB3" );
+
+            // Attribute for BlockType: Roster:Show All Areas
+            RockMigrationHelper.AddOrUpdateBlockTypeAttribute( "EA5C2CF9-8602-445F-B2B7-48D0A5CFEA8C", "1EDAFDED-DFE6-4334-B019-6EECBA89E05A", "Show All Areas", "ShowAllAreas", "Show All Areas", @"If enabled, all Check-in Areas will be shown. This setting will be ignored if a specific area is specified in the URL.", 2, @"True", "AB85D5AF-B136-4C06-804F-D7A5466ED8FB" );
+
+            // Add Block Attribute Value
+            //   Block: Roster
+            //   BlockType: Roster
+            //   Block Location: Page=Roster, Site=Rock Check-in Manager
+            //   Attribute: Show All Areas
+            //   Attribute Value: True
+            RockMigrationHelper.AddBlockAttributeValue( "26B9D6B8-8153-4F17-805A-8512BAC656E0", "AB85D5AF-B136-4C06-804F-D7A5466ED8FB", @"True" );
+
+            // Add Block Attribute Value
+            //   Block: Logout
+            //   BlockType: Logout
+            //   Block Location: Page=Logout, Site=Rock Check-in Manager
+            //   Attribute: Redirect Page
+            //   Attribute Value: 31f51dbb-ac84-4724-9219-b46fadab9cb2
+            RockMigrationHelper.AddBlockAttributeValue( "80D16848-7EF2-4452-B2C6-480EDC8268C3", "81C96E97-4FD9-40AA-B3CC-5EBA813630A5", @"31f51dbb-ac84-4724-9219-b46fadab9cb2" );
+
+            // Add Block Attribute Value
+            //   Block: Logout
+            //   BlockType: Logout
+            //   Block Location: Page=Logout, Site=Rock Check-in Manager
+            //   Attribute: Message
+            //   Attribute Value: <div class="alert alert-success">You have been logged out.</div>
+            RockMigrationHelper.AddBlockAttributeValue( "80D16848-7EF2-4452-B2C6-480EDC8268C3", "A7F6BC82-6CEA-457C-9D56-A07D89FBDF8F", @"<div class=""alert alert-success"">You have been logged out.</div>" );
         }
 
         /// <summary>
