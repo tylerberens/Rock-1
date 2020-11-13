@@ -99,7 +99,7 @@ namespace Rock.Jobs
 
     [BooleanField(
         "Fix Attendance Records Never Marked Present",
-        Description = "If checked, any attendance record marked DidAttend=true for check-in areas that have 'Enable Presence' which were never marked present, will be changed to false.",
+        Description = "If checked, any attendance records (since the last time the job ran) marked DidAttend=true for check-in areas that have 'Enable Presence' which were never marked present, will be changed to false.",
         Order = 8,
         Key = AttributeKey.FixAttendanceRecordsNeverMarkedPresent,
         Category = "Check-in" )]
@@ -150,6 +150,7 @@ namespace Rock.Jobs
 
         private int commandTimeout;
         private int batchAmount;
+        private DateTime lastRunDateTime;
 
         /// <summary>
         /// Job that executes routine Rock cleanup tasks
@@ -166,7 +167,7 @@ namespace Rock.Jobs
 
             batchAmount = dataMap.GetString( AttributeKey.BatchCleanupAmount ).AsIntegerOrNull() ?? 1000;
             commandTimeout = dataMap.GetString( AttributeKey.CommandTimeout ).AsIntegerOrNull() ?? 900;
-
+            lastRunDateTime = Rock.Web.SystemSettings.GetValue( Rock.SystemKey.SystemSetting.ROCK_CLEANUP_LAST_RUN_DATETIME ).AsDateTime() ?? RockDateTime.Now.AddDays( -1 );
             /* IMPORTANT!! MDP 2020-05-05
 
             1 ) Whenever you do a new RockContext() in RockCleanup make sure to set the commandtimeout, like this:
@@ -245,7 +246,10 @@ namespace Rock.Jobs
             var fixAttendanceRecordsEnabled = dataMap.GetString( AttributeKey.FixAttendanceRecordsNeverMarkedPresent ).AsBoolean();
             if ( fixAttendanceRecordsEnabled )
             {
-                RunCleanupTask( "didAttend Attendance Fix", () => FixDidAttendInAttendance() );            }
+                RunCleanupTask( "did attend attendance fix", () => FixDidAttendInAttendance() );
+            }
+
+            Rock.Web.SystemSettings.SetValue( Rock.SystemKey.SystemSetting.ROCK_CLEANUP_LAST_RUN_DATETIME, RockDateTime.Now.ToString() );
 
             //// ***********************
             ////  Final count and report
@@ -1810,6 +1814,7 @@ where ISNULL(ValueAsNumeric, 0) != ISNULL((case WHEN LEN([value]) < (100)
                 /// Get all Attendance records for the current day and location
                 var attendanceQueryToUpdate = new AttendanceService( rockContext ).Queryable().Where( a =>
                     !a.PresentDateTime.HasValue
+                    && a.CreatedDateTime >= lastRunDateTime
                     && a.DidAttend.HasValue
                     && a.DidAttend.Value
                     && groupTypeIds.Contains( a.Occurrence.Group.GroupTypeId ) );

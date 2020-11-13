@@ -191,5 +191,10 @@ namespace Rock.SystemKey
         /// The open identifier connect settings
         /// </summary>
         public const string OPEN_ID_CONNECT_SETTINGS = "OpenIdConnectSettings";
+
+        /// <summary>
+        /// The RockCleanup Last Run DateTime
+        /// </summary>
+        public const string ROCK_CLEANUP_LAST_RUN_DATETIME = "core_RockCleanup_LastRunDateTime";
     }
 }
