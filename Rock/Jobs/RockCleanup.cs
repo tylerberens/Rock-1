@@ -99,7 +99,7 @@ namespace Rock.Jobs
 
     [BooleanField(
         "Fix Attendance Records Never Marked Present",
-        Description = "If checked, any attendance records (since the last time the job ran) marked DidAttend=true for check-in areas that have 'Enable Presence' which were never marked present, will be changed to false.",
+        Description = "If checked verifies attendance records since the last time the job ran. This will change the DidAttend from 'true' to 'false' for check-in areas that have 'Enable Presence' when the PresentDateTime does not have a value. (e.g. the person was checked into the room but didn’t show up)",
         Order = 8,
         Key = AttributeKey.FixAttendanceRecordsNeverMarkedPresent,
         Category = "Check-in" )]
