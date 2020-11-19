@@ -579,11 +579,13 @@
     <Compile Include="Logging\RockSerilogReader.cs" />
     <Compile Include="Model\AchievementAttemptService.Partial.cs" />
     <Compile Include="Model\AttendanceCheckInSession.cs" />
+    <Compile Include="Model\AuthAuditLog.cs" />
     <Compile Include="Model\AuthClaim.cs" />
     <Compile Include="Model\AuthClient.cs" />
     <Compile Include="Model\AuthClientService.Partial.cs" />
     <Compile Include="Model\AuthScope.cs" />
     <Compile Include="Model\CodeGenerated\AttendanceCheckInSessionService.cs" />
+    <Compile Include="Model\CodeGenerated\AuthAuditLogService.cs" />
     <Compile Include="Model\CodeGenerated\AuthClaimService.cs" />
     <Compile Include="Model\CodeGenerated\AuthClientService.cs" />
     <Compile Include="Model\CodeGenerated\AuthScopeService.cs" />
