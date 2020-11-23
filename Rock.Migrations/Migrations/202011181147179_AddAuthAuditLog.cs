@@ -52,7 +52,7 @@ namespace Rock.Migrations
                         ForeignKey = c.String(maxLength: 100),
                     })
                 .PrimaryKey(t => t.Id)
-                .ForeignKey("dbo.PersonAlias", t => t.ChangeByPersonAliasId, cascadeDelete: true)
+                .ForeignKey("dbo.PersonAlias", t => t.ChangeByPersonAliasId)
                 .ForeignKey("dbo.EntityType", t => t.EntityTypeId)
                 .ForeignKey("dbo.Group", t => t.GroupId)
                 .Index(t => t.EntityTypeId)
