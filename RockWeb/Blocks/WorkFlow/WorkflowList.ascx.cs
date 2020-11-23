@@ -585,8 +585,7 @@ namespace RockWeb.Blocks.WorkFlow
         /// <summary>
         /// Binds the grid.
         /// </summary>
-        private void
-            BindGrid()
+        private void BindGrid()
         {
             if ( _workflowType != null )
             {

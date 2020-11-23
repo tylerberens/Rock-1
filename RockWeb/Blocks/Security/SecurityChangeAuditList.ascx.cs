@@ -107,12 +107,14 @@ namespace RockWeb.Blocks.Security
                         {
                             e.Value = EntityTypeCache.Get( entityTypeId.Value ).FriendlyName;
                         }
+
                         break;
                     }
 
                 case UserPreferenceKey.Date:
                     {
                         e.Value = DateRangePicker.FormatDelimitedValues( e.Value );
+
                         break;
                     }
 
@@ -129,8 +131,10 @@ namespace RockWeb.Blocks.Security
                                 e.Value = person.ToString();
                             }
                         }
+
                         break;
                     }
+
                 case UserPreferenceKey.EntityId:
                     {
                         break;
@@ -181,6 +185,8 @@ namespace RockWeb.Blocks.Security
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void Block_BlockUpdated( object sender, EventArgs e )
         {
+            BindFilter();
+            BindGrid();
         }
 
         #endregion
@@ -224,6 +230,7 @@ namespace RockWeb.Blocks.Security
             {
                 authAuditLogQry = authAuditLogQry.Where( t => t.ChangeDateTime >= drpDate.LowerValue.Value );
             }
+
             if ( drpDate.UpperValue.HasValue )
             {
                 DateTime upperDate = drpDate.UpperValue.Value.Date.AddDays( 1 );
@@ -315,6 +322,7 @@ namespace RockWeb.Blocks.Security
             {
                 accessStr = allowOrDeny == "A" ? "Allow" : "Deny";
             }
+
             return accessStr;
         }
 

@@ -184,7 +184,7 @@ namespace Rock.Model
         {
             this.HasRequired( p => p.EntityType ).WithMany().HasForeignKey( p => p.EntityTypeId ).WillCascadeOnDelete( false );
             this.HasOptional( p => p.Group ).WithMany().HasForeignKey( p => p.GroupId ).WillCascadeOnDelete( false );
-            this.HasOptional( p => p.ChangeByPersonAlias ).WithMany().HasForeignKey( p => p.ChangeByPersonAliasId ).WillCascadeOnDelete( true );
+            this.HasOptional( p => p.ChangeByPersonAlias ).WithMany().HasForeignKey( p => p.ChangeByPersonAliasId ).WillCascadeOnDelete( false );
         }
     }
 
