@@ -17,8 +17,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+
 using Rock.Utility;
 
 //// <summary>
@@ -2452,10 +2454,10 @@ namespace Rock.MyWell
                 // in the Dev sandbox, an example is https://sandbox.gotnpgateway.com/merchant/transaction/detail/bhrgr79erttu0kh14bs0
                 isFailure = true;
             }
-            else if ( FailureStatusCodes.Contains(this.Status, StringComparer.OrdinalIgnoreCase) )
+            else if ( FailureStatusCodes.Contains( this.Status, StringComparer.OrdinalIgnoreCase ) )
             {
                 // if ResponseCode is less than 200, but has a fail status code, it is also a failure
-                isFailure  =  true;
+                isFailure = true;
             }
             else
             {
@@ -2572,6 +2574,81 @@ namespace Rock.MyWell
     }
 
     #endregion
+
+    #region CardSync Webhook
+
+
+    public class CardSyncWebhookResponse : BaseResponseData
+    {
+        [JsonProperty( "account_type" )]
+        public string account_type { get; set; }
+
+        [JsonProperty( "account_type_id" )]
+        public string account_type_id { get; set; }
+
+        [JsonProperty( "transaction_id" )]
+        public string transaction_id { get; set; }
+
+        [JsonProperty( "action_at" )]
+        public DateTime action_at { get; set; }
+
+        [JsonProperty( "data" )]
+        public CardSyncWebhookPaymentMethod PaymentMethodData { get; set; }
+
+        [JsonProperty( "type" )]
+        public string type { get; set; }
+    }
+
+    public class CardSyncWebhookPaymentMethod
+    {
+        [JsonProperty( "card_id" )]
+        public string card_id { get; set; }
+
+        [JsonProperty( "digest" )]
+        public string digest { get; set; }
+
+        [JsonProperty( "expiration_date" )]
+        public string ExpirationDate { get; set; }
+
+        [JsonProperty( "flags" )]
+        public object flags { get; set; }
+
+        [JsonProperty( "generic_card_level" )]
+        public string generic_card_level { get; set; }
+
+        [JsonProperty( "instrument_type" )]
+        public string instrument_type { get; set; }
+
+        [JsonProperty( "masked_number" )]
+        public string MaskedNumber { get; set; }
+
+        [JsonProperty( "processor_id" )]
+        public string processor_id { get; set; }
+
+        /// <summary>
+        /// Gets or sets the record identifier (The CustomerId)
+        /// </summary>
+        /// <value>
+        /// The record identifier.
+        /// </value>
+        [JsonProperty( "record_id" )]
+        public string RecordId { get; set; }
+
+        [JsonProperty( "status" )]
+        public string Status { get; set; }
+
+        /// <summary>
+        /// Newtonsoft.Json.JsonExtensionData instructs the Newtonsoft.Json.JsonSerializer to deserialize properties with no
+        /// matching class member into the specified collection
+        /// </summary>
+        /// <value>
+        /// The other data.
+        /// </value>
+        [Newtonsoft.Json.JsonExtensionData( ReadData = true, WriteData = false )]
+        public IDictionary<string, Newtonsoft.Json.Linq.JToken> _additionalData { get; set; }
+    }
+
+    #endregion CardSync Webhook
 
     #region Rock Wrapper Type
 

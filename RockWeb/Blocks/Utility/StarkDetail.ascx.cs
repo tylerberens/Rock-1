@@ -17,6 +17,10 @@
 using System;
 using System.ComponentModel;
 using System.Web.UI;
+
+using RestSharp;
+
+using Rock;
 using Rock.Attribute;
 using Rock.Model;
 
@@ -138,5 +142,19 @@ namespace RockWeb.Blocks.Utility
         // helper functional methods (like BindGrid(), etc.)
 
         #endregion
+
+        protected void btnTestWebhook_Click( object sender, EventArgs e )
+        {
+            var url = ResolveRockUrlIncludeRoot( "~/Webhooks/MyWellCardSync.ashx" );
+            var cardSyncWebhookResponse = new Rock.MyWell.CardSyncWebhookResponse();
+            cardSyncWebhookResponse.PaymentMethodData = new Rock.MyWell.CardSyncWebhookPaymentMethod();
+            var postData = cardSyncWebhookResponse.ToJson();
+
+            RestRequest request = new RestRequest( RestSharp.Method.POST );
+            var restClient = new RestClient( url );
+
+            request.AddJsonBody( cardSyncWebhookResponse );
+            var result = restClient.Execute( request );
+        }
     }
 }
