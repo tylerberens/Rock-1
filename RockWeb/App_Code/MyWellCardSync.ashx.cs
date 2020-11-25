@@ -39,7 +39,8 @@ namespace RockWeb.Webhooks
             response.ContentType = "text/plain";
 
 
-            // Signature https://sandbox.gotnpgateway.com/docs/webhooks/#security ??
+            // Signature https://sandbox.gotnpgateway.com/docs/webhooks/#security
+            // see signature @ https://sandbox.fluidpay.com/merchant/settings/webhooks/search
             var signature = request.Headers["Signature"];
 
             string postedData = string.Empty;
