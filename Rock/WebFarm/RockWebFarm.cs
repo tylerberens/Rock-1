@@ -1,4 +1,4 @@
-﻿// <copyright>
+// <copyright>
 // Copyright by the Spark Development Network
 //
 // Licensed under the Rock Community License (the "License");
@@ -17,6 +17,7 @@
 
 using System;
 using System.Configuration;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -104,6 +105,11 @@ namespace Rock.WebFarm
         private const bool DEBUG = false;
 
         /// <summary>
+        /// The bytes per megayte
+        /// </summary>
+        private const int BytesPerMegayte = 1024 * 1024;
+
+        /// <summary>
         /// The web farm enabled
         /// </summary>
         private static bool _isWebFarmEnabledAndUnlocked = false;
@@ -138,6 +144,21 @@ namespace Rock.WebFarm
         /// </summary>
         private static IntervalAction _pollingInterval;
 
+        /// <summary>
+        /// The cpu counter
+        /// </summary>
+        private static readonly PerformanceCounter _cpuCounter = new PerformanceCounter( "Processor", "% Processor Time", "_Total" );
+
+        /// <summary>
+        /// The ram counter
+        /// </summary>
+        private static readonly PerformanceCounter _ramCounter = new PerformanceCounter( "Memory", "Available MBytes" );
+
+        /// <summary>
+        /// The total ram mb
+        /// </summary>
+        private static readonly int TotalRamMb = ( int ) ( new Microsoft.VisualBasic.Devices.ComputerInfo().TotalPhysicalMemory / BytesPerMegayte );
+
         #endregion State
 
         #region Startup and Shutdown
@@ -155,6 +176,10 @@ namespace Rock.WebFarm
             }
 
             Debug( "Start Stage 1" );
+
+            // Start the performance counters
+            _cpuCounter.NextValue();
+            _ramCounter.NextValue();
 
             using ( var rockContext = new RockContext() )
             {
@@ -292,7 +317,7 @@ namespace Rock.WebFarm
             }
 
             // Start the polling cycle
-            _pollingInterval = IntervalAction.Start( DoLeadershipPollAsync, TimeSpan.FromSeconds( decimal.ToDouble( _pollingIntervalSeconds ) ) );
+            _pollingInterval = IntervalAction.Start( DoIntervalProcessingAsync, TimeSpan.FromSeconds( decimal.ToDouble( _pollingIntervalSeconds ) ) );
 
             // Annouce startup to EventBus
             PublishEvent( EventType.Startup );
@@ -398,6 +423,20 @@ namespace Rock.WebFarm
 
                 node.LastSeenDateTime = RockDateTime.Now;
                 node.IsActive = true;
+                rockContext.SaveChanges();
+            }
+        }
+
+        /// <summary>
+        /// Does the interval processing asynchronous.
+        /// </summary>
+        internal static async Task DoIntervalProcessingAsync()
+        {
+            await DoLeadershipPollAsync();
+
+            using ( var rockContext = new RockContext() )
+            {
+                AddMetrics( rockContext );
                 rockContext.SaveChanges();
             }
         }
@@ -515,6 +554,36 @@ namespace Rock.WebFarm
         #endregion Event Handlers
 
         #region Helper Methods
+
+        /// <summary>
+        /// Adds the metrics.
+        /// </summary>
+        /// <param name="rockContext">The rock context.</param>
+        private static void AddMetrics( RockContext rockContext )
+        {
+            var cpuPercent = Convert.ToDecimal( _cpuCounter.NextValue() );
+            var ramAvailable = Convert.ToDecimal( _ramCounter.NextValue() );
+            var ramUsage = TotalRamMb - ramAvailable;
+
+            var webFarmNodeMetricService = new WebFarmNodeMetricService( rockContext );
+
+            webFarmNodeMetricService.AddRange( new[] {
+                new WebFarmNodeMetric
+                {
+                    WebFarmNodeId = _nodeId,
+                    MetricType = WebFarmNodeMetric.TypeOfMetric.CpuUsagePercent,
+                    MetricValue = cpuPercent
+                },
+                new WebFarmNodeMetric
+                {
+                    WebFarmNodeId = _nodeId,
+                    MetricType = WebFarmNodeMetric.TypeOfMetric.MemoryUsageMegabytes,
+                    MetricValue = ramUsage
+                }
+            } );
+
+            Debug( $"Added metrics: CPU {cpuPercent:N0}% RAM {ramUsage:N0}MB" );
+        }
 
         /// <summary>
         /// Adds the log.
