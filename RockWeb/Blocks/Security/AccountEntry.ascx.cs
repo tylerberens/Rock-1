@@ -42,6 +42,13 @@ namespace RockWeb.Blocks.Security
 
     #region "Block Attributes"
     [BooleanField(
+        "Require Email For Username",
+        Key = AttributeKeys.RequireEmailForUsername,
+        Description = "When enabled the label on the Username will be changed to Email and the field will validate to ensure that the input is formatted as an email.",
+        DefaultBooleanValue = false,
+        Order = -1 )]
+
+    [BooleanField(
         "Check For Duplicates",
         Key = AttributeKeys.Duplicates,
         Description = "Should people with the same email and last name be presented as a possible pre-existing record for user to choose from.",
@@ -227,6 +234,7 @@ namespace RockWeb.Blocks.Security
     {
         private static class AttributeKeys
         {
+            public const string RequireEmailForUsername = "RequireEmailForUsername";
             public const string Duplicates = "Duplicates";
             public const string FoundDuplicateCaption = "FoundDuplicateCaption";
             public const string ExistingAccountCaption = "ExistingAccountCaption";
@@ -266,6 +274,14 @@ namespace RockWeb.Blocks.Security
             set { ViewState["Password"] = value; }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether [validate username as email].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [validate username as email]; otherwise, <c>false</c>.
+        /// </value>
+        protected bool ValidateUsernameAsEmail { get; private set; }
+
         #endregion
 
         #region Base Control Methods
@@ -277,6 +293,10 @@ namespace RockWeb.Blocks.Security
         protected override void OnInit( EventArgs e )
         {
             base.OnInit( e );
+
+            ValidateUsernameAsEmail = GetAttributeValue( AttributeKeys.RequireEmailForUsername ).AsBoolean();
+            tbUserName.Label = ValidateUsernameAsEmail ? "Email" : "Username";
+            tbEmail.Visible = !ValidateUsernameAsEmail;
 
             lFoundDuplicateCaption.Text = GetAttributeValue( AttributeKeys.FoundDuplicateCaption );
             lSentLoginCaption.Text = GetAttributeValue( AttributeKeys.SentLoginCaption );
@@ -419,6 +439,16 @@ namespace RockWeb.Blocks.Security
                         GetAttributeValue( AttributeKeys.MinimumAge ) )
                     );
                     return;
+                }
+
+                if ( ValidateUsernameAsEmail )
+                {
+                    var match = System.Text.RegularExpressions.Regex.Match( tbUserName.Text, @"\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*" );
+                    if ( !match.Success )
+                    {
+                        ShowErrorMessage( "User name must be a valid email address." );
+                        return;
+                    }
                 }
 
                 if ( UserLoginService.IsPasswordValid( tbPassword.Text ) )
@@ -584,9 +614,11 @@ namespace RockWeb.Blocks.Security
 
             if ( Convert.ToBoolean( GetAttributeValue( AttributeKeys.Duplicates ) ) )
             {
-                PersonService personService = new PersonService( new RockContext() );
-                var matches = personService.Queryable().Where( p =>
-                        p.Email.ToLower() == tbEmail.Text.ToLower() && p.LastName.ToLower() == tbLastName.Text.ToLower() ).ToList();
+                var email = ValidateUsernameAsEmail ? tbUserName.Text : tbEmail.Text;
+                var matches = new PersonService( new RockContext() ).Queryable()
+                    .Where( p => p.Email.ToLower() == email.ToLower()
+                        && p.LastName.ToLower() == tbLastName.Text.ToLower() )
+                    .ToList();
 
                 if ( matches.Count > 0 )
                 {
@@ -631,7 +663,15 @@ namespace RockWeb.Blocks.Security
 
             tbFirstName.Text = CurrentPerson.NickName;
             tbLastName.Text = CurrentPerson.LastName;
-            tbEmail.Text = CurrentPerson.Email;
+
+            if ( ValidateUsernameAsEmail )
+            {
+                tbUserName.Text = CurrentPerson.Email;
+            }
+            else
+            {
+                tbEmail.Text = CurrentPerson.Email;
+            }
 
             switch ( CurrentPerson.Gender )
             {
@@ -903,7 +943,7 @@ namespace RockWeb.Blocks.Security
             Person person = new Person();
             person.FirstName = tbFirstName.Text;
             person.LastName = tbLastName.Text;
-            person.Email = tbEmail.Text;
+            person.Email = ValidateUsernameAsEmail ? tbUserName.Text : tbEmail.Text;
             person.IsEmailActive = true;
             person.EmailPreference = EmailPreference.EmailAllowed;
             person.RecordTypeValueId = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON.AsGuid() ).Id;
