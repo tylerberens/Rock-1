@@ -137,6 +137,8 @@ namespace RockWeb.Blocks.WorkFlow
 
         private WorkflowActionTypeCache _actionType = null;
 
+        private const string VALIDATION_GROUP = "WorkflowEntryValidationGroup";
+
         #endregion
 
         #region Properties
@@ -737,7 +739,7 @@ namespace RockWeb.Blocks.WorkFlow
                     AttributeControlOptions attributeControlOptions = new AttributeControlOptions
                     {
                         Value = value,
-                        ValidationGroup = BlockValidationGroup,
+                        ValidationGroup = VALIDATION_GROUP,
                         SetValue = setValues,
                         SetId = true,
                         Required = formAttribute.IsRequired,
@@ -797,7 +799,7 @@ namespace RockWeb.Blocks.WorkFlow
 
                 string buttonClickScript = string.Format(
                     "handleWorkflowActionButtonClick('{0}', {1});",
-                    BlockValidationGroup,
+                    VALIDATION_GROUP,
                     button.CausesValidation.ToJavaScriptValue() );
 
                 buttonMergeFields.Add( "ButtonClick", buttonClickScript );
@@ -1450,7 +1452,7 @@ namespace RockWeb.Blocks.WorkFlow
             {
                 if ( button.CausesValidation )
                 {
-                    Page.Validate();
+                    Page.Validate( VALIDATION_GROUP );
 
                     if ( !Page.IsValid )
                     {
