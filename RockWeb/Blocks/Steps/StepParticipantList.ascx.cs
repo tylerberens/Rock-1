@@ -889,13 +889,14 @@ namespace RockWeb.Blocks.Steps
             _stepStatusesHtml = stepStatusService.Queryable()
                 .AsNoTracking()
                 .Where( ss => ss.StepProgram.StepTypes.Any( st => st.Id == _stepType.Id ) )
-                .ToList()
                 .ToDictionary(
                     ss => ss.Id,
-                    ss => string.Format(
-                        "<span class='label label-default' style='background-color: {0};'>{1}</span>",
-                        ss.StatusColorOrDefault,
-                        ss.Name ) );
+                    ss =>
+                        "<span class='label label-default' style='background-color: " +
+                        ss.StatusColorOrDefault +
+                        ";'>" +
+                        ss.Name +
+                        "</span>" );
 
             return _stepStatusesHtml;
         }

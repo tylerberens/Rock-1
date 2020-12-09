@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
+using System.Data.Entity.SqlServer;
 using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -1512,11 +1513,10 @@ namespace RockWeb.Blocks.Steps
             var stepsCompleted = completedQuery.Count();
 
             var daysToCompleteList = completedQuery
-                .Where( s => s.StartDateKey.HasValue )
-                .Select( s => new { s.StartDateTime, s.CompletedDateTime } )
-                .ToList()
-                .Where( s => s.StartDateTime.HasValue && s.CompletedDateTime.HasValue )
-                .Select( s => ( s.CompletedDateTime.Value - s.StartDateTime.Value ).Days );
+                .Select( s => SqlFunctions.DateDiff( "DAY", s.StartDateTime, s.CompletedDateTime ) )
+                .Where( i => i.HasValue )
+                .Select( i => i.Value )
+                .ToList();
 
             var avgDaysToComplete = daysToCompleteList.Any() ? ( int ) daysToCompleteList.Average() : 0;
 
