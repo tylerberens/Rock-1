@@ -573,6 +573,7 @@ namespace Rock.Web.UI.Controls
             _noteEditor.ID = this.ID + "_noteEditor";
             _noteEditor.SetNoteOptions( this.NoteOptions );
             _noteEditor.CssClass = "note-new";
+            _noteEditor.ValidationGroup = this.ClientID + "_validationGroup";
 
             _noteEditor.CreatedByPersonAlias = ( this.Page as RockPage )?.CurrentPersonAlias;
             _noteEditor.SaveButtonClick += note_SaveButtonClick;

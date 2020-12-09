@@ -32,7 +32,7 @@ namespace Rock.Web.UI.Controls
     /// Edits a Rock Note.
     /// </summary>
     [ToolboxData( "<{0}:NoteEditor runat=server></{0}:NoteEditor>" )]
-    public class NoteEditor : CompositeControl, IDoNotBlockValidate
+    public class NoteEditor : CompositeControl, IHasValidationGroup
     {
         #region Fields
 
@@ -393,6 +393,12 @@ namespace Rock.Web.UI.Controls
             }
         }
 
+        public string ValidationGroup
+        {
+            get { return ViewState["ValidationGroup"] as string ?? string.Empty; }
+            set { ViewState["ValidationGroup"] = value; }
+        }
+
         private PersonAlias _createdByPersonAlias = null;
 
         #endregion
@@ -648,10 +654,10 @@ namespace Rock.Web.UI.Controls
         /// </summary>
         private void AddNoteValidationGroup()
         {
-            string validationGroup = $"vgNoteEdit_{this.ClientID}";
-            _vsEditNote.ValidationGroup = validationGroup;
-            _tbNote.ValidationGroup = validationGroup;
-            _lbSaveNote.ValidationGroup = validationGroup;
+            //ValidationGroup = $"{ValidationGroup}_{this.ClientID}";
+            _vsEditNote.ValidationGroup = ValidationGroup;
+            _tbNote.ValidationGroup = ValidationGroup;
+            _lbSaveNote.ValidationGroup = ValidationGroup;
         }
 
         #endregion
