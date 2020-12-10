@@ -191,7 +191,6 @@ namespace Rock.Model
         [DataMember]
         public bool? IsFirstTime { get; set; }
 
-
         /// <summary>
         /// Gets or sets the note.
         /// </summary>
@@ -580,10 +579,10 @@ namespace Rock.Model
         }
 
         /// <summary>
-        /// Gets or sets the sunday date.
+        /// Gets or sets the Sunday date.
         /// </summary>
         /// <value>
-        /// The sunday date.
+        /// The Sunday date.
         /// </value>
         [LavaInclude]
         [NotMapped]
