@@ -2,6 +2,10 @@
 
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
+        <%-- TODO Temp Style --%>
+        <style>
+            .criteria-exists{color:#fff;background-color:#f0ad4e;border:1px solid #eea236}
+        </style>
 
         <asp:Panel ID="pnlView" runat="server" CssClass="panel panel-block">
 
@@ -11,6 +15,7 @@
                 <div class="pull-right">
                     <asp:LinkButton ID="btnShowFilter" runat="server" CssClass="btn btn-xs btn-link room-list-criteria-exists" OnClick="btnShowFilter_Click">
                         <i class="fa fa-filter"></i>
+                        Filters
                     </asp:LinkButton>
                 </div>
             </div>
@@ -25,6 +30,7 @@
                     <asp:LinkButton ID="btnClearFilter" runat="server" CssClass="filter-clear btn btn-default btn-xs" Text="Clear Filter" OnClick="btnClearFilter_Click" CausesValidation="false" />
                 </div>
             </asp:Panel>
+            <Rock:NotificationBox ID="nbWarning" runat="server" NotificationBoxType="Warning" />
             <div class="panel-body">
                 <div class="grid grid-panel">
                     <Rock:Grid ID="gRoomList" runat="server" DisplayType="Light" UseFullStylesForLightGrid="true" ShowActionRow="false" OnRowDataBound="gRoomList_RowDataBound">

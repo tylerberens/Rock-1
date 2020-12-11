@@ -413,21 +413,32 @@ namespace Rock.CheckIn
             // Status: if this Attendee has multiple AttendanceOccurrences, the highest AttendeeStatus value among them wins.
             var latestAttendance = this.Attendances.OrderByDescending( a => a.StartDateTime ).First();
 
-            if ( latestAttendance.EndDateTime.HasValue )
-            {
-                this.Status = RosterAttendeeStatus.CheckedOut;
-            }
-            else if ( latestAttendance.PresentDateTime.HasValue )
-            {
-                this.Status = RosterAttendeeStatus.Present;
-            }
-            else
-            {
-                this.Status = RosterAttendeeStatus.CheckedIn;
-            }
+            this.Status = GetRosterAttendeeStatus( latestAttendance.EndDateTime, latestAttendance.PresentDateTime );
 
             // Check-in Time: if this Attendee has multiple AttendanceOccurrences, the latest StartDateTime value among them wins.
             this.CheckInTime = latestAttendance.StartDateTime;
+        }
+
+        /// <summary>
+        /// Gets the roster attendee status.
+        /// </summary>
+        /// <param name="endDateTime">The <see cref="Attendance.EndDateTime"/></param>
+        /// <param name="presentDateTime">The <see cref="Attendance.PresentDateTime"/></param>
+        /// <returns></returns>
+        public static RosterAttendeeStatus GetRosterAttendeeStatus( DateTime? endDateTime, DateTime? presentDateTime )
+        {
+            if ( endDateTime.HasValue )
+            {
+                return RosterAttendeeStatus.CheckedOut;
+            }
+            else if ( presentDateTime.HasValue )
+            {
+                return RosterAttendeeStatus.Present;
+            }
+            else
+            {
+                return RosterAttendeeStatus.CheckedIn;
+            }
         }
 
         /// <summary>
