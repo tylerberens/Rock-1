@@ -278,7 +278,7 @@ namespace Rock.CheckIn
         /// <returns></returns>
         public string GetPersonPhotoImageHtmlTag()
         {
-            var imgTag = Rock.Model.Person.GetPersonPhotoImageTag( this.PersonId, this.PhotoId, this.Age, this.Gender, null, 50, 50, this.FullName, "avatar avatar-lg" );
+            var imgTag = Rock.Model.Person.GetPersonPhotoImageTag( this._person, 50, 50, className: "avatar avatar-lg" );
 
             return imgTag;
         }

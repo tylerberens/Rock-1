@@ -248,9 +248,16 @@ namespace RockWeb.Blocks.CheckIn.Manager
         protected override void OnInit( EventArgs e )
         {
             base.OnInit( e );
+            DebugHelper.SQLLoggingStart();
 
             this.BlockUpdated += Block_BlockUpdated;
             this.AddConfigurationUpdateTrigger( upnlContent );
+        }
+
+        protected override void OnUnload( EventArgs e )
+        {
+            base.OnUnload( e );
+            DebugHelper.SQLLoggingStop();
         }
 
         /// <summary>
@@ -791,8 +798,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
             if ( campusEntityType != null )
             {
                 var campusContext = RockPage.GetCurrentContext( campusEntityType ) as Campus;
-
-                campus = CampusCache.Get( campusContext );
+                if ( campusContext != null )
+                {
+                    campus = CampusCache.Get( campusContext.Id );
+                }
             }
 
             return campus;

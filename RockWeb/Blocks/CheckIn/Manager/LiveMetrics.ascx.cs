@@ -387,11 +387,13 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="RepeaterItemEventArgs"/> instance containing the event data.</param>
         protected void rptPeople_ItemDataBound( object sender, RepeaterItemEventArgs e )
         {
-            var person = e.Item.DataItem as PersonResult;
-            if ( person == null )
+            var personResult = e.Item.DataItem as PersonResult;
+            if ( personResult == null && personResult.Person == null )
             {
                 return;
             }
+
+            var person = personResult.Person;
 
             var li = e.Item.FindControl( "liNavItem" ) as HtmlGenericControl;
             if ( li != null )
@@ -402,20 +404,20 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var img = e.Item.FindControl( "imgPerson" ) as Literal;
             if ( img != null )
             {
-                img.Text = Rock.Model.Person.GetPersonPhotoImageTag( person.Id, person.PhotoId, person.Age.AsIntegerOrNull(), person.Gender, null, 50, 50, person.Name, "avatar avatar-lg mr-3" );
+                img.Text = Rock.Model.Person.GetPersonPhotoImageTag( person, 50, 50, className: "avatar avatar-lg mr-3" );
             }
 
             string desktopStatus = string.Empty;
             string statusClass = string.Empty;
             string mobileIcon = @"<i class=""fa fa-{0}""></i>";
 
-            if ( NavData.AllowCheckout && person.CheckedOutDateTime.HasValue )
+            if ( NavData.AllowCheckout && personResult.CheckedOutDateTime.HasValue )
             {
                 statusClass = "danger";
                 mobileIcon = string.Format( mobileIcon, "minus" );
                 desktopStatus = "Checked-out";
             }
-            else if ( person.PresentDateTime.HasValue )
+            else if ( personResult.PresentDateTime.HasValue )
             {
                 statusClass = "success";
                 mobileIcon = string.Format( mobileIcon, "check" );
@@ -448,14 +450,14 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 lMobileStatus.Text = string.Format( @"<span class=""badge badge-circle badge-{0} d-sm-none"">{1}</span>", statusClass, mobileIcon );
             }
 
-            if ( person.Age != string.Empty )
+            if ( person.Age.HasValue )
             {
                 var lAge = e.Item.FindControl( "lAge" ) as Literal;
                 if ( lAge != null )
                 {
                     lAge.Text = string.Format(
                         "{0}<span class='small text-muted'>(Age: {1})</span>",
-                        string.IsNullOrWhiteSpace( person.ScheduleGroupNames ) ? "<br/>" : " ",
+                        string.IsNullOrWhiteSpace( personResult.ScheduleGroupNames ) ? "<br/>" : " ",
                         person.Age );
                 }
             }
@@ -1584,19 +1586,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
         public class PersonResult
         {
-            public int Id { get; set; }
-
-            public Guid Guid { get; set; }
-
-            public string Name { get; set; }
-
-            public Gender Gender { get; set; }
-
-            public int? PhotoId { get; set; }
+            public Person Person { get; private set; }
 
             public string ScheduleGroupNames { get; set; }
-
-            public string Age { get; set; }
 
             public DateTime? PresentDateTime { get; set; }
 
@@ -1613,13 +1605,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     return;
                 }
 
-                var person = attendances.First().PersonAlias.Person;
-                Id = person.Id;
-                Guid = person.Guid;
-                Name = person.FullName;
-                Gender = person.Gender;
-                Age = person.Age.ToString() ?? string.Empty;
-                PhotoId = person.PhotoId;
+                Person = attendances.First().PersonAlias.Person;
 
                 ScheduleGroupNames = attendances
                     .Select( a => string.Format(

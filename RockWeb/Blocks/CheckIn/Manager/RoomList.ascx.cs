@@ -253,6 +253,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             }
 
             var rockContext = new RockContext();
+            rockContext.SqlLogging( true );
             var groupService = new GroupService( rockContext );
             var groupTypeService = new GroupTypeService( rockContext );
             IEnumerable<CheckinAreaPath> checkinAreaPaths;
@@ -313,7 +314,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 GroupId = a.Occurrence.GroupId.Value,
                 EndDateTime = a.EndDateTime,
                 PresentDateTime = a.PresentDateTime
-            } );
+            } ).ToList();
 
             var locationCountLookup = attendanceCheckinTimeInfoList.GroupBy( a => a.LocationId ).ToDictionary( k => k.Key, v => new RoomCounts
             {
@@ -343,11 +344,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
             gRoomList.DataKeyNames = new string[1] { "Id" };
             gRoomList.DataSource = sortedRoomList;
             gRoomList.DataBind();
+
+            rockContext.SqlLogging( false );
         }
 
-        /// <summary>
-        /// Gets the campus from the current context.
-        /// </summary>
         private CampusCache GetCampusFromContext()
         {
             CampusCache campus = null;
@@ -356,8 +356,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
             if ( campusEntityType != null )
             {
                 var campusContext = RockPage.GetCurrentContext( campusEntityType ) as Campus;
-
-                campus = CampusCache.Get( campusContext );
+                if ( campusContext != null )
+                {
+                    campus = CampusCache.Get( campusContext.Id );
+                }
             }
 
             return campus;
@@ -387,9 +389,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
             lRoomName.Text = roomInfo.LocationName;
 
             lGroupName.Text = roomInfo.GroupsPathHTML;
-            lCheckedInCount.Text = "TODO";
-            lPresentCount.Text = "TODO";
-            lCheckedOutCount.Text = "TODO";
+            if ( roomInfo.RoomCounts != null )
+            {
+                lCheckedInCount.Text = roomInfo.RoomCounts.CheckedInCount.ToString();
+                lPresentCount.Text = roomInfo.RoomCounts.PresentCount.ToString();
+                lCheckedOutCount.Text = roomInfo.RoomCounts.CheckedOutCount.ToString();
+            }
         }
 
         /// <summary>
