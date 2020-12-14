@@ -10,9 +10,6 @@
             default: 'Loading...'
         }
     },
-    emits: [
-        'click'
-    ],
     methods: {
         handleClick: function () {
             this.$emit('click');

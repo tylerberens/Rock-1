@@ -1,7 +1,7 @@
 ﻿Obsidian.Elements.registerElement({
     name: 'CheckBox',
     props: {
-        modelValue: {
+        value: {
             type: Boolean,
             required: true
         },
@@ -10,23 +10,20 @@
             required: true
         }
     },
-    emits: [
-        'update:modelValue'
-    ],
     data: function () {
         return {
             uniqueId: `rock-checkbox-${Obsidian.Util.newGuid()}`,
-            internalValue: this.modelValue
+            internalValue: this.value
         };
     },
     methods: {
         handleInput: function () {
-            this.$emit('update:modelValue', this.internalValue);
+            this.$emit('input', this.internalValue);
         }
     },
     watch: {
         value: function () {
-            this.internalValue = this.modelValue;
+            this.internalValue = this.value;
         }
     },
     template:

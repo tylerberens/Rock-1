@@ -78,7 +78,7 @@
                     DropDownList: Obsidian.Elements.DropDownList
                 },
                 props: {
-                    modelValue: {
+                    value: {
                         type: String,
                         required: true
                     },
@@ -91,9 +91,6 @@
                         default: false
                     }
                 },
-                emits: [
-                    'update:modelValue'
-                ],
                 data: function () {
                     return {
                         internalValue: '',
@@ -105,18 +102,16 @@
                         return getOptionsFunc(this.$store);
                     }
                 },
-                methods: {
-                    onChange: function () {
-                        this.$emit('update:modelValue', this.internalValue);
-                    }
-                },
                 watch: {
+                    internalValue: function () {
+                        this.$emit('input', this.internalValue);
+                    },
                     value: function () {
-                        this.internalValue = this.modelValue;
+                        this.internalValue = this.value;
                     }
                 },
                 template:
-                    `<DropDownList v-model="internalValue" @change="onChange" :disabled="isLoading" :label="label" :options="options" />`
+                    `<DropDownList v-model="internalValue" :disabled="isLoading" :label="label" :options="options" />`
             });
         }
     };
@@ -234,7 +229,9 @@
      * @param {object} config
      */
     Obsidian.initializeBlock = function (config) {
-        return Vue.createApp({
+        return new Vue({
+            el: config.rootElement,
+            store: Obsidian.Store,
             name: `Root.${config.blockFileIdentifier}`,
             components: {
                 RockBlock: Obsidian.Controls.RockBlock
@@ -245,8 +242,6 @@
                 };
             },
             template: `<RockBlock :config="config" />`
-        })
-            .use(Obsidian.Store)
-            .mount(config.rootElement);
+        });
     };
 })();

@@ -60,7 +60,7 @@ Obsidian.Store = (function () {
     }
 
     // Declare the Vuex store
-    const _store = Vuex.createStore({
+    const _store = new Vuex.Store({
         state: {
             areSecondaryBlocksShown: true,
             currentPerson: null,

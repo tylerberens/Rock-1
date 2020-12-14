@@ -1,14 +1,14 @@
 ﻿Obsidian.Fields.registerField('1EDAFDED-DFE6-4334-B019-6EECBA89E05A', {
     name: 'BooleanField',
     props: {
-        modelValue: {
+        value: {
             type: String,
             required: true
         }
     },
     computed: {
         safeValue() {
-            return (this.modelValue || '').trim().toLowerCase();
+            return (this.value || '').trim().toLowerCase();
         },
         valueIsNull() {
             return !this.safeValue

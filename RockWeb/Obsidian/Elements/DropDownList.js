@@ -1,7 +1,7 @@
 ﻿Obsidian.Elements.registerElement({
     name: 'DropDownList',
     props: {
-        modelValue: {
+        value: {
             type: String,
             required: true
         },
@@ -22,23 +22,20 @@
             required: true
         }
     },
-    emits: [
-        'update:modelValue'
-    ],
     data: function () {
         return {
             uniqueId: `rock-dropdownlist-${Obsidian.Util.newGuid()}`,
-            internalValue: this.modelValue
+            internalValue: this.value
         };
     },
     methods: {
         onChange: function () {
-            this.$emit('update:modelValue', this.internalValue);
+            this.$emit('input', this.internalValue);
         }
     },
     watch: {
         value: function () {
-            this.internalValue = this.modelValue;
+            this.internalValue = this.value;
         }
     },
     template:

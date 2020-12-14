@@ -7,7 +7,7 @@
         'http'
     ],
     props: {
-        modelValue: {
+        value: {
             type: String,
             required: true
         },
@@ -24,12 +24,9 @@
             default: false
         }
     },
-    emits: [
-        'update:modelValue'
-    ],
     data: function () {
         return {
-            internalValue: this.modelValue,
+            internalValue: this.value,
             definedValues: [],
             isLoading: false
         };
@@ -46,14 +43,12 @@
             }));
         }
     },
-    methods: {
-        onChange: function () {
-            this.$emit('update:modelValue', this.internalValue);
-        }
-    },
     watch: {
+        internalValue: function () {
+            this.$emit('input', this.internalValue);
+        },
         value: function () {
-            this.internalValue = this.modelValue;
+            this.internalValue = this.value;
         },
         definedTypeGuid: {
             immediate: true,
@@ -78,5 +73,5 @@
         }
     },
     template:
-`<DropDownList v-model="internalValue" @change="onChange" :disabled="!isEnabled" :label="label" :options="options" />`
+`<DropDownList v-model="internalValue" :disabled="!isEnabled" :label="label" :options="options" />`
 });

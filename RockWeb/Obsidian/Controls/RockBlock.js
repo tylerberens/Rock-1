@@ -20,7 +20,7 @@
         return {
             blockGuid: this.config.blockGuid,
             log: [],
-            blockComponent: Vue.markRaw(Obsidian.Blocks[this.config.blockFileIdentifier])
+            blockComponent: Obsidian.Blocks[this.config.blockFileIdentifier]
         };
     },
     computed: {
