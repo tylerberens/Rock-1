@@ -158,8 +158,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             base.OnInit( e );
 
-            DebugHelper.SQLLoggingStart();
-
             // this event gets fired after block settings are updated. it's nice to repaint the screen if these settings would alter it
             this.BlockUpdated += Block_BlockUpdated;
             this.AddConfigurationUpdateTrigger( upnlContent );
@@ -173,12 +171,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
             rptPeople.ItemDataBound += rptPeople_ItemDataBound;
 
             _configuredMode = GetAttributeValue( AttributeKey.Mode );
-        }
-
-        protected override void OnUnload( EventArgs e )
-        {
-            base.OnUnload( e );
-            DebugHelper.SQLLoggingStop();
         }
 
         /// <summary>
