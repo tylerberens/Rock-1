@@ -113,7 +113,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             + Rock.SystemGuid.Badge.BAPTISM + ","
             + Rock.SystemGuid.Badge.IN_SERVING_TEAM,
         Order = 7 )]
-    public partial class Person : Rock.Web.UI.RockBlock
+    public partial class PersonProfile : Rock.Web.UI.RockBlock
     {
         #region Attribute Keys
 
