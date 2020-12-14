@@ -2,10 +2,15 @@ set nocount on
 
 -- configuration
 declare
-    @populateStartDateTime datetime = DateAdd(hour, -1, GetDate()),
+    @populateStartDateTimeLastHour datetime = DateAdd(hour, -1, GetDate()),
+    @populateStartDateTimeLast12Months datetime = DateAdd(MONTH, -12, GetDate())
+
+declare
+    -- set this to @populateStartDateTimeLastHour or @populateStartDateTimeLast12Months (or custom), depending on what you need
+    @populateStartDateTime datetime = @populateStartDateTimeLastHour,
     @populateEndDateTime datetime  = DateAdd(hour, 0, GetDate()),
     @populateGroupScheduling int = 0, -- set this to true if the attendance records should be for scheduling attendences
-    @maxAttendanceCount int = 12, 
+    @maxAttendanceCount int = 1000, 
     @personSampleSize int = 10000, -- number of people to use when randomly assigning a person to each attendance. You might want to set this lower or higher depending on what type of data you want
     @checkinAreaGroupTypeId int = (SELECT Id FROM GroupType WHERE [Guid] = 'FEDD389A-616F-4A53-906C-63D8255631C5') -- Weekly Service Checkin
     
