@@ -27,7 +27,7 @@ namespace Rock.CheckIn
     public static class CheckinManagerHelper
     {
         /// <summary>
-        /// Saves the campus location configuration to cookie.
+        /// Saves the campus location configuration to the response cookie
         /// </summary>
         /// <param name="campusId">The campus identifier.</param>
         /// <param name="locationId">The location identifier.</param>
@@ -48,7 +48,7 @@ namespace Rock.CheckIn
         }
 
         /// <summary>
-        /// Saves the roster configuration to cookie.
+        /// Saves the roster configuration to the response cookie.
         /// </summary>
         /// <param name="rosterStatusFilter">The roster status filter.</param>
         public static void SaveRosterConfigurationToCookie( RosterStatusFilter rosterStatusFilter )
@@ -59,7 +59,7 @@ namespace Rock.CheckIn
         }
 
         /// <summary>
-        /// Saves the selected checkin area unique identifier to a cookie
+        /// Saves the selected checkin area unique identifier to the response cookie
         /// </summary>
         /// <returns></returns>
         public static void SaveSelectedCheckinAreaGuidToCookie( Guid? checkinAreaGuid )
@@ -70,7 +70,7 @@ namespace Rock.CheckIn
         }
 
         /// <summary>
-        /// Sets the room list filter to cookie.
+        /// Saves the room list filter to the response cookie
         /// </summary>
         /// <param name="roomListScheduleIdsFilter">The room list schedule ids filter.</param>
         public static void SaveRoomListFilterToCookie( int[] roomListScheduleIdsFilter )
@@ -80,6 +80,10 @@ namespace Rock.CheckIn
             SaveCheckinManagerConfigurationToCookie( checkinManagerConfiguration );
         }
 
+        /// <summary>
+        /// Saves the checkin manager configuration to response cookie.
+        /// </summary>
+        /// <param name="checkinManagerConfiguration">The checkin manager configuration.</param>
         private static void SaveCheckinManagerConfigurationToCookie( CheckinManagerConfiguration checkinManagerConfiguration )
         {
             var checkinManagerConfigurationJson = checkinManagerConfiguration.ToJson( Newtonsoft.Json.Formatting.None );
@@ -87,21 +91,18 @@ namespace Rock.CheckIn
         }
 
         /// <summary>
-        /// Gets the roster configuration from cookie.
+        /// Gets the roster configuration from the request cookie.
+        /// NOTE: This is the value from the Browser. It doesn't have the changes that were saved to the response cookie during this request.
         /// Always returns a non-null CheckinManagerConfiguration.
         /// </summary>
         /// <returns></returns>
         public static CheckinManagerConfiguration GetCheckinManagerConfigurationFromCookie()
         {
-            var requestCookie = HttpContext.Current.Request.Cookies[CheckInManagerCookieKey.CheckinManagerConfiguration];
-            var responseCookie = HttpContext.Current.Response.Cookies[CheckInManagerCookieKey.CheckinManagerConfiguration];
-
-            // if we've already done SaveCheckinManagerConfigurationToCookie in the current request, the configuration will be in the response cookie
-            // otherwise, it'll be in the request cookie
-            var checkinManagerConfiguration = responseCookie?.Value.FromJsonOrNull<CheckinManagerConfiguration>();
-            if ( checkinManagerConfiguration == null )
+            CheckinManagerConfiguration checkinManagerConfiguration = null;
+            var checkinManagerRosterConfigurationCookie = HttpContext.Current.Request.Cookies[CheckInManagerCookieKey.CheckinManagerConfiguration];
+            if ( checkinManagerRosterConfigurationCookie != null )
             {
-                checkinManagerConfiguration = requestCookie?.Value.FromJsonOrNull<CheckinManagerConfiguration>();
+                checkinManagerConfiguration = checkinManagerRosterConfigurationCookie.Value.FromJsonOrNull<CheckinManagerConfiguration>();
             }
 
             if ( checkinManagerConfiguration == null )

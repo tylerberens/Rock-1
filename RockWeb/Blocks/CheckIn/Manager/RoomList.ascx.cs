@@ -90,7 +90,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         #endregion Attribute Keys
-
         #region Page Parameter Keys
 
         private class PageParameterKey
@@ -130,6 +129,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             if ( !Page.IsPostBack )
             {
+                BindFilter();
                 BindGrid();
             }
         }
@@ -213,10 +213,28 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// Binds the grid.
+        /// Determines if the Filter
         /// </summary>
-        private void BindGrid()
+        /// <returns></returns>
+        private bool HasFilterErrors()
         {
+            CampusCache campus = GetCampusFromContext();
+            if ( campus == null )
+            {
+                nbWarning.Text = "Please select a Campus.";
+                nbWarning.NotificationBoxType = NotificationBoxType.Warning;
+                nbWarning.Visible = true;
+                return true;
+            }
+
+            if ( !campus.LocationId.HasValue )
+            {
+                nbWarning.Text = "This campus does not have any locations.";
+                nbWarning.NotificationBoxType = NotificationBoxType.Warning;
+                nbWarning.Visible = true;
+                return true;
+            }
+
             GroupTypeCache checkinAreaFilter = null;
 
             // if ShowAllAreas is false, the CheckinAreaFilter is required
@@ -228,19 +246,35 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     if ( NavigateToLinkedPage( AttributeKey.AreaSelectPage ) )
                     {
                         // we are navigating to get the Area Filter, which will get the Area cookie
-                        return;
+                        return true;
                     }
                     else
                     {
                         nbWarning.Text = "The 'Area Select Page' Block Attribute must be defined.";
                         nbWarning.NotificationBoxType = NotificationBoxType.Warning;
                         nbWarning.Visible = true;
-                        return;
+                        return true;
                     }
                 }
             }
 
-            var selectedScheduleIds = CheckinManagerHelper.GetCheckinManagerConfigurationFromCookie().RoomListScheduleIdsFilter;
+            return false;
+        }
+
+        /// <summary>
+        /// Binds the grid.
+        /// </summary>
+        private void BindGrid()
+        {
+            if ( HasFilterErrors() )
+            {
+                return;
+            }
+
+            var checkinAreaFilter = GetCheckinAreaFilter();
+            CampusCache campus = GetCampusFromContext();
+
+            var selectedScheduleIds = lbSchedules.SelectedValues.AsIntegerList();
             if ( selectedScheduleIds.Any() )
             {
                 btnShowFilter.AddCssClass( "criteria-exists" );
@@ -250,8 +284,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 btnShowFilter.RemoveCssClass( "criteria-exists" );
             }
 
+            CheckinManagerHelper.SaveRoomListFilterToCookie( selectedScheduleIds.ToArray() );
+
             var rockContext = new RockContext();
-            rockContext.SqlLogging( true );
             var groupService = new GroupService( rockContext );
             var groupTypeService = new GroupTypeService( rockContext );
             IEnumerable<CheckinAreaPath> checkinAreaPaths;
@@ -268,6 +303,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             var groupLocationService = new GroupLocationService( rockContext );
             var groupLocationsQuery = groupLocationService.Queryable().Where( gl => selectedGroupTypeIds.Contains( gl.Group.GroupTypeId ) );
+
+            // limit locations (rooms) to locations within the selected campus
+            var campusLocationIds = new LocationService( rockContext ).GetAllDescendentIds( campus.LocationId.Value ).ToList();
+            campusLocationIds.Add( campus.LocationId.Value, true );
+            groupLocationsQuery = groupLocationsQuery.Where( a => campusLocationIds.Contains( a.LocationId ) );
+
             if ( selectedScheduleIds.Any() )
             {
                 groupLocationsQuery = groupLocationsQuery.Where( a => a.Schedules.Any( s => s.IsActive && s.CheckInStartOffsetMinutes.HasValue && selectedScheduleIds.Contains( s.Id ) ) );
@@ -287,7 +328,15 @@ namespace RockWeb.Blocks.CheckIn.Manager
             } ).ToList();
 
             var startDateTime = RockDateTime.Today;
-            var currentDateTime = RockDateTime.Now;
+            DateTime currentDateTime;
+            if ( campus != null )
+            {
+                currentDateTime = campus.CurrentDateTime;
+            }
+            else
+            {
+                currentDateTime = RockDateTime.Now;
+            }
 
             // Get all Attendance records for the current day and location
             var attendanceQuery = new AttendanceService( rockContext ).Queryable().Where( a =>
@@ -299,6 +348,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 && a.Occurrence.LocationId.HasValue
                 && a.Occurrence.ScheduleId.HasValue );
 
+            // limit attendances (rooms) to locations within the selected campus
+            attendanceQuery = attendanceQuery.Where( a => campusLocationIds.Contains( a.Occurrence.LocationId.Value ) );
+
             attendanceQuery = attendanceQuery.Where( a => selectedGroupTypeIds.Contains( a.Occurrence.Group.GroupTypeId ) );
 
             if ( selectedScheduleIds.Any() )
@@ -306,13 +358,59 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 attendanceQuery = attendanceQuery.Where( a => selectedScheduleIds.Contains( a.Occurrence.ScheduleId.Value ) );
             }
 
-            var attendanceCheckinTimeInfoList = attendanceQuery.Select( a => new
+            IEnumerable<AttendanceCheckinTimeInfo> attendanceCheckinTimeInfoList = attendanceQuery.Select( a => new AttendanceCheckinTimeInfo
             {
                 LocationId = a.Occurrence.LocationId.Value,
                 GroupId = a.Occurrence.GroupId.Value,
+                GroupTypeId = a.Occurrence.Group.GroupTypeId,
+                StartDateTime = a.StartDateTime,
                 EndDateTime = a.EndDateTime,
-                PresentDateTime = a.PresentDateTime
+                Schedule = a.Occurrence.Schedule,
+                PresentDateTime = a.PresentDateTime,
+                PersonId = a.PersonAlias.PersonId
             } ).ToList();
+
+            var groupTypeIdsWithAllowCheckout = selectedGroupTypeIds
+                .Select( a => GroupTypeCache.Get( a ) )
+                .Where( a => a != null )
+                .Where( gt => gt.GetCheckInConfigurationAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ALLOW_CHECKOUT ).AsBoolean() )
+                .Select( a => a.Id )
+                .Distinct();
+
+            var groupTypeIdsWithEnablePresence = selectedGroupTypeIds
+                .Select( a => GroupTypeCache.Get( a ) )
+                .Where( a => a != null )
+                .Where( gt => gt.GetCheckInConfigurationAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ENABLE_PRESENCE ).AsBoolean() )
+                .Select( a => a.Id )
+                .Distinct();
+
+            // if the same person is checked in multiple times, only count the most recent attendance
+            attendanceCheckinTimeInfoList = attendanceCheckinTimeInfoList.GroupBy( a => a.PersonId )
+                .Select( s => s.OrderByDescending( o => o.StartDateTime ).FirstOrDefault() );
+
+            attendanceCheckinTimeInfoList = attendanceCheckinTimeInfoList.Where( a =>
+            {
+                var allowCheckout = groupTypeIdsWithAllowCheckout.Contains( a.GroupTypeId );
+                if ( !allowCheckout )
+                {
+                    /* 
+                        If AllowCheckout is false, remove all Attendees whose schedules are not currently active. Per the 'WasSchedule...ActiveForCheckOut()'
+                        method below: "Check-out can happen while check-in is active or until the event ends (start time + duration)." This will help to keep
+                        the list of 'Present' attendees cleaned up and accurate, based on the room schedules, since the volunteers have no way to manually mark
+                        an Attendee as 'Checked-out'.
+
+                        If, on the other hand, AllowCheckout is true, it will be the volunteers' responsibility to click the [Check-out] button when an
+                        Attendee leaves the room, in order to keep the list of 'Present' Attendees in order. This will also allow the volunteers to continue
+                        'Checking-out' Attendees in the case that the parents are running late in picking them up.
+                    */
+
+                    return a.Schedule.WasScheduleOrCheckInActiveForCheckOut( currentDateTime );
+                }
+                else
+                {
+                    return true;
+                }
+            } );
 
             var locationCountLookup = attendanceCheckinTimeInfoList.GroupBy( a => a.LocationId ).ToDictionary(
                 k => k.Key,
@@ -337,17 +435,24 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     GroupTypeId = g.GroupTypeId,
                     GroupTypePath = checkinAreaPathsLookup.GetValueOrNull( g.GroupTypeId )
                 } ).ToList()
-            } ).ToList();
+            } );
 
             var sortedRoomList = roomList.OrderBy( a => a.LocationName ).ToList();
+
+            var lCheckedOutCountField = gRoomList.ColumnsOfType<RockLiteralField>().FirstOrDefault( a => a.ID == "lCheckedOutCount" );
+            var lPresentCount = gRoomList.ColumnsOfType<RockLiteralField>().FirstOrDefault( a => a.ID == "lPresentCount" );
+            lCheckedOutCountField.Visible = groupTypeIdsWithAllowCheckout.Any();
+            lPresentCount.Visible = groupTypeIdsWithEnablePresence.Any();
 
             gRoomList.DataKeyNames = new string[1] { "Id" };
             gRoomList.DataSource = sortedRoomList;
             gRoomList.DataBind();
-
-            rockContext.SqlLogging( false );
         }
 
+        /// <summary>
+        /// Gets the campus from context.
+        /// </summary>
+        /// <returns></returns>
         private CampusCache GetCampusFromContext()
         {
             CampusCache campus = null;
@@ -405,16 +510,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
         protected void btnShowFilter_Click( object sender, EventArgs e )
         {
             pnlFilterCriteria.Visible = !pnlFilterCriteria.Visible;
-            if ( pnlFilterCriteria.Visible )
-            {
-                ShowFilters();
-            }
         }
 
         /// <summary>
         /// Shows the filters.
         /// </summary>
-        private void ShowFilters()
+        private void BindFilter()
         {
             ScheduleService scheduleService = new ScheduleService( new RockContext() );
 
@@ -453,7 +554,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnApplyFilter_Click( object sender, EventArgs e )
         {
-            CheckinManagerHelper.SaveRoomListFilterToCookie( lbSchedules.SelectedValuesAsInt.ToArray() );
             pnlFilterCriteria.Visible = false;
             BindGrid();
         }
@@ -465,8 +565,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnClearFilter_Click( object sender, EventArgs e )
         {
-            CheckinManagerHelper.SaveRoomListFilterToCookie( null );
-            ShowFilters();
+            lbSchedules.SelectedValue = string.Empty;
         }
 
         /// <summary>
@@ -529,6 +628,25 @@ namespace RockWeb.Blocks.CheckIn.Manager
             public int PresentCount { get; internal set; }
 
             public int CheckedOutCount { get; internal set; }
+        }
+
+        private class AttendanceCheckinTimeInfo
+        {
+            public int LocationId { get; internal set; }
+
+            public int GroupId { get; internal set; }
+
+            public int GroupTypeId { get; internal set; }
+
+            public DateTime StartDateTime { get; internal set; }
+
+            public DateTime? EndDateTime { get; internal set; }
+
+            public Schedule Schedule { get; internal set; }
+
+            public DateTime? PresentDateTime { get; internal set; }
+
+            public int PersonId { get; internal set; }
         }
     }
 }
