@@ -124,19 +124,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
         #endregion ViewState Keys
 
-        #region Entity Attribute Value Keys
-
-        /// <summary>
-        /// Keys to use for entity attribute values.
-        /// </summary>
-        private class EntityAttributeValueKey
-        {
-            public const string GroupType_AllowCheckout = "core_checkin_AllowCheckout";
-            public const string GroupType_EnablePresence = "core_checkin_EnablePresence";
-        }
-
-        #endregion Entity Attribute Value Keys
-
         #region Properties
 
         /// <summary>
@@ -248,16 +235,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
         protected override void OnInit( EventArgs e )
         {
             base.OnInit( e );
-            DebugHelper.SQLLoggingStart();
-
             this.BlockUpdated += Block_BlockUpdated;
             this.AddConfigurationUpdateTrigger( upnlContent );
-        }
-
-        protected override void OnUnload( EventArgs e )
-        {
-            base.OnUnload( e );
-            DebugHelper.SQLLoggingStop();
         }
 
         /// <summary>
@@ -625,7 +604,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var groupTypeIds = attendanceList.Select( a => a.Occurrence.Group.GroupTypeId ).Distinct().ToList();
             var groupTypes = groupTypeIds.Select( a => GroupTypeCache.Get( a ) );
             var groupTypeIdsWithAllowCheckout = groupTypes
-                .Where( gt => gt.GetAttributeValue( EntityAttributeValueKey.GroupType_AllowCheckout ).AsBoolean() )
+                .Where( gt => gt.GetCheckInConfigurationAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ALLOW_CHECKOUT ).AsBoolean() )
                 .Where( a => a != null )
                 .Select( a => a.Id )
                 .Distinct();
@@ -872,7 +851,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// Initializes the sub page navigation.
         /// </summary>
         /// <param name="locationId">The location identifier.</param>
-        private void InitializeSubPageNav( int locationId)
+        private void InitializeSubPageNav( int locationId )
         {
             RockPage rockPage = this.Page as RockPage;
             if ( rockPage != null )
@@ -920,8 +899,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             var checkinConfigurationTypes = checkinAreas.Select( a => a.GetCheckInConfigurationType() );
 
-            var showPresenceControls = checkinConfigurationTypes.Any( a => a != null && a.GetAttributeValue( EntityAttributeValueKey.GroupType_EnablePresence ).AsBoolean() );
-            var showAllowCheckoutControls = checkinConfigurationTypes.Any( a => a != null && a.GetAttributeValue( EntityAttributeValueKey.GroupType_AllowCheckout ).AsBoolean() );
+            var showPresenceControls = checkinConfigurationTypes.Any( a => a != null && a.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ENABLE_PRESENCE ).AsBoolean() );
+            var showAllowCheckoutControls = checkinConfigurationTypes.Any( a => a != null && a.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ALLOW_CHECKOUT ).AsBoolean() );
 
             if ( !showPresenceControls )
             {
@@ -955,7 +934,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// Toggles the column visibility within the gAttendees grid based on the current filter
         /// </summary>
         /// <param name="anyRoomHasAllowCheckout">if set to <c>true</c> [any room has allow checkout].</param>
-        private void ToggleColumnVisibility(bool anyRoomHasAllowCheckout )
+        private void ToggleColumnVisibility( bool anyRoomHasAllowCheckout )
         {
             // StatusFilter.All:
             var mobileIconField = gAttendees.ColumnsOfType<RockLiteralField>().First( c => c.ID == "lMobileIcon" );

@@ -467,12 +467,6 @@ namespace Rock.CheckIn
 
         #region Static methods
 
-        private class EntityAttributeValueKey
-        {
-            public const string GroupType_AllowCheckout = "core_checkin_AllowCheckout";
-            public const string GroupType_EnablePresence = "core_checkin_EnablePresence";
-        }
-
         /// <summary>
         /// Returns a list of <see cref="RosterAttendee"/> from the attendance list
         /// </summary>
@@ -484,22 +478,12 @@ namespace Rock.CheckIn
             var groupTypes = groupTypeIds.Select( a => GroupTypeCache.Get( a ) ).Where( a => a != null );
 
             var groupTypeIdsWithAllowCheckout = groupTypes
-                .Where( gt =>
-                {
-                    var checkinConfigurationType = gt.GetCheckInConfigurationType();
-                    var allowCheckout = checkinConfigurationType?.GetAttributeValue( EntityAttributeValueKey.GroupType_AllowCheckout ).AsBoolean() ?? false;
-                    return allowCheckout;
-                } )
+                .Where( a => a.GetCheckInConfigurationAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ALLOW_CHECKOUT ).AsBoolean() )
                 .Select( a => a.Id )
                 .Distinct();
 
             var groupTypeIdsWithEnablePresence = groupTypes
-                .Where( gt =>
-                {
-                    var checkinConfigurationType = gt.GetCheckInConfigurationType();
-                    var enablePresence = checkinConfigurationType?.GetAttributeValue( EntityAttributeValueKey.GroupType_EnablePresence ).AsBoolean() ?? false;
-                    return enablePresence;
-                } )
+                .Where( a => a.GetCheckInConfigurationAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ENABLE_PRESENCE ).AsBoolean() )
                 .Select( a => a.Id )
                 .Distinct();
 
