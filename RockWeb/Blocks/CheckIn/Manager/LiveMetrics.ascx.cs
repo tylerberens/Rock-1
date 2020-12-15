@@ -1609,7 +1609,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
         public class PersonResult
         {
-            public Person Person { get; private set; }
+            public Rock.Model.Person Person { get; private set; }
 
             public string Name
             {

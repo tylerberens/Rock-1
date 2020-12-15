@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Web;
+using Rock.Web.UI;
 
 namespace Rock.CheckIn
 {
@@ -32,7 +33,18 @@ namespace Rock.CheckIn
         /// <param name="locationId">The location identifier.</param>
         public static void SaveCampusLocationConfigurationToCookie( int campusId, int? locationId )
         {
-            SaveCheckinManagerConfigurationToCookie( campusId, locationId, null, null );
+            CheckinManagerConfiguration checkinManagerConfiguration = GetCheckinManagerConfigurationFromCookie();
+
+            if ( locationId.HasValue )
+            {
+                checkinManagerConfiguration.LocationIdFromSelectedCampusId.AddOrReplace( campusId, locationId.Value );
+            }
+            else
+            {
+                checkinManagerConfiguration.LocationIdFromSelectedCampusId.Remove( campusId );
+            }
+
+            SaveCheckinManagerConfigurationToCookie( checkinManagerConfiguration );
         }
 
         /// <summary>
@@ -41,50 +53,35 @@ namespace Rock.CheckIn
         /// <param name="rosterStatusFilter">The roster status filter.</param>
         public static void SaveRosterConfigurationToCookie( RosterStatusFilter rosterStatusFilter )
         {
-            SaveCheckinManagerConfigurationToCookie( null, null, rosterStatusFilter, null );
+            CheckinManagerConfiguration checkinManagerConfiguration = GetCheckinManagerConfigurationFromCookie();
+            checkinManagerConfiguration.RosterStatusFilter = rosterStatusFilter;
+            SaveCheckinManagerConfigurationToCookie( checkinManagerConfiguration );
         }
 
         /// <summary>
-        /// Sets the selected checkin area unique identifier to a cookie
+        /// Saves the selected checkin area unique identifier to a cookie
         /// </summary>
         /// <returns></returns>
-        public static void SetSelectedCheckinAreaGuidToCookie( Guid? checkinAreaGuid )
+        public static void SaveSelectedCheckinAreaGuidToCookie( Guid? checkinAreaGuid )
         {
-            SaveCheckinManagerConfigurationToCookie( null, null, null, checkinAreaGuid );
+            CheckinManagerConfiguration checkinManagerConfiguration = GetCheckinManagerConfigurationFromCookie();
+            checkinManagerConfiguration.CheckinAreaGuid = checkinAreaGuid;
+            SaveCheckinManagerConfigurationToCookie( checkinManagerConfiguration );
         }
 
         /// <summary>
-        /// Saves the CheckinManager configuration to a cookie.
+        /// Sets the room list filter to cookie.
         /// </summary>
-        /// <param name="campusId">The campus identifier.</param>
-        /// <param name="locationId">The location identifier.</param>
-        /// <param name="rosterStatusFilter">The roster status filter.</param>
-        /// <param name="checkinAreaGuid">The checkin area unique identifier.</param>
-        private static void SaveCheckinManagerConfigurationToCookie( int? campusId, int? locationId, RosterStatusFilter? rosterStatusFilter, Guid? checkinAreaGuid )
+        /// <param name="roomListScheduleIdsFilter">The room list schedule ids filter.</param>
+        public static void SaveRoomListFilterToCookie( int[] roomListScheduleIdsFilter )
         {
             CheckinManagerConfiguration checkinManagerConfiguration = GetCheckinManagerConfigurationFromCookie();
-            if ( campusId.HasValue )
-            {
-                if ( locationId.HasValue )
-                {
-                    checkinManagerConfiguration.LocationIdFromSelectedCampusId.AddOrReplace( campusId.Value, locationId.Value );
-                }
-                else
-                {
-                    checkinManagerConfiguration.LocationIdFromSelectedCampusId.Remove( campusId.Value );
-                }
-            }
+            checkinManagerConfiguration.RoomListScheduleIdsFilter = roomListScheduleIdsFilter;
+            SaveCheckinManagerConfigurationToCookie( checkinManagerConfiguration );
+        }
 
-            if ( rosterStatusFilter.HasValue )
-            {
-                checkinManagerConfiguration.RosterStatusFilter = rosterStatusFilter.Value;
-            }
-
-            if ( checkinAreaGuid.HasValue )
-            {
-                checkinManagerConfiguration.CheckinAreaGuid = checkinAreaGuid;
-            }
-
+        private static void SaveCheckinManagerConfigurationToCookie( CheckinManagerConfiguration checkinManagerConfiguration )
+        {
             var checkinManagerConfigurationJson = checkinManagerConfiguration.ToJson( Newtonsoft.Json.Formatting.None );
             Rock.Web.UI.RockPage.AddOrUpdateCookie( CheckInManagerCookieKey.CheckinManagerConfiguration, checkinManagerConfigurationJson, RockDateTime.Now.AddYears( 1 ) );
         }
@@ -96,11 +93,15 @@ namespace Rock.CheckIn
         /// <returns></returns>
         public static CheckinManagerConfiguration GetCheckinManagerConfigurationFromCookie()
         {
-            CheckinManagerConfiguration checkinManagerConfiguration = null;
-            var checkinManagerRosterConfigurationCookie = HttpContext.Current.Request.Cookies[CheckInManagerCookieKey.CheckinManagerConfiguration];
-            if ( checkinManagerRosterConfigurationCookie != null )
+            var requestCookie = HttpContext.Current.Request.Cookies[CheckInManagerCookieKey.CheckinManagerConfiguration];
+            var responseCookie = HttpContext.Current.Response.Cookies[CheckInManagerCookieKey.CheckinManagerConfiguration];
+
+            // if we've already done SaveCheckinManagerConfigurationToCookie in the current request, the configuration will be in the response cookie
+            // otherwise, it'll be in the request cookie
+            var checkinManagerConfiguration = responseCookie?.Value.FromJsonOrNull<CheckinManagerConfiguration>();
+            if ( checkinManagerConfiguration == null )
             {
-                checkinManagerConfiguration = checkinManagerRosterConfigurationCookie.Value.FromJsonOrNull<CheckinManagerConfiguration>();
+                checkinManagerConfiguration = requestCookie?.Value.FromJsonOrNull<CheckinManagerConfiguration>();
             }
 
             if ( checkinManagerConfiguration == null )
@@ -111,6 +112,11 @@ namespace Rock.CheckIn
             if ( checkinManagerConfiguration.LocationIdFromSelectedCampusId == null )
             {
                 checkinManagerConfiguration.LocationIdFromSelectedCampusId = new Dictionary<int, int>();
+            }
+
+            if ( checkinManagerConfiguration.RoomListScheduleIdsFilter == null )
+            {
+                checkinManagerConfiguration.RoomListScheduleIdsFilter = new int[0];
             }
 
             return checkinManagerConfiguration;
@@ -184,5 +190,13 @@ namespace Rock.CheckIn
         /// The checkin area unique identifier.
         /// </value>
         public Guid? CheckinAreaGuid { get; set; }
+
+        /// <summary>
+        /// Gets or sets the room list schedule ids filter.
+        /// </summary>
+        /// <value>
+        /// The room list schedule ids filter.
+        /// </value>
+        public int[] RoomListScheduleIdsFilter { get; set; }
     }
 }

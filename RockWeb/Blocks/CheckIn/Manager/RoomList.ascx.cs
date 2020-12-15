@@ -16,7 +16,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data.Entity;
 using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -61,6 +60,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
         GroupTypePurposeValueGuid = Rock.SystemGuid.DefinedValue.GROUPTYPE_PURPOSE_CHECKIN_TEMPLATE,
         Order = 3 )]
 
+    [LinkedPage(
+        "Roster Page",
+        Key = AttributeKey.RosterPage,
+        IsRequired = false,
+        Order = 4 )]
+
     #endregion Block Attributes
     public partial class RoomList : RockBlock
     {
@@ -80,6 +85,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
             /// For example "Weekly Service Check-in".
             /// </summary>
             public const string CheckInAreaGuid = "CheckInAreaGuid";
+
+            public const string RosterPage = "RosterPage";
         }
 
         #endregion Attribute Keys
@@ -96,15 +103,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         #endregion Page Parameter Keys
-
-        #region UserPreferenceKeys
-
-        private static class UserPreferenceKey
-        {
-            public const string SelectedScheduleIds = "SelectedScheduleIds";
-        }
-
-        #endregion UserPreferenceKeys
 
         #region Base Control Methods
 
@@ -242,7 +240,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 }
             }
 
-            var selectedScheduleIds = GetBlockUserPreference( UserPreferenceKey.SelectedScheduleIds ).SplitDelimitedValues().AsIntegerList();
+            var selectedScheduleIds = CheckinManagerHelper.GetCheckinManagerConfigurationFromCookie().RoomListScheduleIdsFilter;
             if ( selectedScheduleIds.Any() )
             {
                 btnShowFilter.AddCssClass( "criteria-exists" );
@@ -316,12 +314,14 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 PresentDateTime = a.PresentDateTime
             } ).ToList();
 
-            var locationCountLookup = attendanceCheckinTimeInfoList.GroupBy( a => a.LocationId ).ToDictionary( k => k.Key, v => new RoomCounts
-            {
-                CheckedInCount = v.Where( x => RosterAttendee.GetRosterAttendeeStatus( x.EndDateTime, x.PresentDateTime ) == RosterAttendeeStatus.CheckedIn ).Count(),
-                PresentCount = v.Where( x => RosterAttendee.GetRosterAttendeeStatus( x.EndDateTime, x.PresentDateTime ) == RosterAttendeeStatus.Present ).Count(),
-                CheckedOutCount = v.Where( x => RosterAttendee.GetRosterAttendeeStatus( x.EndDateTime, x.PresentDateTime ) == RosterAttendeeStatus.CheckedOut ).Count()
-            } );
+            var locationCountLookup = attendanceCheckinTimeInfoList.GroupBy( a => a.LocationId ).ToDictionary(
+                k => k.Key,
+                v => new RoomCounts
+                {
+                    CheckedInCount = v.Where( x => RosterAttendee.GetRosterAttendeeStatus( x.EndDateTime, x.PresentDateTime ) == RosterAttendeeStatus.CheckedIn ).Count(),
+                    PresentCount = v.Where( x => RosterAttendee.GetRosterAttendeeStatus( x.EndDateTime, x.PresentDateTime ) == RosterAttendeeStatus.Present ).Count(),
+                    CheckedOutCount = v.Where( x => RosterAttendee.GetRosterAttendeeStatus( x.EndDateTime, x.PresentDateTime ) == RosterAttendeeStatus.CheckedOut ).Count()
+                } );
 
             var checkinAreaPathsLookup = checkinAreaPaths.ToDictionary( k => k.GroupTypeId, v => v );
 
@@ -418,7 +418,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             ScheduleService scheduleService = new ScheduleService( new RockContext() );
 
-            List<int> selectedScheduleIds = GetBlockUserPreference( UserPreferenceKey.SelectedScheduleIds ).SplitDelimitedValues().AsIntegerList();
+            var selectedScheduleIds = CheckinManagerHelper.GetCheckinManagerConfigurationFromCookie().RoomListScheduleIdsFilter;
 
             // limit Schedules to ones that are Active, have a CheckInStartOffsetMinutes, and are Named schedules
             var scheduleQry = scheduleService.Queryable().Where( a => a.IsActive && a.CheckInStartOffsetMinutes != null && a.Name != null && a.Name != string.Empty );
@@ -453,7 +453,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnApplyFilter_Click( object sender, EventArgs e )
         {
-            SetBlockUserPreference( UserPreferenceKey.SelectedScheduleIds, lbSchedules.SelectedValuesAsInt.AsDelimited( "," ) );
+            CheckinManagerHelper.SaveRoomListFilterToCookie( lbSchedules.SelectedValuesAsInt.ToArray() );
             pnlFilterCriteria.Visible = false;
             BindGrid();
         }
@@ -465,8 +465,23 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnClearFilter_Click( object sender, EventArgs e )
         {
-            SetBlockUserPreference( UserPreferenceKey.SelectedScheduleIds, null );
+            CheckinManagerHelper.SaveRoomListFilterToCookie( null );
             ShowFilters();
+        }
+
+        /// <summary>
+        /// Handles the RowSelected event of the gRoomList control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
+        protected void gRoomList_RowSelected( object sender, RowEventArgs e )
+        {
+            var queryParams = new Dictionary<string, string>
+            {
+                { "LocationId", e.RowKeyId.ToString() }
+            };
+
+            NavigateToLinkedPage( AttributeKey.RosterPage, queryParams );
         }
 
         /// <summary>
@@ -480,7 +495,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             public List<RoomGroupPathInfo> GroupList { get; internal set; }
 
-            public RoomCounts RoomCounts { get; set; } 
+            public RoomCounts RoomCounts { get; set; }
 
             public string GroupsPathHTML
             {
@@ -510,7 +525,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
         private class RoomCounts
         {
             public int CheckedInCount { get; internal set; }
+
             public int PresentCount { get; internal set; }
+
             public int CheckedOutCount { get; internal set; }
         }
     }
