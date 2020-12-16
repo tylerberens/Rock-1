@@ -268,6 +268,30 @@ namespace Rock.CheckIn
         /// </value>
         public DateTime CheckInTime { get; private set; }
 
+        /// <summary>
+        /// Gets the GroupTypeId (Checkin Area) of the group for the attendance
+        /// </summary>
+        /// <value>
+        /// The group type identifier.
+        /// </value>
+        public int? GroupTypeId { get; private set; }
+
+        /// <summary>
+        /// Gets the name of Checkin Group of the attendance
+        /// </summary>
+        /// <value>
+        /// The name of the group.
+        /// </value>
+        public string GroupName { get; private set; }
+
+        /// <summary>
+        /// Gets the group type path ( Area1 > Area2 > Area51 )
+        /// </summary>
+        /// <value>
+        /// The group type path.
+        /// </value>
+        public string GroupTypePath { get; private set; }
+
         #endregion Properties
 
         #region HTML
@@ -389,7 +413,8 @@ namespace Rock.CheckIn
         /// Sets the attendance-specific properties.
         /// </summary>
         /// <param name="attendance">The attendance.</param>
-        private void SetAttendanceInfo( Attendance attendance )
+        /// <param name="checkinAreaPathsLookup">The checkin area paths lookup.</param>
+        private void SetAttendanceInfo( Attendance attendance, Dictionary<int, CheckinAreaPath> checkinAreaPathsLookup )
         {
             // Keep track of each Attendance ID tied to this Attendee so we can manage them all as a group.
             this.Attendances.Add( attendance, true );
@@ -417,6 +442,15 @@ namespace Rock.CheckIn
 
             // Check-in Time: if this Attendee has multiple AttendanceOccurrences, the latest StartDateTime value among them wins.
             this.CheckInTime = latestAttendance.StartDateTime;
+
+            this.GroupTypeId = latestAttendance.Occurrence?.Group?.GroupTypeId;
+
+            this.GroupName = latestAttendance.Occurrence?.Group?.Name;
+
+            if ( GroupTypeId.HasValue )
+            {
+                this.GroupTypePath = checkinAreaPathsLookup.GetValueOrNull( GroupTypeId.Value )?.Path;
+            }
         }
 
         /// <summary>
@@ -487,6 +521,8 @@ namespace Rock.CheckIn
                 .Select( a => a.Id )
                 .Distinct();
 
+            var checkinAreaPathsLookup = new GroupTypeService( new Rock.Data.RockContext() ).GetAllCheckinAreaPaths().ToDictionary( k => k.GroupTypeId, v => v );
+
             var attendees = new List<RosterAttendee>();
             foreach ( var attendance in attendanceList )
             {
@@ -504,7 +540,7 @@ namespace Rock.CheckIn
                 attendee.RoomHasEnablePresence = groupTypeIdsWithEnablePresence.Contains( attendance.Occurrence.Group.GroupTypeId );
 
                 // Add the attendance-specific property values.
-                attendee.SetAttendanceInfo( attendance );
+                attendee.SetAttendanceInfo( attendance, checkinAreaPathsLookup );
             }
 
             return attendees;

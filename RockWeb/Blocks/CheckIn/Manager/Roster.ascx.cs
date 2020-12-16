@@ -70,6 +70,41 @@ namespace RockWeb.Blocks.CheckIn.Manager
         GroupTypePurposeValueGuid = Rock.SystemGuid.DefinedValue.GROUPTYPE_PURPOSE_CHECKIN_TEMPLATE,
         Order = 4 )]
 
+    [BooleanField(
+        "Enable Group Column",
+        Key = AttributeKey.EnableGroupColumn,
+        Description = "When enabled, a column showing the group(s) the person checked into will be shown.",
+        DefaultBooleanValue = false,
+        Order = 5 )]
+
+    [BooleanField(
+        "Enable Checkout All",
+        Key = AttributeKey.EnableCheckoutAll,
+        Description = "When enabled, a button will be shown to allow checking out all individuals.",
+        DefaultBooleanValue = false,
+        Order = 6 )]
+
+    [BooleanField(
+        "Enable Staying Button",
+        Key = AttributeKey.EnableStayingButton,
+        Description = "When enabled, a 'Staying' button will be shown to mark the person as checked into the selected service( shown in modal )",
+        DefaultBooleanValue = false,
+        Order = 7 )]
+
+    [BooleanField(
+        "Enable Not Present Button",
+        Key = AttributeKey.EnableNotPresentButton,
+        Description = "When enabled, a 'Not Present' button will be shown to mark the person as not being present in the room.",
+        DefaultBooleanValue = false,
+        Order = 8 )]
+
+    [BooleanField(
+        "Enable Mark Present",
+        Key = AttributeKey.EnableMarkPresentButton,
+        Description = "When enabled, a button will be shown in 'Checkedout' mode allowing the person to be marked present.",
+        DefaultBooleanValue = false,
+        Order = 9 )]
+
     #endregion Block Attributes
 
     public partial class Roster : Rock.Web.UI.RockBlock
@@ -90,6 +125,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
             /// For example "Weekly Service Check-in".
             /// </summary>
             public const string CheckInAreaGuid = "CheckInAreaGuid";
+
+            public const string EnableGroupColumn = "EnableGroupColumn";
+            public const string EnableCheckoutAll = "EnableCheckoutAll";
+            public const string EnableStayingButton = "EnableStayingButton";
+            public const string EnableNotPresentButton = "EnableNotPresentButton";
+            public const string EnableMarkPresentButton = "EnableMarkPresentButton";
         }
 
         #endregion Attribute Keys
@@ -433,6 +474,14 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var lBadges = e.Row.FindControl( "lBadges" ) as Literal;
             lBadges.Text = string.Format( "<div>{0}</div>", attendee.GetBadgesHtml( false ) );
 
+            var lGroupNameAndPath = e.Row.FindControl( "lGroupNameAndPath" ) as Literal;
+            if ( lGroupNameAndPath != null && lGroupNameAndPath.Visible )
+            {
+                lGroupNameAndPath.Text = string.Format(
+@"<div class='group-name'>{0}</div>
+<div class='small text-muted text-wrap'>{1}</div>", attendee.GroupName, attendee.GroupTypePath );
+            }
+
             // Mobile only.
             var lMobileTagAndSchedules = e.Row.FindControl( "lMobileTagAndSchedules" ) as Literal;
             lMobileTagAndSchedules.Text = attendee.GetMobileTagAndSchedulesHtml();
@@ -532,6 +581,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
             ToggleColumnVisibility( anyRoomHasAllowCheckout );
 
             var attendeesSorted = attendees.OrderByDescending( a => a.Status == RosterAttendeeStatus.Present ).ThenByDescending( a => a.CheckInTime ).ThenBy( a => a.PersonGuid ).ToList();
+
+            var lGroupNameAndPathField = gAttendees.ColumnsOfType<RockLiteralField>().FirstOrDefault( a => a.ID == "lGroupNameAndPath" );
+            if ( lGroupNameAndPathField != null )
+            {
+                lGroupNameAndPathField.Visible = this.GetAttributeValue( AttributeKey.EnableGroupColumn ).AsBoolean();
+            }
 
             gAttendees.DataSource = attendeesSorted;
             gAttendees.DataBind();

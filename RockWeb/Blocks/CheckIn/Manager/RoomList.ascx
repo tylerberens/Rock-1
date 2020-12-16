@@ -36,7 +36,7 @@
                     <Rock:Grid ID="gRoomList" runat="server" DisplayType="Light" UseFullStylesForLightGrid="true" ShowActionRow="false" OnRowDataBound="gRoomList_RowDataBound" OnRowSelected="gRoomList_RowSelected">
                         <Columns>
                             <Rock:RockLiteralField ID="lRoomName" HeaderText="Room" />
-                            <Rock:RockLiteralField ID="lGroupName" HeaderText="Group" />
+                            <Rock:RockLiteralField ID="lGroupNameAndPath" HeaderText="Group" />
                             <Rock:RockLiteralField ID="lCheckedInCount" HeaderText="Checked-in" />
                             <Rock:RockLiteralField ID="lPresentCount" HeaderText="Present" />
                             <Rock:RockLiteralField ID="lCheckedOutCount" HeaderText="Out" />

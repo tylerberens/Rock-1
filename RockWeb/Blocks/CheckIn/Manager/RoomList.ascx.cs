@@ -486,14 +486,14 @@ namespace RockWeb.Blocks.CheckIn.Manager
             }
 
             var lRoomName = e.Row.FindControl( "lRoomName" ) as Literal;
-            var lGroupName = e.Row.FindControl( "lGroupName" ) as Literal;
+            var lGroupNameAndPath = e.Row.FindControl( "lGroupNameAndPath" ) as Literal;
             var lCheckedInCount = e.Row.FindControl( "lCheckedInCount" ) as Literal;
             var lPresentCount = e.Row.FindControl( "lPresentCount" ) as Literal;
             var lCheckedOutCount = e.Row.FindControl( "lCheckedOutCount" ) as Literal;
 
             lRoomName.Text = roomInfo.LocationName;
 
-            lGroupName.Text = roomInfo.GroupsPathHTML;
+            lGroupNameAndPath.Text = roomInfo.GroupsPathHTML;
             if ( roomInfo.RoomCounts != null )
             {
                 lCheckedInCount.Text = roomInfo.RoomCounts.CheckedInCount.ToString();
