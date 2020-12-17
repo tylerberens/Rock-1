@@ -47,12 +47,14 @@
             <Rock:NotificationBox ID="nbWarning" runat="server" NotificationBoxType="Warning" />
             <Rock:HiddenFieldWithClass ID="hfMarkPresentShowConfirmation" CssClass="js-mark-present-show-confirmation" runat="server" />
 
+            <!-- Check Out All button -->
             <div class="row">
                 <div class="col-md-12">
                     <asp:LinkButton ID="btnCheckoutAll" runat="server" CssClass="btn btn-primary btn-sm pull-right margin-b-md" Text="Check Out All" OnClick="btnCheckoutAll_Click" />
                 </div>
             </div>
 
+            <!-- Roster (main view) -->
             <asp:Panel ID="pnlRoster" runat="server" CssClass="panel panel-block">
                 <div class="panel-heading">
                     <h1 class="panel-title">Room Roster</h1>
@@ -92,17 +94,21 @@
                 </div>
             </asp:Panel>
 
+            <!-- Confirm Staying modal -->
             <Rock:ModalDialog ID="mdConfirmStaying" runat="server" Title="Confirm" SaveButtonText="Check In" OnSaveClick="mdConfirmStaying_SaveClick">
                 <Content>
-                    Which schedule would you like to this person to stay for:
-                    <Rock:RockDropDownList ID="ddlScheduleStayingFor" runat="server" EnhanceForLongLists="true" />
+                    <asp:HiddenField ID="hfConfirmStayingAttendanceId" runat="server" />
+                    <Rock:NotificationBox ID="nbConfirmStayingWarning" runat="server" NotificationBoxType="Warning" />
+                    <asp:Literal ID="lConfirmStayingPromptText" runat="server" Text="Which schedule would you like to this person to stay for:" />
+                    <Rock:RockRadioButtonList ID="rblScheduleStayingFor" runat="server" Label="Schedule" RepeatDirection="Horizontal" />
                 </Content>
             </Rock:ModalDialog>
 
+            <!-- Confirm Checkout modal -->
             <Rock:ModalDialog ID="mdConfirmCheckoutAll" runat="server" Title="Confirm" SaveButtonText="Check Out" OnSaveClick="mdConfirmCheckoutAll_SaveClick">
                 <Content>
                     Which schedules would you like to check out for:
-                    <Rock:RockListBox ID="lbSchedulesCheckoutAll" runat="server" />
+                    <Rock:RockCheckBoxList ID="cblSchedulesCheckoutAll" runat="server" Label="Schedules" />
                 </Content>
             </Rock:ModalDialog>
 

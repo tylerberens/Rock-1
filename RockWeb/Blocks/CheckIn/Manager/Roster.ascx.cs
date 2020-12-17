@@ -273,51 +273,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             if ( !this.IsPostBack )
             {
-                LoadDropDowns();
                 BuildRoster();
             }
         }
 
         #endregion Base Control Methods
-
-        #region Methods
-
-        /// <summary>
-        /// Loads the drop downs.
-        /// </summary>
-        private void LoadDropDowns()
-        {
-            ScheduleService scheduleService = new ScheduleService( new RockContext() );
-
-            // limit Schedules to ones that are Active, have a CheckInStartOffsetMinutes, and are Named schedules
-            var scheduleQry = scheduleService.Queryable().Where( a => a.IsActive && a.CheckInStartOffsetMinutes != null && a.Name != null && a.Name != string.Empty );
-
-            var scheduleList = scheduleQry.ToList();
-
-            var sortedScheduleList = scheduleList.OrderByOrderAndNextScheduledDateTime();
-            ddlScheduleStayingFor.Items.Clear();
-            ddlScheduleStayingFor.Items.Add( new ListItem() );
-
-            lbSchedulesCheckoutAll.Items.Clear();
-
-            foreach ( var schedule in sortedScheduleList )
-            {
-                string listItemText;
-                if ( schedule.Name.IsNotNullOrWhiteSpace() )
-                {
-                    listItemText = schedule.Name;
-                }
-                else
-                {
-                    listItemText = schedule.FriendlyScheduleText;
-                }
-
-                ddlScheduleStayingFor.Items.Add( new ListItem( listItemText, schedule.Id.ToString() ) );
-                lbSchedulesCheckoutAll.Items.Add( new ListItem( listItemText, schedule.Id.ToString() ) );
-            }
-        }
-
-        #endregion Methods
 
         #region Control Events
 
@@ -836,18 +796,142 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
         protected void btnStaying_Click( object sender, RowEventArgs e )
         {
+            var attendanceIds = GetRowAttendanceIds( e ).ToList();
+
+
+            rblScheduleStayingFor.Items.Clear();
+
+            var rockContext = new RockContext();
+            var attendanceQuery = new AttendanceService( rockContext ).Queryable();
+
+            var attendanceInfo = new AttendanceService( rockContext ).GetByIds( attendanceIds )
+                .Where( a => a.Occurrence.GroupId.HasValue && a.Occurrence.ScheduleId.HasValue && a.Occurrence.LocationId.HasValue )
+                .Select( s => new
+                {
+                    GroupId = s.Occurrence.GroupId.Value,
+                    LocationId = s.Occurrence.LocationId.Value,
+                    ScheduleId = s.Occurrence.ScheduleId.Value,
+                    s.Id,
+                    s.StartDateTime
+                } )
+                .OrderByDescending( a => a.StartDateTime )
+                .FirstOrDefault();
+
+            if ( attendanceInfo == null )
+            {
+                return;
+            }
+
+            hfConfirmStayingAttendanceId.Value = attendanceInfo.Id.ToString();
+
+            // limit Schedules to ones that available to this attendance's GroupId and LocationId
+
+            var groupLocationService = new GroupLocationService( rockContext );
+            var groupLocationScheduleQuery = groupLocationService.Queryable()
+                .Where( a => a.GroupId == attendanceInfo.GroupId && a.LocationId == attendanceInfo.LocationId )
+                .SelectMany( s => s.Schedules ).Distinct();
+
+            // also limit to active check-in schedules, and exclude the current schedule
+            var scheduleQry = groupLocationScheduleQuery
+                    .Where( a =>
+                        a.Id != attendanceInfo.ScheduleId &&
+                        a.IsActive
+                        && a.CheckInStartOffsetMinutes != null
+                        && a.Name != null
+                        && a.Name != string.Empty )
+                    .ToList();
+
+            var scheduleList = scheduleQry.ToList();
+
+            // limit to schedules for the current day
+            scheduleList = scheduleList
+                .Where( a => a.GetNextCheckInStartTime( RockDateTime.Today ) < RockDateTime.Today.AddDays( 1 ) )
+                .ToList();
+
+            var sortedScheduleList = scheduleList.OrderByOrderAndNextScheduledDateTime();
+            rblScheduleStayingFor.Items.Clear();
+
+            foreach ( var schedule in sortedScheduleList )
+            {
+                rblScheduleStayingFor.Items.Add( new ListItem( schedule.Name, schedule.Id.ToString() ) );
+            }
+
+            nbConfirmStayingWarning.Visible = false;
+            lConfirmStayingPromptText.Visible = true;
+            rblScheduleStayingFor.Visible = true;
+            mdConfirmStaying.SaveButtonText = "Check In";
+
+            if ( !sortedScheduleList.Any() )
+            {
+                nbConfirmStayingWarning.Text = "No other schedules available for this group and location.";
+                nbConfirmStayingWarning.Visible = true;
+                lConfirmStayingPromptText.Visible = false;
+
+                // hide the save button and schedule options
+                mdConfirmStaying.SaveButtonText = string.Empty;
+
+                rblScheduleStayingFor.Visible = false;
+            }
+            else if ( sortedScheduleList.Count == 1 )
+            {
+                // only one schedule to pick from so hide the options and set the wording on the prompt
+                lConfirmStayingPromptText.Text = string.Format( "Would you like to this person to stay for {0}?", sortedScheduleList[0].Name );
+                rblScheduleStayingFor.Visible = false;
+            }
+            else
+            {
+                lConfirmStayingPromptText.Text = "Which schedule would you like to this person to stay for:";
+                rblScheduleStayingFor.Visible = true;
+            }
+
             mdConfirmStaying.Show();
         }
 
-        protected void btnCheckoutAll_Click( object sender, EventArgs e )
-        {
-            mdConfirmCheckoutAll.Show();
-        }
-
+        /// <summary>
+        /// Handles the SaveClick event of the mdConfirmStaying control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void mdConfirmStaying_SaveClick( object sender, EventArgs e )
         {
+            var selectedAttendanceId = hfConfirmStayingAttendanceId.Value.AsIntegerOrNull();
             mdConfirmStaying.Hide();
             // TODO
+        }
+
+        /// <summary>
+        /// Handles the Click event of the btnCheckoutAll control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void btnCheckoutAll_Click( object sender, EventArgs e )
+        {
+            using ( var rockContext = new RockContext() )
+            {
+                // populate the schedules for the 'Checkout All' to only include the schedules that are currently shown in the roster grid
+                var displayedScheduleIds = GetAttendees( rockContext ).Select( a => a.ScheduleId ).Distinct().ToList();
+                var scheduleList = new ScheduleService( rockContext ).GetByIds( displayedScheduleIds ).AsNoTracking()
+                    .ToList().OrderByOrderAndNextScheduledDateTime();
+
+                cblSchedulesCheckoutAll.Items.Clear();
+
+                foreach ( var schedule in scheduleList )
+                {
+                    string listItemText;
+                    if ( schedule.Name.IsNotNullOrWhiteSpace() )
+                    {
+                        listItemText = schedule.Name;
+                    }
+                    else
+                    {
+                        listItemText = schedule.FriendlyScheduleText;
+                    }
+
+                    cblSchedulesCheckoutAll.Items.Add( new ListItem( listItemText, schedule.Id.ToString() ) );
+                }
+            }
+
+            mdConfirmCheckoutAll.Show();
         }
 
         protected void mdConfirmCheckoutAll_SaveClick( object sender, EventArgs e )

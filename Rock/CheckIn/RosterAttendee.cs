@@ -280,6 +280,14 @@ namespace Rock.CheckIn
         public int? GroupTypeId { get; private set; }
 
         /// <summary>
+        /// Gets the ScheduleId for the attendance's occurrence
+        /// </summary>
+        /// <value>
+        /// The schedule identifier.
+        /// </value>
+        public int ScheduleId { get; private set; }
+
+        /// <summary>
         /// Gets the name of Checkin Group of the attendance
         /// </summary>
         /// <value>
@@ -461,6 +469,9 @@ namespace Rock.CheckIn
             }
 
             this.IsFirstTime = latestAttendance?.IsFirstTime ?? false;
+
+            // ScheduleId should have a value, but just in case, we'll do some null safety
+            this.ScheduleId = latestAttendance.Occurrence?.ScheduleId ?? 0;
         }
 
         /// <summary>
