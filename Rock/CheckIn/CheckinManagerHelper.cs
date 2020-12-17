@@ -16,7 +16,9 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Web;
+using Rock.Model;
 using Rock.Web.UI;
 
 namespace Rock.CheckIn
@@ -122,6 +124,38 @@ namespace Rock.CheckIn
 
             return checkinManagerConfiguration;
         }
+
+        /// <summary>
+        /// Filters an IQueryable of Attendance by the specified roster status filter.
+        /// </summary>
+        /// <param name="attendanceQuery">The attendance query.</param>
+        /// <param name="rosterStatusFilter">The roster status filter.</param>
+        /// <returns></returns>
+        public static IQueryable<Attendance> FilterByRosterStatusFilter( IQueryable<Attendance> attendanceQuery, RosterStatusFilter rosterStatusFilter )
+        {
+            /*
+                If StatusFilter == All, no further filtering is needed.
+                If StatusFilter == Checked-in, only retrieve records that have neither a EndDateTime nor a PresentDateTime value.
+                If StatusFilter == Present, only retrieve records that have a PresentDateTime value but don't have a EndDateTime value.
+                If StatusFilter == Checked-Out, only retrieve records that have an EndDateTime
+            */
+            switch ( rosterStatusFilter )
+            {
+                case RosterStatusFilter.CheckedIn:
+                    attendanceQuery = attendanceQuery.Where( a => !a.PresentDateTime.HasValue && !a.EndDateTime.HasValue );
+                    break;
+                case RosterStatusFilter.Present:
+                    attendanceQuery = attendanceQuery.Where( a => a.PresentDateTime.HasValue && !a.EndDateTime.HasValue );
+                    break;
+                case RosterStatusFilter.CheckedOut:
+                    attendanceQuery = attendanceQuery.Where( a => a.EndDateTime.HasValue );
+                    break;
+                default:
+                    break;
+            }
+
+            return attendanceQuery;
+        }
     }
 
     /// <summary>
@@ -160,7 +194,12 @@ namespace Rock.CheckIn
         /// Note that if Presence is NOT enabled, the attendance records will automatically marked as Present.
         /// So this would be the default filter mode when Presence is not enabled
         /// </summary>
-        Present = 3
+        Present = 3,
+
+        /// <summary>
+        /// Only show attendees that are checked-out.
+        /// </summary>
+        CheckedOut = 4
     }
 
     /// <summary>

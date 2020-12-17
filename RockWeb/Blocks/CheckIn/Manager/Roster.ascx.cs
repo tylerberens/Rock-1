@@ -248,23 +248,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
             return null;
         }
 
-        /// <summary>
-        /// The current status filter.
-        /// </summary>
-        public RosterStatusFilter CurrentStatusFilter
-        {
-            get
-            {
-                RosterStatusFilter statusFilter = ViewState[ViewStateKey.CurrentStatusFilter] as RosterStatusFilter? ?? RosterStatusFilter.Unknown;
-                return statusFilter;
-            }
-
-            set
-            {
-                ViewState[ViewStateKey.CurrentStatusFilter] = value;
-            }
-        }
-
         #endregion Properties
 
         #region Base Control Methods
@@ -288,10 +271,53 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             base.OnLoad( e );
 
-            BuildRoster();
+            if ( !this.IsPostBack )
+            {
+                LoadDropDowns();
+                BuildRoster();
+            }
         }
 
         #endregion Base Control Methods
+
+        #region Methods
+
+        /// <summary>
+        /// Loads the drop downs.
+        /// </summary>
+        private void LoadDropDowns()
+        {
+            ScheduleService scheduleService = new ScheduleService( new RockContext() );
+
+            // limit Schedules to ones that are Active, have a CheckInStartOffsetMinutes, and are Named schedules
+            var scheduleQry = scheduleService.Queryable().Where( a => a.IsActive && a.CheckInStartOffsetMinutes != null && a.Name != null && a.Name != string.Empty );
+
+            var scheduleList = scheduleQry.ToList();
+
+            var sortedScheduleList = scheduleList.OrderByOrderAndNextScheduledDateTime();
+            ddlScheduleStayingFor.Items.Clear();
+            ddlScheduleStayingFor.Items.Add( new ListItem() );
+
+            lbSchedulesCheckoutAll.Items.Clear();
+
+            foreach ( var schedule in sortedScheduleList )
+            {
+                string listItemText;
+                if ( schedule.Name.IsNotNullOrWhiteSpace() )
+                {
+                    listItemText = schedule.Name;
+                }
+                else
+                {
+                    listItemText = schedule.FriendlyScheduleText;
+                }
+
+                ddlScheduleStayingFor.Items.Add( new ListItem( listItemText, schedule.Id.ToString() ) );
+                lbSchedulesCheckoutAll.Items.Add( new ListItem( listItemText, schedule.Id.ToString() ) );
+            }
+        }
+
+        #endregion Methods
 
         #region Control Events
 
@@ -332,6 +358,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             RosterStatusFilter statusFilter = GetStatusFilterValueFromControl();
             CheckinManagerHelper.SaveRosterConfigurationToCookie( statusFilter );
+            BuildRoster();
         }
 
         #endregion Control Events
@@ -434,15 +461,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 SetStatusFilterControl( statusFilter );
             }
 
-            // If the Location or StatusFilter selections have changed, we need to reload the attendees.
-            if ( locationId != CurrentLocationId || statusFilter != CurrentStatusFilter )
-            {
-                CurrentLocationId = locationId;
-                CurrentStatusFilter = statusFilter;
+            CurrentLocationId = locationId;
 
-                ShowAttendees();
-            }
+            BindGrid();
         }
+
+        RosterStatusFilter _dataBoundRosterStatusFilter;
 
         /// <summary>
         /// Handles the RowDataBound event of the gAttendees control.
@@ -494,7 +518,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             // Desktop only.
             var lStatusTag = e.Row.FindControl( "lStatusTag" ) as Literal;
             lStatusTag.Text = attendee.GetStatusIconHtmlTag( false );
-            lElapsedCheckInTime.Visible = CurrentStatusFilter == RosterStatusFilter.CheckedIn;
+            lElapsedCheckInTime.Visible = _dataBoundRosterStatusFilter == RosterStatusFilter.CheckedIn;
         }
 
         /// <summary>
@@ -510,7 +534,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             // Cancel button will be visible in two cases
             // 1) They are on the CheckedIn tab (which would only show attendees that checked-in (but not yet present) in "Enable Presence" rooms
             // 2) They are on the Present Tab in a room that doesn't have Presence Enable
-            btnCancel.Visible = ( CurrentStatusFilter == RosterStatusFilter.CheckedIn ) || ( rosterAttendee.RoomHasEnablePresence == false && CurrentStatusFilter == RosterStatusFilter.Present );
+            btnCancel.Visible = ( _dataBoundRosterStatusFilter == RosterStatusFilter.CheckedIn ) || ( rosterAttendee.RoomHasEnablePresence == false && _dataBoundRosterStatusFilter == RosterStatusFilter.Present );
         }
 
         /// <summary>
@@ -533,7 +557,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
         protected void btnPresent_DataBound( object sender, RowEventArgs e )
         {
             var rosterAttendee = e.Row.DataItem as RosterAttendee;
-            var btnPresentLinkButton = sender as LinkButton;
+            var btnNotPresentLinkButton = e.Row.ControlsOfTypeRecursive<LinkButton>().FirstOrDefault( a => a.ID == "btnNotPresent" );
+            var btnPresentLinkButton = e.Row.ControlsOfTypeRecursive<LinkButton>().FirstOrDefault( a => a.ID == "btnPresent" );
             btnPresentLinkButton.Visible = rosterAttendee.RoomHasEnablePresence;
         }
 
@@ -567,7 +592,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <summary>
         /// Shows the attendees.
         /// </summary>
-        private void ShowAttendees()
+        private void BindGrid()
         {
             IList<RosterAttendee> attendees = null;
 
@@ -578,7 +603,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             bool anyRoomHasAllowCheckout = attendees.Any( a => a.RoomHasAllowCheckout );
 
-            ToggleColumnVisibility( anyRoomHasAllowCheckout );
+            var currentStatusFilter = GetStatusFilterValueFromControl();
+
+            ToggleColumnVisibility( anyRoomHasAllowCheckout, currentStatusFilter );
 
             var attendeesSorted = attendees.OrderByDescending( a => a.Status == RosterAttendeeStatus.Present ).ThenByDescending( a => a.CheckInTime ).ThenBy( a => a.PersonGuid ).ToList();
 
@@ -587,6 +614,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
             {
                 lGroupNameAndPathField.Visible = this.GetAttributeValue( AttributeKey.EnableGroupColumn ).AsBoolean();
             }
+
+            _dataBoundRosterStatusFilter = currentStatusFilter;
 
             gAttendees.DataSource = attendeesSorted;
             gAttendees.DataBind();
@@ -615,8 +644,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 a.StartDateTime >= startDateTime
                 && a.DidAttend == true
                 && a.StartDateTime <= currentDateTime
-                && a.Occurrence.GroupId.HasValue
                 && a.PersonAliasId.HasValue
+                && a.Occurrence.GroupId.HasValue
+                && a.Occurrence.ScheduleId.HasValue
                 && a.Occurrence.LocationId == CurrentLocationId
                 && a.Occurrence.ScheduleId.HasValue );
 
@@ -629,24 +659,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 attendanceQuery = attendanceQuery.Where( a => checkinAreaGroupTypeIds.Contains( a.Occurrence.Group.GroupTypeId ) );
             }
 
-            /*
-                If StatusFilter == All, no further filtering is needed.
-                If StatusFilter == Checked-in, only retrieve records that have neither a EndDateTime nor a PresentDateTime value.
-                If StatusFilter == Present, only retrieve records that have a PresentDateTime value but don't have a EndDateTime value.
-            */
-
             var unfilteredAttendanceCheckinAreas = attendanceQuery.Select( a => a.Occurrence.Group.GroupTypeId ).ToList().Select( a => GroupTypeCache.Get( a ) ).ToArray();
 
-            RemoveUnneededStatusFilters( unfilteredAttendanceCheckinAreas );
-
-            if ( CurrentStatusFilter == RosterStatusFilter.CheckedIn )
-            {
-                attendanceQuery = attendanceQuery.Where( a => !a.PresentDateTime.HasValue && !a.EndDateTime.HasValue );
-            }
-            else if ( CurrentStatusFilter == RosterStatusFilter.Present )
-            {
-                attendanceQuery = attendanceQuery.Where( a => a.PresentDateTime.HasValue && !a.EndDateTime.HasValue );
-            }
+            var currentStatusFilter = GetStatusFilterValueFromControl();
+            RemoveUnneededStatusFilters( unfilteredAttendanceCheckinAreas, currentStatusFilter );
+            attendanceQuery = CheckinManagerHelper.FilterByRosterStatusFilter( attendanceQuery, currentStatusFilter );
 
             List<Attendance> attendanceList = attendanceQuery
                 .Include( a => a.AttendanceCode )
@@ -728,7 +745,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 Rock.CheckIn.KioskLocationAttendance.Remove( CurrentLocationId );
             }
 
-            ShowAttendees();
+            BindGrid();
         }
 
         /// <summary>
@@ -766,12 +783,18 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 {
                     attendee.PresentDateTime = now;
                     attendee.PresentByPersonAliasId = CurrentPersonAliasId;
+
+                    // if they were Checked-out, clear the EndDateTime since they have been changed to Present
+                    if ( attendee.EndDateTime.HasValue )
+                    {
+                        attendee.EndDateTime = null;
+                    }
                 }
 
                 rockContext.SaveChanges();
             }
 
-            ShowAttendees();
+            BindGrid();
         }
 
         /// <summary>
@@ -803,7 +826,75 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 rockContext.SaveChanges();
             }
 
-            ShowAttendees();
+            BindGrid();
+        }
+
+        /// <summary>
+        /// Handles the Click event of the btnStaying control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
+        protected void btnStaying_Click( object sender, RowEventArgs e )
+        {
+            mdConfirmStaying.Show();
+        }
+
+        protected void btnCheckoutAll_Click( object sender, EventArgs e )
+        {
+            mdConfirmCheckoutAll.Show();
+        }
+
+        protected void mdConfirmStaying_SaveClick( object sender, EventArgs e )
+        {
+            mdConfirmStaying.Hide();
+            // TODO
+        }
+
+        protected void mdConfirmCheckoutAll_SaveClick( object sender, EventArgs e )
+        {
+            mdConfirmCheckoutAll.Hide();
+            // TODO
+        }
+
+        /// <summary>
+        /// Handles the Click event of the btnNotPresent control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
+        protected void btnNotPresent_Click( object sender, RowEventArgs e )
+        {
+            var attendanceIds = GetRowAttendanceIds( e );
+            if ( !attendanceIds.Any() )
+            {
+                return;
+            }
+
+            using ( var rockContext = new RockContext() )
+            {
+                var now = RockDateTime.Now;
+                var attendanceService = new AttendanceService( rockContext );
+                foreach ( var attendee in attendanceService
+                    .Queryable()
+                    .Where( a => attendanceIds.Contains( a.Id ) ) )
+                {
+                    // if they are getting changed from Present to NotPresent, clear out PresentDateTimeTime
+                    if ( attendee.PresentDateTime.HasValue )
+                    {
+                        attendee.PresentDateTime = null;
+                        attendee.PresentByPersonAliasId = null;
+                    }
+
+                    // if they were Checked-out, clear the EndDateTime since they have been changed to Present
+                    if ( attendee.EndDateTime.HasValue )
+                    {
+                        attendee.EndDateTime = null;
+                    }
+                }
+
+                rockContext.SaveChanges();
+            }
+
+            BindGrid();
         }
 
         #endregion Control Events
@@ -947,7 +1038,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// Removes the unneeded status filters based on the whether any of the rooms have EnablePresence and/or AllowCheckout
         /// </summary>
         /// <param name="attendees">The attendees.</param>
-        private void RemoveUnneededStatusFilters( GroupTypeCache[] checkinAreas )
+        private void RemoveUnneededStatusFilters( GroupTypeCache[] checkinAreas, RosterStatusFilter rosterStatusFilter )
         {
             // Reset the visibility, just in case the control was previously hidden.
             bgStatus.Visible = true;
@@ -957,6 +1048,15 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var showPresenceControls = checkinConfigurationTypes.Any( a => a != null && a.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ENABLE_PRESENCE ).AsBoolean() );
             var showAllowCheckoutControls = checkinConfigurationTypes.Any( a => a != null && a.GetAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ALLOW_CHECKOUT ).AsBoolean() );
 
+            if ( !showAllowCheckoutControls )
+            {
+                var checkedOutItem = bgStatus.Items.FindByValue( RosterStatusFilter.CheckedOut.ToString( "d" ) );
+                if ( checkedOutItem != null )
+                {
+                    bgStatus.Items.Remove( checkedOutItem );
+                }
+            }
+
             if ( !showPresenceControls )
             {
                 // When EnablePresence is false for a given Check-in Area, the [Attendance].[PresentDateTime] value will have already been set upon check-in.
@@ -965,7 +1065,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     // If there aren't any attendees that are in rooms that have EnabledPresence or AllowCheckout,
                     // it doesn't make sense to show the status filters at all.
                     bgStatus.Visible = false;
-                    CurrentStatusFilter = RosterStatusFilter.Present;
+                    rosterStatusFilter = RosterStatusFilter.Present;
 
                     return;
                 }
@@ -977,10 +1077,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     bgStatus.Items.Remove( checkedInItem );
                 }
 
-                if ( CurrentStatusFilter == RosterStatusFilter.CheckedIn )
+                if ( rosterStatusFilter == RosterStatusFilter.CheckedIn )
                 {
-                    CurrentStatusFilter = RosterStatusFilter.Present;
-                    SetStatusFilterControl( CurrentStatusFilter );
+                    SetStatusFilterControl( RosterStatusFilter.Present );
                 }
             }
         }
@@ -989,7 +1088,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// Toggles the column visibility within the gAttendees grid based on the current filter
         /// </summary>
         /// <param name="anyRoomHasAllowCheckout">if set to <c>true</c> [any room has allow checkout].</param>
-        private void ToggleColumnVisibility( bool anyRoomHasAllowCheckout )
+        private void ToggleColumnVisibility( bool anyRoomHasAllowCheckout, RosterStatusFilter rosterStatusFilter )
         {
             // StatusFilter.All:
             var mobileIconField = gAttendees.ColumnsOfType<RockLiteralField>().First( c => c.ID == "lMobileIcon" );
@@ -1003,26 +1102,47 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             // StatusFilter.Present:
             var btnCheckOutField = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnCheckOut" );
+            var btnStaying = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnStaying" );
+            var btnNotPresent = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnNotPresent" );
+            btnCheckoutAll.Visible = GetAttributeValue( AttributeKey.EnableCheckoutAll ).AsBoolean();
 
-            mobileIconField.Visible = CurrentStatusFilter == RosterStatusFilter.All;
-            serviceTimesField.Visible = CurrentStatusFilter == RosterStatusFilter.All || CurrentStatusFilter == RosterStatusFilter.Present;
-            statusTagField.Visible = CurrentStatusFilter == RosterStatusFilter.All;
+            mobileIconField.Visible = rosterStatusFilter == RosterStatusFilter.All;
+            serviceTimesField.Visible = rosterStatusFilter == RosterStatusFilter.All || rosterStatusFilter == RosterStatusFilter.Present || rosterStatusFilter == RosterStatusFilter.CheckedOut;
+            statusTagField.Visible = rosterStatusFilter == RosterStatusFilter.All;
 
-            lElapsedCheckInTimeField.Visible = CurrentStatusFilter == RosterStatusFilter.CheckedIn;
+            lElapsedCheckInTimeField.Visible = rosterStatusFilter == RosterStatusFilter.CheckedIn;
 
             // only show the CancelField Column if they are on the CheckedIn or Present tab
             // The actual button's visibility will be determined per row in the btnCancel_OnDatabound event
-            btnCancelField.Visible = CurrentStatusFilter == RosterStatusFilter.CheckedIn || CurrentStatusFilter == RosterStatusFilter.Present;
+            btnCancelField.Visible = rosterStatusFilter == RosterStatusFilter.CheckedIn || rosterStatusFilter == RosterStatusFilter.Present;
 
-            // only show the PresentField Column if they are on the CheckedIn tab
+            // Only show the PresentField Column if they are on the CheckedIn tab
+            // or they are on the CheckedOut tab and the Mark Present Button is enabled.
             // The actual button's visibility will be determined per row in the btnPresent_OnDatabound event
-            btnPresentField.Visible = CurrentStatusFilter == RosterStatusFilter.CheckedIn;
+            if ( rosterStatusFilter == RosterStatusFilter.CheckedIn )
+            {
+                hfMarkPresentShowConfirmation.Value = false.ToJavaScriptValue();
+                btnPresentField.Visible = true;
+            }
+            else if ( rosterStatusFilter == RosterStatusFilter.CheckedOut && GetAttributeValue( AttributeKey.EnableMarkPresentButton ).AsBoolean() )
+            {
+                // show a confirmation if changing a person from CheckedOut to Present
+                hfMarkPresentShowConfirmation.Value = true.ToJavaScriptValue();
+                btnPresentField.Visible = true;
+            }
+            else
+            {
+                btnPresentField.Visible = false;
+            }
+
+            btnStaying.Visible = rosterStatusFilter == RosterStatusFilter.Present && GetAttributeValue( AttributeKey.EnableStayingButton ).AsBoolean();
+            btnNotPresent.Visible = rosterStatusFilter == RosterStatusFilter.Present && GetAttributeValue( AttributeKey.EnableNotPresentButton ).AsBoolean();
 
             if ( anyRoomHasAllowCheckout )
             {
                 // only show these action button's Column if they are on the Present Tab
                 // The actual button's visibility will be determined per row in the btnCheckout_OnDatabound event
-                btnCheckOutField.Visible = CurrentStatusFilter == RosterStatusFilter.Present;
+                btnCheckOutField.Visible = rosterStatusFilter == RosterStatusFilter.Present;
             }
             else
             {

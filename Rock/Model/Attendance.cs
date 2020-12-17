@@ -183,10 +183,10 @@ namespace Rock.Model
         public bool? Processed { get; set; }
 
         /// <summary>
-        /// Gets or sets the is first time.
+        /// Gets or sets if this first time that this person has ever checked into anything
         /// </summary>
         /// <value>
-        /// The first time the person has attended this group.
+        /// If this attendance is the first time the person has attended anything
         /// </value>
         [DataMember]
         public bool? IsFirstTime { get; set; }

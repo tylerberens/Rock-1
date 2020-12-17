@@ -600,8 +600,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
             {
                 get
                 {
+                    var groupsHtmlFormat =
+@"<div class='group-name'>{0}</div>
+<div class='small text-muted text-wrap'>{1}</div>";
+
                     var sortGroupList = GroupList.OrderBy( x => x.GroupTypePath.Path );
-                    var groupsPathList = sortGroupList.Select( s => string.Format( "<small>{0} &gt; {1} </small>", s.GroupTypePath.Path, s.GroupName ) ).ToList();
+                    var groupsPathList = sortGroupList.Select( s => string.Format( groupsHtmlFormat, s.GroupName, s.GroupTypePath.Path ) ).ToList();
                     return groupsPathList.AsDelimited( "<br>" );
                 }
             }

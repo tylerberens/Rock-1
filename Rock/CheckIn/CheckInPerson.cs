@@ -94,12 +94,7 @@ namespace Rock.CheckIn
         [DataMember]
         public DateTime? LastCheckIn { get; set; }
 
-        /// <summary>
-        /// Gets or sets a value indicating whether this is the person's first time checking in.
-        /// </summary>
-        /// <value>
-        ///   <c>true</c> if [first checkin]; otherwise, <c>false</c>.
-        /// </value>
+        /// <inheritdoc cref="Attendance.IsFirstTime"/>
         [DataMember]
         public bool FirstTime { get; set; } 
 

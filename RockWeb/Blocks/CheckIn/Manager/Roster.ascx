@@ -7,6 +7,26 @@
             var personName = $(this).parent().siblings(".js-name").find(".js-checkin-person-name").first().text();
             return Rock.dialogs.confirmDelete(event, 'Check-in for ' + personName);
         });
+
+        var showMarkPresentConfirmation = $('.js-mark-present-show-confirmation').val() == 'true';
+
+        if (showMarkPresentConfirmation) {
+            $('.js-mark-present').on('click', function (e) {
+
+                // make sure the element that triggered this event isn't disabled
+                if (e.currentTarget && e.currentTarget.disabled) {
+                    return false;
+                }
+
+                e.preventDefault();
+
+                Rock.dialogs.confirm('Are you sure you want to mark this person back to Present?', function (result) {
+                    if (result) {
+                        window.location = e.target.href ? e.target.href : e.target.parentElement.href;
+                    }
+                })
+            });
+        }
     });
 </script>
 <Rock:RockUpdatePanel ID="upnlContent" runat="server">
@@ -25,6 +45,13 @@
             </div>
 
             <Rock:NotificationBox ID="nbWarning" runat="server" NotificationBoxType="Warning" />
+            <Rock:HiddenFieldWithClass ID="hfMarkPresentShowConfirmation" CssClass="js-mark-present-show-confirmation" runat="server" />
+
+            <div class="row">
+                <div class="col-md-12">
+                    <asp:LinkButton ID="btnCheckoutAll" runat="server" CssClass="btn btn-primary btn-sm pull-right margin-b-md" Text="Check Out All" OnClick="btnCheckoutAll_Click" />
+                </div>
+            </div>
 
             <asp:Panel ID="pnlRoster" runat="server" CssClass="panel panel-block">
                 <div class="panel-heading">
@@ -34,6 +61,7 @@
                             <asp:ListItem Text="All" Value="1" />
                             <asp:ListItem Text="Checked-in" Value="2" />
                             <asp:ListItem Text="Present" Value="3" />
+                            <asp:ListItem Text="Checked-out" Value="4" />
                         </Rock:ButtonGroup>
                     </div>
                 </div>
@@ -50,16 +78,33 @@
                                 <Rock:RockBoundField DataField="ServiceTimes" HeaderText="Service Times" HeaderStyle-CssClass="d-none d-sm-table-cell" ItemStyle-CssClass="service-times d-none d-sm-table-cell align-middle" />
                                 <Rock:RockLiteralField ID="lMobileTagAndSchedules" HeaderText="Tag" HeaderStyle-CssClass="d-sm-none" ItemStyle-CssClass="tags-and-schedules d-table-cell d-sm-none" />
                                 <Rock:RockLiteralField ID="lElapsedCheckInTime" HeaderText="Check-in Time" HeaderStyle-HorizontalAlign="Right" ItemStyle-CssClass="check-in-time align-middle" ItemStyle-HorizontalAlign="Right" ColumnPriority="TabletSmall" />
-                                <Rock:RockLiteralField ID="lStatusTag"  HeaderStyle-CssClass="d-none d-sm-table-cell" ItemStyle-CssClass="status-tag d-none d-sm-table-cell align-middle" ItemStyle-HorizontalAlign="Right" ColumnPriority="TabletSmall" />
+                                <Rock:RockLiteralField ID="lStatusTag" HeaderStyle-CssClass="d-none d-sm-table-cell" ItemStyle-CssClass="status-tag d-none d-sm-table-cell align-middle" ItemStyle-HorizontalAlign="Right" ColumnPriority="TabletSmall" />
 
-                                <Rock:LinkButtonField ID="btnCancel"  ItemStyle-CssClass="grid-columnaction"  CssClass="btn btn-danger btn-square js-cancel-checkin" Text="<span class='d-none d-sm-inline'>Cancel</span> <i class='fa fa-times'></i>" OnClick="btnCancel_Click" OnDataBound="btnCancel_DataBound" />
-                                <Rock:LinkButtonField ID="btnPresent"  ItemStyle-CssClass="grid-columnaction" CssClass="btn btn-success btn-square" Text="<span class='d-none d-sm-inline'>Present</span> <i class='fa fa-user-check'></i>" OnClick="btnPresent_Click" OnDataBound="btnPresent_DataBound" />
-                                <Rock:LinkButtonField ID="btnCheckOut" ItemStyle-CssClass="grid-columnaction" CssClass="btn btn-primary btn-square" Text="<span class='d-none d-sm-inline'>Check-out</span> <i class='fa fa-user-minus'></i>" OnClick="btnCheckOut_Click" OnDataBound="btnCheckOut_DataBound" />
+                                <Rock:LinkButtonField ID="btnCancel" ItemStyle-CssClass="grid-columnaction" CssClass="btn btn-danger btn-square js-cancel-checkin" Text="<i class='fa fa-times'></i>" ToolTip="Cancel" OnClick="btnCancel_Click" OnDataBound="btnCancel_DataBound" />
+                                <Rock:LinkButtonField ID="btnPresent" ItemStyle-CssClass="grid-columnaction" CssClass="btn btn-success btn-square js-mark-present" Text="<i class='fa fa-user-check'></i>" ToolTip="Mark Present" OnClick="btnPresent_Click" OnDataBound="btnPresent_DataBound" />
+
+                                <Rock:LinkButtonField ID="btnCheckOut" ItemStyle-CssClass="grid-columnaction" CssClass="btn btn-primary btn-square" Text="<i class='fa fa-user-minus'></i>" ToolTip="Check out" OnClick="btnCheckOut_Click" OnDataBound="btnCheckOut_DataBound" />
+                                <Rock:LinkButtonField ID="btnStaying" ItemStyle-CssClass="grid-columnaction" CssClass="btn btn-default btn-square" Text="<i class='fa fa-user-clock'></i>" ToolTip="Staying" OnClick="btnStaying_Click" />
+                                <Rock:LinkButtonField ID="btnNotPresent" ItemStyle-CssClass="grid-columnaction" CssClass="btn btn-default btn-square" Text="<i class='fa fa-external-link-alt'></i>" ToolTip="Not Present" OnClick="btnNotPresent_Click" />
                             </Columns>
                         </Rock:Grid>
                     </div>
                 </div>
             </asp:Panel>
+
+            <Rock:ModalDialog ID="mdConfirmStaying" runat="server" Title="Confirm" SaveButtonText="Check In" OnSaveClick="mdConfirmStaying_SaveClick">
+                <Content>
+                    Which schedule would you like to this person to stay for:
+                    <Rock:RockDropDownList ID="ddlScheduleStayingFor" runat="server" EnhanceForLongLists="true" />
+                </Content>
+            </Rock:ModalDialog>
+
+            <Rock:ModalDialog ID="mdConfirmCheckoutAll" runat="server" Title="Confirm" SaveButtonText="Check Out" OnSaveClick="mdConfirmCheckoutAll_SaveClick">
+                <Content>
+                    Which schedules would you like to check out for:
+                    <Rock:RockListBox ID="lbSchedulesCheckoutAll" runat="server" />
+                </Content>
+            </Rock:ModalDialog>
 
         </asp:Panel>
 

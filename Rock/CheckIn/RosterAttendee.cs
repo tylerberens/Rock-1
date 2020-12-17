@@ -178,6 +178,9 @@ namespace Rock.CheckIn
         /// </value>
         public bool HasLegalNote { get; private set; }
 
+        /// <inheritdoc cref="Attendance.IsFirstTime"/>
+        public bool IsFirstTime { get; private set; }
+
         /// <summary>
         /// Gets the unique tags.
         /// </summary>
@@ -402,6 +405,11 @@ namespace Rock.CheckIn
                 badgesSb.Append( $"{openDiv}&nbsp;<i class='fa fa-clipboard{fa2x}'></i>{closeDiv}" );
             }
 
+            if ( this.IsFirstTime )
+            {
+                badgesSb.Append( $"{openDiv}&nbsp;<i class='fa fa-star{fa2x} text-warning'></i>{closeDiv}" );
+            }
+
             return badgesSb.ToString();
         }
 
@@ -451,6 +459,8 @@ namespace Rock.CheckIn
             {
                 this.GroupTypePath = checkinAreaPathsLookup.GetValueOrNull( GroupTypeId.Value )?.Path;
             }
+
+            this.IsFirstTime = latestAttendance?.IsFirstTime ?? false;
         }
 
         /// <summary>
