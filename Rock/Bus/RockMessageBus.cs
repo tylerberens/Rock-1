@@ -179,6 +179,12 @@ namespace Rock.Bus
         public static async Task PublishAsync<TQueue>( IEventMessage<TQueue> message, Type messageType )
             where TQueue : IPublishEventQueue, new()
         {
+            if ( DidBusFailStartup() )
+            {
+                // If the bus didn't start correctly, then an exception was already logged. Don't keep logging exceptions.
+                return;
+            }
+
             if ( !IsReady() )
             {
                 ExceptionLogService.LogException( $"A message was published before the message bus was ready: {RockMessage.GetLogString( message )}" );
@@ -213,6 +219,12 @@ namespace Rock.Bus
         public static async Task SendAsync<TQueue>( ICommandMessage<TQueue> message, Type messageType )
             where TQueue : ISendCommandQueue, new()
         {
+            if ( DidBusFailStartup() )
+            {
+                // If the bus didn't start correctly, then an exception was already logged. Don't keep logging exceptions.
+                return;
+            }
+
             if ( !IsReady() )
             {
                 ExceptionLogService.LogException( $"A message was sent before the message bus was ready: {RockMessage.GetLogString( message )}" );
@@ -237,7 +249,7 @@ namespace Rock.Bus
         {
             if ( _transportComponent == null )
             {
-                throw new Exception( "An active transport component is required for Rock to run correctly" );
+                throw new Exception( "An active bus transport component is required for Rock to run correctly" );
             }
 
             _bus = _transportComponent.GetBusControl( RockConsumer.ConfigureRockConsumers );
@@ -264,6 +276,15 @@ namespace Rock.Bus
             }
 
             _isBusStarted = true;
+        }
+
+        /// <summary>
+        /// Did the bus fail to start?
+        /// </summary>
+        /// <returns></returns>
+        public static bool DidBusFailStartup()
+        {
+            return IsRockStarted && !IsReady();
         }
 
         /// <summary>

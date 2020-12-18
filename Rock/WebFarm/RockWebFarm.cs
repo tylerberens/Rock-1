@@ -148,6 +148,12 @@ namespace Rock.WebFarm
         /// </summary>
         public static void StartStage1()
         {
+            if ( !RockMessageBus.IsReady() )
+            {
+                LogException( $"Web Farm cannot start because the bus is not ready" );
+                return;
+            }
+
             if ( _startStage != 0 )
             {
                 LogException( $"Web Farm cannot start stage 1 when at stage {_startStage}" );
@@ -268,6 +274,12 @@ namespace Rock.WebFarm
         /// </summary>
         public static void StartStage2()
         {
+            if ( !RockMessageBus.IsReady() )
+            {
+                // Already logged exception in stage 1
+                return;
+            }
+
             if ( !_isWebFarmEnabledAndUnlocked )
             {
                 return;
