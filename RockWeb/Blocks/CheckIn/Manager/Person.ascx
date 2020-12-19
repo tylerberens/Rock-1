@@ -6,8 +6,19 @@
 
         $('.js-cancel-checkin').on('click', function (event) {
             event.stopImmediatePropagation();
-            var personName = $('h1.js-checkin-person-name').first().text();
+            var personName = $('h1.js-checkin-person-name').first().text().trim();
             return Rock.dialogs.confirmDelete(event, 'Checkin for ' + personName);
+        });
+
+        $('.js-share-editperson').on('click', function (event) {
+            event.stopImmediatePropagation();
+
+            // see https://css-tricks.com/how-to-use-the-web-share-api/
+            var shareUrl = $('.js-share-editperson-url').val();
+            var personName = $('h1.js-checkin-person-name').first().text().trim();
+            if (navigator.share && shareUrl) {
+                navigator.share({ title: personName, url: shareUrl });
+            }
         });
     });
 </script>
@@ -17,15 +28,17 @@
 
         <div class="row">
             <div class="col-xs-12 col-sm-4 col-lg-3">
+                <Rock:HiddenFieldWithClass ID="hfShareEditPersonUrl" runat="server" CssClass="js-share-editperson-url" />
 
                 <!-- Photo, Name & Campus, Phone & Email, Attributes -->
                 <div class="panel panel-block">
                     <div class="profile-photo-container">
-                    <asp:Literal ID="lPhoto" runat="server" />
+                        <asp:Literal ID="lPhoto" runat="server" />
                     </div>
                     <div class="d-flex flex-column align-items-center p-2 pb-3 py-lg-3 px-lg-4">
                         <h1 class="h3 title name js-checkin-person-name mt-0 text-center">
-                            <asp:Literal ID="lName" runat="server"></asp:Literal></h1>
+                            <asp:Literal ID="lName" runat="server" />
+                            <a id="btnShare" runat="server" class="btn-link btn-default js-share-editperson"><i class="fa fa-share-alt-square hand"></i></a></h1>
                         <Rock:HighlightLabel ID="hlCampus" runat="server" LabelType="Campus" />
                     </div>
 
@@ -51,7 +64,7 @@
                                     </div>
                                     <div class="text-right">
                                         <asp:LinkButton ID="btnSms" runat="server" Visible="false" OnClick="btnSms_Click" CssClass="btn btn-sm btn-square btn-default my-1" Text="<i class='fa fa-sms'></i>" />
-                                        <a class="btn btn-sm btn-square btn-default my-1" href="tel:<%# Eval("Number") %>"> <i class="fa fa-phone"></i></a>
+                                        <a class="btn btn-sm btn-square btn-default my-1" href="tel:<%# Eval("Number") %>"><i class="fa fa-phone"></i></a>
                                     </div>
                                 </div>
                             </ItemTemplate>
@@ -140,12 +153,14 @@
 
                 <!-- Check-in History -->
                 <asp:Panel ID="pnlCheckinHistory" runat="server" CssClass="panel panel-block">
-                    <Rock:Grid ID="gHistory" runat="server" DisplayType="Light" UseFullStylesForLightGrid="true" AllowPaging="false" CssClass="table-condensed" OnRowDataBound="gHistory_RowDataBound" ShowActionRow="false">
+                    <Rock:Grid ID="gAttendanceHistory" runat="server" DisplayType="Light" UseFullStylesForLightGrid="true" AllowPaging="false" CssClass="table-condensed" OnRowDataBound="gAttendanceHistory_RowDataBound" ShowActionRow="false" OnRowSelected="gAttendanceHistory_RowSelected">
                         <Columns>
                             <Rock:RockTemplateField HeaderText="When">
                                 <ItemTemplate>
-                                    <span class="text-sm"><asp:Literal ID="lCheckinDate" runat="server" /></span>
-                                    <span class="d-block text-sm text-muted"><asp:Literal ID="lCheckinScheduleName" runat="server" /></span>
+                                    <span class="text-sm">
+                                        <asp:Literal ID="lCheckinDate" runat="server" /></span>
+                                    <span class="d-block text-sm text-muted">
+                                        <asp:Literal ID="lCheckinScheduleName" runat="server" /></span>
                                     <asp:Literal ID="lWhoCheckedIn" runat="server" />
                                 </ItemTemplate>
                             </Rock:RockTemplateField>
@@ -163,7 +178,7 @@
                                     <asp:Literal ID="lActiveLabel" runat="server" /><br />
                                 </ItemTemplate>
                             </Rock:RockTemplateField>
-                            <Rock:DeleteField OnClick="gHistory_Delete" ButtonCssClass="js-cancel-checkin btn btn-xs btn-danger" Tooltip="Delete This Checkin" />
+                            <Rock:DeleteField OnClick="gAttendanceHistory_Delete" ButtonCssClass="js-cancel-checkin btn btn-xs btn-danger" Tooltip="Delete This Checkin" />
                         </Columns>
                     </Rock:Grid>
                 </asp:Panel>

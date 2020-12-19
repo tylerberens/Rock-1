@@ -765,28 +765,39 @@ namespace RockWeb.Blocks.CheckIn.Manager
         protected void btnCheckOut_Click( object sender, RowEventArgs e )
         {
             // the attendance grid's DataKeyNames="PersonGuid,AttendanceIds". So each row is a PersonGuid, with a list of attendanceIds (usually one attendance, but could be more)
-            var attendanceIds = GetRowAttendanceIds( e );
+            var attendanceIds = GetRowAttendanceIds( e ).ToList();
             if ( !attendanceIds.Any() )
             {
                 return;
             }
 
-            using ( var rockContext = new RockContext() )
-            {
-                var now = RockDateTime.Now;
-                var attendanceService = new AttendanceService( rockContext );
-                foreach ( var attendee in attendanceService
-                    .Queryable()
-                    .Where( a => attendanceIds.Contains( a.Id ) ) )
-                {
-                    attendee.EndDateTime = now;
-                    attendee.CheckedOutByPersonAliasId = CurrentPersonAliasId;
-                }
+            var rockContext = new RockContext();
+            var attendanceList = new AttendanceService( rockContext ).GetByIds( attendanceIds ).ToList();
 
-                rockContext.SaveChanges();
-            }
+            SetAttendancesAsCheckedOut( attendanceList, rockContext );
+
 
             BindGrid();
+        }
+
+        /// <summary>
+        /// Sets the attendances as checked out.
+        /// </summary>
+        /// <param name="attendanceIds">The attendance ids.</param>
+        private void SetAttendancesAsCheckedOut( List<Attendance> attendanceList, RockContext rockContext )
+        {
+            var now = RockDateTime.Now;
+
+            foreach ( var attendee in attendanceList )
+            {
+                attendee.EndDateTime = now;
+                attendee.CheckedOutByPersonAliasId = CurrentPersonAliasId;
+            }
+
+            rockContext.SaveChanges();
+
+            // Reset the cache for this Location so the kiosk will show the correct counts.
+            Rock.CheckIn.KioskLocationAttendance.Remove( CurrentLocationId );
         }
 
         /// <summary>
@@ -797,7 +808,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
         protected void btnStaying_Click( object sender, RowEventArgs e )
         {
             var attendanceIds = GetRowAttendanceIds( e ).ToList();
-
 
             rblScheduleStayingFor.Items.Clear();
 
@@ -875,7 +885,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
             else if ( sortedScheduleList.Count == 1 )
             {
                 // only one schedule to pick from so hide the options and set the wording on the prompt
-                lConfirmStayingPromptText.Text = string.Format( "Would you like to this person to stay for {0}?", sortedScheduleList[0].Name );
+                var singleSchedule = sortedScheduleList[0];
+
+                lConfirmStayingPromptText.Text = string.Format( "Would you like to this person to stay for {0}?", singleSchedule.Name );
+                rblScheduleStayingFor.SetValue( singleSchedule.Id );
                 rblScheduleStayingFor.Visible = false;
             }
             else
@@ -894,9 +907,60 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void mdConfirmStaying_SaveClick( object sender, EventArgs e )
         {
-            var selectedAttendanceId = hfConfirmStayingAttendanceId.Value.AsIntegerOrNull();
+            var selectedAttendanceId = hfConfirmStayingAttendanceId.Value.AsInteger();
             mdConfirmStaying.Hide();
-            // TODO
+
+            var rockContext = new RockContext();
+            var attendanceService = new AttendanceService( rockContext );
+            var selectedAttendance = attendanceService.Get( selectedAttendanceId );
+            if ( selectedAttendance == null )
+            {
+                // just in case
+                return;
+            }
+
+            var stayingForScheduleId = rblScheduleStayingFor.SelectedValueAsId();
+            var selectedOccurrence = selectedAttendance.Occurrence;
+            if ( selectedAttendance.Occurrence == null || stayingForScheduleId == null )
+            {
+                // just in case
+                return;
+            }
+
+            var occurrenceService = new AttendanceOccurrenceService( rockContext );
+
+            var stayingOccurrence = occurrenceService.GetOrAdd( selectedOccurrence.OccurrenceDate, selectedOccurrence.GroupId, selectedOccurrence.LocationId, stayingForScheduleId.Value );
+            if ( stayingOccurrence.Id == 0 )
+            {
+                rockContext.SaveChanges();
+            }
+
+            // create a new attendance based on the values in the selected attendance, but change ScheduleId to the  schedule they are staying for
+            var stayingAttendance = selectedAttendance.Clone( false );
+
+            // reset fields specific to the new attendance
+            stayingAttendance.Id = 0;
+            stayingAttendance.Guid = Guid.NewGuid();
+            stayingOccurrence.CreatedDateTime = null;
+            stayingOccurrence.ModifiedDateTime = null;
+            stayingAttendance.OccurrenceId = stayingOccurrence.Id;
+            stayingAttendance.Occurrence = stayingOccurrence;
+            stayingOccurrence.CreatedByPersonAliasId = CurrentPersonAliasId;
+
+            // if the selected attendance was their first time, the 2nd one wouldn't be, so mark IsFirstTime to false
+            if ( selectedAttendance.IsFirstTime == true )
+            {
+                stayingAttendance.IsFirstTime = false;
+            }
+
+            /* 2020-12-18 MDP #TODO Confirm https://app.asana.com/0/0/1199643530714803/f #
+            Keep StartDateTime the same as the original StartDateTime, since that is when they checked into the room.
+            */
+
+            attendanceService.Add( stayingAttendance );
+            rockContext.SaveChanges();
+
+            BindGrid();
         }
 
         /// <summary>
@@ -910,12 +974,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
             {
                 // populate the schedules for the 'Checkout All' to only include the schedules that are currently shown in the roster grid
                 var displayedScheduleIds = GetAttendees( rockContext ).Select( a => a.ScheduleId ).Distinct().ToList();
-                var scheduleList = new ScheduleService( rockContext ).GetByIds( displayedScheduleIds ).AsNoTracking()
+                var sortedScheduleList = new ScheduleService( rockContext ).GetByIds( displayedScheduleIds ).AsNoTracking()
                     .ToList().OrderByOrderAndNextScheduledDateTime();
 
                 cblSchedulesCheckoutAll.Items.Clear();
 
-                foreach ( var schedule in scheduleList )
+                foreach ( var schedule in sortedScheduleList )
                 {
                     string listItemText;
                     if ( schedule.Name.IsNotNullOrWhiteSpace() )
@@ -928,16 +992,48 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     }
 
                     cblSchedulesCheckoutAll.Items.Add( new ListItem( listItemText, schedule.Id.ToString() ) );
+                };
+
+                if ( sortedScheduleList.Count == 1 )
+                {
+                    var singleSchedule = sortedScheduleList[0];
+
+                    // only one schedule to pick from so hide the options and set the wording on the prompt
+                    lConfirmCheckoutAll.Text = string.Format( "Would you like checkout all for {0}?", singleSchedule.Name );
+                    cblSchedulesCheckoutAll.SetValue( singleSchedule.Id );
+                    cblSchedulesCheckoutAll.Visible = false;
+                }
+                else
+                {
+                    lConfirmCheckoutAll.Text = "Which schedules would you like to check out all for:";
+                    cblSchedulesCheckoutAll.Visible = true;
                 }
             }
 
             mdConfirmCheckoutAll.Show();
         }
 
+        /// <summary>
+        /// Handles the SaveClick event of the mdConfirmCheckoutAll control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void mdConfirmCheckoutAll_SaveClick( object sender, EventArgs e )
         {
             mdConfirmCheckoutAll.Hide();
-            // TODO
+            var rockContext = new RockContext();
+
+            var displayedAttendeeIds = GetAttendees( rockContext ).SelectMany( a => a.AttendanceIds ).ToList();
+
+            var selectedScheduleIds = cblSchedulesCheckoutAll.SelectedValuesAsInt;
+
+            var attendancesToCheckout = new AttendanceService( rockContext )
+                .GetByIds( displayedAttendeeIds )
+                .Where( x => selectedScheduleIds.Contains( x.Occurrence.ScheduleId.Value ) ).ToList();
+
+            SetAttendancesAsCheckedOut( attendancesToCheckout, rockContext );
+
+            BindGrid();
         }
 
         /// <summary>

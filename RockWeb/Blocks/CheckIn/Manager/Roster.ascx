@@ -105,10 +105,10 @@
             </Rock:ModalDialog>
 
             <!-- Confirm Checkout modal -->
-            <Rock:ModalDialog ID="mdConfirmCheckoutAll" runat="server" Title="Confirm" SaveButtonText="Check Out" OnSaveClick="mdConfirmCheckoutAll_SaveClick">
+            <Rock:ModalDialog ID="mdConfirmCheckoutAll" runat="server" Title="Confirm" ValidationGroup="vgConfirmCheckoutAll" SaveButtonText="Check Out" OnSaveClick="mdConfirmCheckoutAll_SaveClick">
                 <Content>
-                    Which schedules would you like to check out for:
-                    <Rock:RockCheckBoxList ID="cblSchedulesCheckoutAll" runat="server" Label="Schedules" />
+                    <asp:Literal ID="lConfirmCheckoutAll" runat="server" Text="Which schedules would you like to check out for:" />
+                    <Rock:RockCheckBoxList ID="cblSchedulesCheckoutAll" runat="server" Label="Schedules" RepeatDirection="Horizontal" Required="true" ValidationGroup="vgConfirmCheckoutAll" />
                 </Content>
             </Rock:ModalDialog>
 

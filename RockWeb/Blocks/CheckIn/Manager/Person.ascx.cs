@@ -23,12 +23,8 @@ using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 
-using Newtonsoft.Json;
-
 using Rock;
 using Rock.Attribute;
-using Rock.CheckIn;
-using Rock.Communication;
 using Rock.Constants;
 using Rock.Data;
 using Rock.Model;
@@ -44,6 +40,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
     [DisplayName( "Person Profile" )]
     [Category( "Check-in > Manager" )]
     [Description( "Displays person and details about recent check-ins." )]
+
+    [SecurityAction( SecurityActionKey.ReprintLabels, "The roles and/or users that can reprint labels for the selected person." )]
 
     [LinkedPage(
         "Manager Page",
@@ -89,7 +87,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
     [BooleanField(
         "Allow Label Reprinting",
         Key = AttributeKey.AllowLabelReprinting,
-        Description = " Determines if reprinting labels should be allowed.",
+        Description = "Determines if reprinting labels should be allowed.",
         DefaultBooleanValue = false,
         Category = "Manager Settings",
         Order = 5 )]
@@ -113,6 +111,29 @@ namespace RockWeb.Blocks.CheckIn.Manager
             + Rock.SystemGuid.Badge.BAPTISM + ","
             + Rock.SystemGuid.Badge.IN_SERVING_TEAM,
         Order = 7 )]
+
+    [BooleanField(
+        "Show Share Person Button",
+        Key = AttributeKey.ShowSharePersonButton,
+        DefaultBooleanValue = true,
+        IsRequired = false,
+        Order = 8 )]
+
+    [LinkedPage(
+        "Share Person Page",
+        Key = AttributeKey.SharePersonPage,
+        DefaultValue = Rock.SystemGuid.Page.EDIT_PERSON + "," + Rock.SystemGuid.PageRoute.EDIT_PERSON_ROUTE,
+        IsRequired = false,
+        Order = 9
+        )]
+
+    [LinkedPage(
+        "Attendance Detail Page",
+        Key = AttributeKey.AttendanceDetailPage,
+        Description = "Page used to manage check-in locations",
+        DefaultValue = Rock.SystemGuid.Page.CHECK_IN_MANAGER_ATTENDANCE_DETAIL,
+        IsRequired = true,
+        Order = 0 )]
     public partial class PersonProfile : Rock.Web.UI.RockBlock
     {
         #region Attribute Keys
@@ -127,6 +148,18 @@ namespace RockWeb.Blocks.CheckIn.Manager
             public const string AllowLabelReprinting = "AllowLabelReprinting";
             public const string BadgesLeft = "BadgesLeft";
             public const string BadgesRight = "BadgesRight";
+            public const string SharePersonPage = "SharePersonPage";
+            public const string ShowSharePersonButton = "ShowSharePersonButton";
+            public const string AttendanceDetailPage = "AttendanceDetailPage";
+        }
+
+        #endregion
+
+        #region Security Actions
+
+        private static class SecurityActionKey
+        {
+            public const string ReprintLabels = "ReprintLabels";
         }
 
         #endregion
@@ -217,7 +250,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             this.BlockUpdated += Block_BlockUpdated;
             this.AddConfigurationUpdateTrigger( upnlContent );
 
-            gHistory.DataKeyNames = new string[] { "Id" };
+            gAttendanceHistory.DataKeyNames = new string[] { "Id" };
 
 
             var leftBadgeGuids = GetAttributeValues( AttributeKey.BadgesLeft ).AsGuidList();
@@ -289,11 +322,21 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// Handles the RowDataBound event of the gHistory control.
+        /// Handles the RowSelected event of the gAttendanceHistory control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
+        protected void gAttendanceHistory_RowSelected( object sender, RowEventArgs e )
+        {
+            NavigateToLinkedPage( AttributeKey.AttendanceDetailPage, "AttendanceId", e.RowKeyId );
+        }
+
+        /// <summary>
+        /// Handles the RowDataBound event of the gAttendanceHistory control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="GridViewRowEventArgs"/> instance containing the event data.</param>
-        protected void gHistory_RowDataBound( object sender, GridViewRowEventArgs e )
+        protected void gAttendanceHistory_RowDataBound( object sender, GridViewRowEventArgs e )
         {
             if ( e.Row.RowType != DataControlRowType.DataRow )
             {
@@ -346,11 +389,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// Handles the Delete event of the gHistory control.
+        /// Handles the Delete event of the gAttendanceHistory control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="Rock.Web.UI.Controls.RowEventArgs"/> instance containing the event data.</param>
-        protected void gHistory_Delete( object sender, Rock.Web.UI.Controls.RowEventArgs e )
+        protected void gAttendanceHistory_Delete( object sender, Rock.Web.UI.Controls.RowEventArgs e )
         {
             using ( var rockContext = new RockContext() )
             {
@@ -659,7 +702,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="personGuid"></param>
         private void ShowDetail( Guid personGuid )
         {
-            btnReprintLabels.Visible = GetAttributeValue( AttributeKey.AllowLabelReprinting ).AsBoolean();
+            btnReprintLabels.Visible = GetAttributeValue( AttributeKey.AllowLabelReprinting ).AsBoolean() && this.IsUserAuthorized( SecurityActionKey.ReprintLabels );
 
             using ( var rockContext = new RockContext() )
             {
@@ -671,6 +714,18 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 if ( person == null )
                 {
                     return;
+                }
+
+                if ( GetAttributeValue( AttributeKey.ShowSharePersonButton ).AsBoolean() )
+                {
+                    btnShare.Visible = true;
+                    var urlParams = new Dictionary<string, string> { { "PersonId", personGuid.ToString() } };
+                    var url = this.LinkedPageUrl( AttributeKey.SharePersonPage, urlParams );
+                    hfShareEditPersonUrl.Value = this.ResolveRockUrlIncludeRoot( url );
+                }
+                else
+                {
+                    btnShare.Visible = false;
                 }
 
                 lName.Text = person.FullName;
@@ -739,7 +794,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
                 // Text Message
                 var phoneNumber = person.PhoneNumbers.FirstOrDefault( n => n.IsMessagingEnabled && n.Number.IsNotNullOrWhiteSpace() );
-                if ( GetAttributeValue( AttributeKey.SMSFrom ).IsNotNullOrWhiteSpace() && phoneNumber != null )
+                //if ( GetAttributeValue( AttributeKey.SMSFrom ).IsNotNullOrWhiteSpace() && phoneNumber != null )
+                if (phoneNumber != null)
                 {
                     SmsPhoneNumberId = phoneNumber.Id;
                 }
@@ -916,11 +972,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 pnlCheckinHistory.Visible = attendances.Any();
 
                 // Get the index of the delete column
-                var deleteField = gHistory.Columns.OfType<Rock.Web.UI.Controls.DeleteField>().First();
-                _deleteFieldIndex = gHistory.Columns.IndexOf( deleteField );
+                var deleteField = gAttendanceHistory.Columns.OfType<Rock.Web.UI.Controls.DeleteField>().First();
+                _deleteFieldIndex = gAttendanceHistory.Columns.IndexOf( deleteField );
 
-                gHistory.DataSource = attendances;
-                gHistory.DataBind();
+                gAttendanceHistory.DataSource = attendances;
+                gAttendanceHistory.DataBind();
             }
         }
 
@@ -1016,5 +1072,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         #endregion
+
+       
     }
 }

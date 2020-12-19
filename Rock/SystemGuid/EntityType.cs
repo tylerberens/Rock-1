@@ -37,6 +37,11 @@ namespace Rock.SystemGuid
         public const string ACHIEVEMENT_TYPE_PREREQUISITE = "5362DB19-B8E1-4378-A66A-FB097CE3AB90";
 
         /// <summary>
+        /// The guid for the Rock.Model.Attendance entity.
+        /// </summary>
+        public const string ATTENDANCE = "4CCB856F-51E0-4E48-B94A-1705EFBA6C9E";
+
+        /// <summary>
         /// The guid for the Rock.Model.Attribute entity.
         /// </summary>
         public const string ATTRIBUTE = "5997C8D3-8840-4591-99A5-552919F90CBD";
