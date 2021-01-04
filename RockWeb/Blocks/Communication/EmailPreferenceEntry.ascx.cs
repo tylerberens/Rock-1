@@ -444,38 +444,26 @@ We have unsubscribed you from the following lists:
 
                     if ( rbNotInvolved.Checked )
                     {
-                        var newRecordStatus = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_INACTIVE );
-                        if ( newRecordStatus != null )
-                        {
-                            person.RecordStatusValueId = newRecordStatus.Id;
-                        }
-
-                        var newInactiveReason = DefinedValueCache.Get( ddlInactiveReason.SelectedValue.AsInteger() );
-                        if ( newInactiveReason != null )
-                        {
-                            person.RecordStatusReasonValueId = newInactiveReason.Id;
-                        }
-
-                        var newReviewReason = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_REVIEW_REASON_SELF_INACTIVATED );
-                        if ( newReviewReason != null )
-                        {
-                            person.ReviewReasonValueId = newReviewReason.Id;
-                        }
+                        var inactiveReasonDefinedValue = DefinedValueCache.Get( ddlInactiveReason.SelectedValue.AsInteger() );
+                        var selfInactivatedDefinedValue = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_REVIEW_REASON_SELF_INACTIVATED );
 
                         // If the inactive reason note is the same as the current review reason note, update it also.
-                        if ( ( person.InactiveReasonNote ?? string.Empty ) == ( person.ReviewReasonNote ?? string.Empty ) )
+                        string inactiveReasonNote = ( person.InactiveReasonNote ?? string.Empty ) == ( person.ReviewReasonNote ?? string.Empty )
+                            ? tbInactiveNote.Text
+                            : person.InactiveReasonNote;
+
+                        // See if inactivating just one person or the whole family
+                        if ( !cbInactFamily.Checked )
                         {
-                            person.InactiveReasonNote = tbInactiveNote.Text;
+                            personService.InactivatePerson( person, inactiveReasonDefinedValue, inactiveReasonNote, selfInactivatedDefinedValue, tbInactiveNote.Text );
                         }
-
-                        person.ReviewReasonNote = tbInactiveNote.Text;
-
-                        if ( cbInactFamily.Checked )
+                        else
                         {
-                            var familyMembers = personService.GetFamilyMembers( _person.Id ).Select( m => m.Person );
-                            foreach ( var familyMember in familyMembers )
+                            // Update each person
+                            var inactivatePersonList = personService.GetFamilyMembers( _person.Id, true ).Select( m => m.Person );
+                            foreach ( var inactivatePerson in inactivatePersonList )
                             {
-                                //personService.InactivatePerson( familyMember, newReviewReason, tbInactiveNote.Text );
+                                personService.InactivatePerson( inactivatePerson, inactiveReasonDefinedValue, inactiveReasonNote, selfInactivatedDefinedValue, tbInactiveNote.Text );
                             }
                         }
                     }
@@ -493,7 +481,6 @@ We have unsubscribed you from the following lists:
                     rockContext.SaveChanges();
 
                     nbEmailPreferenceSuccessMessage.Visible = true;
-                    return;
                 }
             }
         }
