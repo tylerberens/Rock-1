@@ -665,8 +665,6 @@ GO
             target.ModifiedByPersonAliasId = null;
             target.ModifiedDateTime = RockDateTime.Now;
 
-            
-
             return target;
         }}
 
