@@ -641,6 +641,35 @@ GO
                 return target;
             }}
         }}
+
+        /// <summary>
+        /// Clones this {0} object to a new {0} object with default values for the properties in the Entity and Model base classes.
+        /// </summary>
+        /// <param name=""source"">The source.</param>
+        /// <returns></returns>
+        public static {0} CloneWithoutIdentity( this {0} source )
+        {{
+            var target = new {0}();
+            target.CopyPropertiesFrom( source );
+
+            target.Id = 0;
+            target.Guid = Guid.NewGuid();
+            target.ForeignKey = null;
+            target.ForeignId = null;
+            target.ForeignGuid = null;
+
+            target.CreatedByPersonAlias = null;
+            target.CreatedByPersonAliasId = null;
+            target.CreatedDateTime = RockDateTime.Now;
+            target.ModifiedByPersonAlias = null;
+            target.ModifiedByPersonAliasId = null;
+            target.ModifiedDateTime = RockDateTime.Now;
+
+            
+
+            return target;
+        }}
+
 ", type.Name );
 
             sb.AppendFormat( @"
@@ -1296,7 +1325,7 @@ GO
             sb.AppendLine( "// See the License for the specific language governing permissions and" );
             sb.AppendLine( "// limitations under the License." );
             sb.AppendLine( "// </copyright>" );
-            sb.AppendLine( "//" );
+            sb.AppendLine( "" );
             sb.AppendLine( "using System;" );
             sb.AppendLine( "using System.Collections.Generic;" );
             sb.AppendLine( "" );
@@ -1400,7 +1429,7 @@ GO
             sb.AppendLine( "// See the License for the specific language governing permissions and" );
             sb.AppendLine( "// limitations under the License." );
             sb.AppendLine( "// </copyright>" );
-            sb.AppendLine( "//" );
+            sb.AppendLine( "" );
             sb.AppendLine( "using System;" );
             sb.AppendLine( "using System.Collections.Generic;" );
             sb.AppendLine( "" );
