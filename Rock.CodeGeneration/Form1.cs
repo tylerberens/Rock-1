@@ -587,7 +587,7 @@ GO
             sb.AppendLine( "// See the License for the specific language governing permissions and" );
             sb.AppendLine( "// limitations under the License." );
             sb.AppendLine( "// </copyright>" );
-            sb.AppendLine( "//" );
+            sb.AppendLine( "" );
 
             sb.AppendLine( "using System;" );
             sb.AppendLine( "using System.Linq;" );
@@ -656,19 +656,24 @@ GO
             target.Guid = Guid.NewGuid();
             target.ForeignKey = null;
             target.ForeignId = null;
-            target.ForeignGuid = null;
+            target.ForeignGuid = null;", type.Name );
 
+            // Only include these properties if the type is a model
+            if ( type.BaseType.IsGenericType && type.BaseType.GetGenericTypeDefinition() == typeof( Rock.Data.Model<> ) )
+            {
+                sb.AppendFormat( @"
             target.CreatedByPersonAlias = null;
             target.CreatedByPersonAliasId = null;
             target.CreatedDateTime = RockDateTime.Now;
             target.ModifiedByPersonAlias = null;
             target.ModifiedByPersonAliasId = null;
-            target.ModifiedDateTime = RockDateTime.Now;
+            target.ModifiedDateTime = RockDateTime.Now;", type.Name );
+            }
 
-            return target;
-        }}
-
-", type.Name );
+            sb.AppendLine( "" );
+            sb.AppendLine( "" );
+            sb.AppendLine( "            return target;" );
+            sb.AppendLine( "        }" );
 
             sb.AppendFormat( @"
         /// <summary>
@@ -1427,7 +1432,7 @@ GO
             sb.AppendLine( "// See the License for the specific language governing permissions and" );
             sb.AppendLine( "// limitations under the License." );
             sb.AppendLine( "// </copyright>" );
-            sb.AppendLine( "" );
+            sb.AppendLine( "//" );
             sb.AppendLine( "using System;" );
             sb.AppendLine( "using System.Collections.Generic;" );
             sb.AppendLine( "" );
