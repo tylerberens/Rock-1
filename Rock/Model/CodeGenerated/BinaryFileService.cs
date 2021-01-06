@@ -227,10 +227,8 @@ namespace Rock.Model
             target.ForeignKey = null;
             target.ForeignId = null;
             target.ForeignGuid = null;
-            target.CreatedByPersonAlias = null;
             target.CreatedByPersonAliasId = null;
             target.CreatedDateTime = RockDateTime.Now;
-            target.ModifiedByPersonAlias = null;
             target.ModifiedByPersonAliasId = null;
             target.ModifiedDateTime = RockDateTime.Now;
 
