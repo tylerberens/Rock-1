@@ -299,20 +299,6 @@ namespace RockWeb.Blocks.Communication
                     copyName = string.Format( "Copy({0}) of {1}", copyNumber, template.Name );
                 }
 
-                //var templateCopy = template.Clone( false );
-                //templateCopy.Id = 0;
-                //templateCopy.Name = copyName.Truncate( 100 );
-                //templateCopy.IsSystem = false;
-                //templateCopy.Guid = Guid.NewGuid();
-                //templateCopy.CreatedByPersonAlias = null;
-                //templateCopy.CreatedByPersonAliasId = null;
-                //templateCopy.ModifiedByPersonAlias = null;
-                //templateCopy.ModifiedByPersonAliasId = null;
-                //templateCopy.LogoBinaryFileId = null;
-                //templateCopy.ImageFileId = null;
-                //templateCopy.CreatedDateTime = RockDateTime.Now;
-                //templateCopy.ModifiedDateTime = RockDateTime.Now;
-
                 var templateCopy = template.CloneWithoutIdentity();
                 templateCopy.Name = copyName.Truncate( 100 );
                 templateCopy.IsSystem = false;

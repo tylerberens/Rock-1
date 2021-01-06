@@ -29,23 +29,6 @@ namespace Rock.Model
     public partial class ConnectionTypeService
     {
         /// <summary>
-        /// Clear ID, guid, modified and created properties
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="model">The model.</param>
-        //private void InitModel<T>( ref T model ) where T : Rock.Data.IModel
-        //{
-        //    model.CreatedByPersonAlias = null;
-        //    model.CreatedByPersonAliasId = null;
-        //    model.CreatedDateTime = RockDateTime.Now;
-        //    model.ModifiedByPersonAlias = null;
-        //    model.ModifiedByPersonAliasId = null;
-        //    model.ModifiedDateTime = RockDateTime.Now;
-        //    model.Id = 0;
-        //    model.Guid = Guid.NewGuid();
-        //}
-
-        /// <summary>
         /// Copies the connection opportunities.
         /// </summary>
         /// <param name="connectionType">Source connectionType.</param>
@@ -56,10 +39,6 @@ namespace Rock.Model
 
             foreach ( var connectionOpportunity in connectionType.ConnectionOpportunities )
             {
-                //ConnectionOpportunity newConnectionOpportunity = new ConnectionOpportunity();
-                //newConnectionOpportunity.CopyPropertiesFrom( connectionOpportunity );
-                //InitModel( ref newConnectionOpportunity );
-
                 var newConnectionOpportunity = connectionOpportunity.CloneWithoutIdentity();
                 newConnectionOpportunity.ConnectionTypeId = newConnectionType.Id;
                 newConnectionType.ConnectionOpportunities.Add( newConnectionOpportunity );
@@ -67,10 +46,6 @@ namespace Rock.Model
 
                 foreach ( var connectionWorkflow in connectionOpportunity.ConnectionWorkflows )
                 {
-                    //ConnectionWorkflow newConnectionWorkflow = new ConnectionWorkflow();
-                    //newConnectionWorkflow.CopyPropertiesFrom( connectionWorkflow );
-                    //InitModel( ref newConnectionWorkflow );
-
                     var newConnectionWorkflow = connectionWorkflow.CloneWithoutIdentity();
                     newConnectionWorkflow.ConnectionOpportunityId = newConnectionOpportunity.Id;
                     newConnectionOpportunity.ConnectionWorkflows.Add( newConnectionWorkflow );
@@ -78,10 +53,6 @@ namespace Rock.Model
 
                 foreach ( var opportunityGroup in connectionOpportunity.ConnectionOpportunityGroups )
                 {
-                    //ConnectionOpportunityGroup newOpportunityGroup = new ConnectionOpportunityGroup();
-                    //newOpportunityGroup.CopyPropertiesFrom( opportunityGroup );
-                    //InitModel( ref newOpportunityGroup );
-
                     var newOpportunityGroup = opportunityGroup.CloneWithoutIdentity();
                     newOpportunityGroup.ConnectionOpportunityId = newConnectionOpportunity.Id;
                     newConnectionOpportunity.ConnectionOpportunityGroups.Add( newOpportunityGroup );
@@ -89,10 +60,6 @@ namespace Rock.Model
 
                 foreach ( var groupConfig in connectionOpportunity.ConnectionOpportunityGroupConfigs )
                 {
-                    //ConnectionOpportunityGroupConfig newGroupConfig = new ConnectionOpportunityGroupConfig();
-                    //newGroupConfig.CopyPropertiesFrom( groupConfig );
-                    //InitModel( ref newGroupConfig );
-
                     var newGroupConfig = groupConfig.CloneWithoutIdentity();
                     newGroupConfig.ConnectionOpportunityId = newConnectionOpportunity.Id;
                     newConnectionOpportunity.ConnectionOpportunityGroupConfigs.Add( newGroupConfig );
@@ -100,10 +67,6 @@ namespace Rock.Model
 
                 foreach ( var connectorGroup in connectionOpportunity.ConnectionOpportunityConnectorGroups )
                 {
-                    //ConnectionOpportunityConnectorGroup newConnectorGroup = new ConnectionOpportunityConnectorGroup();
-                    //newConnectorGroup.CopyPropertiesFrom( connectorGroup );
-                    //InitModel( ref newConnectorGroup );
-
                     var newConnectorGroup = connectorGroup.CloneWithoutIdentity();
                     newConnectorGroup.ConnectionOpportunityId = newConnectionOpportunity.Id;
                     newConnectionOpportunity.ConnectionOpportunityConnectorGroups.Add( newConnectorGroup );
@@ -113,10 +76,6 @@ namespace Rock.Model
 
                 foreach ( var campus in connectionOpportunity.ConnectionOpportunityCampuses )
                 {
-                    //ConnectionOpportunityCampus newCampus = new ConnectionOpportunityCampus();
-                    //newCampus.CopyPropertiesFrom( campus );
-                    //InitModel( ref newCampus );
-
                     var newCampus = campus.CloneWithoutIdentity();
                     newCampus.ConnectionOpportunityId = newConnectionOpportunity.Id;
                     newConnectionOpportunity.ConnectionOpportunityCampuses.Add( newCampus );
@@ -170,9 +129,6 @@ namespace Rock.Model
             rockContext.WrapTransaction( () =>
             {
 
-                //newConnectionType.CopyPropertiesFrom( connectionType );
-                //InitModel( ref newConnectionType );
-
                 newConnectionType = connectionType.CloneWithoutIdentity();
                 newConnectionType.Name = connectionType.Name + " - Copy";
                 this.Add( newConnectionType );
@@ -181,20 +137,12 @@ namespace Rock.Model
 
                 foreach ( var connectionActivityTypeState in connectionType.ConnectionActivityTypes )
                 {
-                    //ConnectionActivityType newConnectionActivityType = new ConnectionActivityType();
-                    //newConnectionActivityType.CopyPropertiesFrom( connectionActivityTypeState );
-                    //InitModel( ref newConnectionActivityType );
-
                     var newConnectionActivityType = connectionActivityTypeState.CloneWithoutIdentity();
                     newConnectionType.ConnectionActivityTypes.Add( newConnectionActivityType );
                 }
 
                 foreach ( var connectionStatusState in connectionType.ConnectionStatuses )
                 {
-                    //ConnectionStatus newConnectionStatus = new ConnectionStatus();
-                    //newConnectionStatus.CopyPropertiesFrom( connectionStatusState );
-                    //InitModel( ref newConnectionStatus );
-
                     var newConnectionStatus = connectionStatusState.CloneWithoutIdentity();
                     newConnectionType.ConnectionStatuses.Add( newConnectionStatus );
                     newConnectionStatus.ConnectionTypeId = newConnectionType.Id;
@@ -202,10 +150,6 @@ namespace Rock.Model
 
                 foreach ( ConnectionWorkflow connectionWorkflowState in connectionType.ConnectionWorkflows )
                 {
-                    //ConnectionWorkflow newConnectionWorkflow = new ConnectionWorkflow();
-                    //newConnectionWorkflow.CopyPropertiesFrom( connectionWorkflowState );
-                    //InitModel( ref newConnectionWorkflow );
-
                     var newConnectionWorkflow = connectionWorkflowState.CloneWithoutIdentity();
                     newConnectionType.ConnectionWorkflows.Add( newConnectionWorkflow );
                     newConnectionWorkflow.ConnectionTypeId = newConnectionType.Id;
@@ -217,9 +161,6 @@ namespace Rock.Model
                 List<Attribute> newAttributesState = new List<Attribute>();
                 foreach ( var attribute in opportunityAttributes )
                 {
-                    //var newAttribute = attribute.Clone( false );
-                    //InitModel( ref newAttribute );
-
                     var newAttribute = attribute.CloneWithoutIdentity();
                     newAttribute.IsSystem = false;
                     newAttributesState.Add( newAttribute );

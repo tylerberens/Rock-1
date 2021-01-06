@@ -643,22 +643,6 @@ namespace RockWeb.Blocks.Communication
                 var communication = service.Get( CommunicationId.Value );
                 if ( communication != null )
                 {
-                    //var newCommunication = communication.Clone( false );
-                    //newCommunication.CreatedByPersonAlias = null;
-                    //newCommunication.CreatedByPersonAliasId = null;
-                    //newCommunication.CreatedDateTime = RockDateTime.Now;
-                    //newCommunication.ModifiedByPersonAlias = null;
-                    //newCommunication.ModifiedByPersonAliasId = null;
-                    //newCommunication.ModifiedDateTime = RockDateTime.Now;
-                    //newCommunication.Id = 0;
-                    //newCommunication.Guid = Guid.Empty;
-                    //newCommunication.SenderPersonAliasId = CurrentPersonAliasId;
-                    //newCommunication.Status = CommunicationStatus.Draft;
-                    //newCommunication.ReviewerPersonAliasId = null;
-                    //newCommunication.ReviewedDateTime = null;
-                    //newCommunication.ReviewerNote = string.Empty;
-                    //newCommunication.SendDateTime = null;
-
                     var newCommunication = communication.CloneWithoutIdentity();
                     newCommunication.SenderPersonAliasId = CurrentPersonAliasId;
                     newCommunication.Status = CommunicationStatus.Draft;
