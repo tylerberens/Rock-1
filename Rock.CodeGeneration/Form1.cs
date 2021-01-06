@@ -662,10 +662,8 @@ GO
             if ( type.BaseType.IsGenericType && type.BaseType.GetGenericTypeDefinition() == typeof( Rock.Data.Model<> ) )
             {
                 sb.AppendFormat( @"
-            target.CreatedByPersonAlias = null;
             target.CreatedByPersonAliasId = null;
             target.CreatedDateTime = RockDateTime.Now;
-            target.ModifiedByPersonAlias = null;
             target.ModifiedByPersonAliasId = null;
             target.ModifiedDateTime = RockDateTime.Now;", type.Name );
             }
