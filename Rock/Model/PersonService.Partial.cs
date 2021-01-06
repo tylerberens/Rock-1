@@ -2937,7 +2937,7 @@ namespace Rock.Model
         /// <param name="reasonNote">The reason note.</param>
         /// <param name="historyChangeList">The history change list.</param>
         [RockObsolete( "1.12" )]
-        [Obsolete( @"Use overloads without the HistoryChangeList out param instead. The Person model takes care of updating the HistoryChangeList.
+        [Obsolete( @"Use one of the InactivatePerson overloads without the HistoryChangeList out param. The Person model takes care of updating the HistoryChangeList.
             Using the HistoryChangeList obj in this method's out param will create duplicate changes in the History table for
             ""Record Status"", ""Record Status Reason"", and ""Inactive Reason Note""." )]
         public void InactivatePerson( Person person, DefinedValueCache reason, string reasonNote, out History.HistoryChangeList historyChangeList )
