@@ -183,6 +183,8 @@ namespace Rock.Jobs
 
             */
 
+            RunCleanupTask( "constraint repair", () => this.ConstraintRepair( dataMap ) );
+
             RunCleanupTask( "exception log", () => this.CleanupExceptionLog( dataMap ) );
 
             RunCleanupTask( "expired entity set", () => CleanupExpiredEntitySets( dataMap ) );
@@ -384,6 +386,74 @@ namespace Rock.Jobs
                     return stackTrace;
                 }
             }
+        }
+
+        private int ConstraintRepair( JobDataMap dataMap )
+        {
+            var currentDateTime = RockDateTime.Now;
+
+            //using ( var rockContext = new Rock.Data.RockContext() )
+            //{
+            //    rockContext.Database.CommandTimeout = commandTimeout;
+
+            //}
+
+            string sql = @"
+                DECLARE @IndexErrorTable TABLE(ForiegnKeyName nvarchar(128), ChildTableName nvarchar(128), ChildColumnName nvarchar(128), ParentTableName nvarchar(128), ParentColumnName nvarchar(128))
+                DECLARE @IndexSuccessTable TABLE(ForiegnKeyName nvarchar(128), ChildTableName nvarchar(128), ChildColumnName nvarchar(128), ParentTableName nvarchar(128), ParentColumnName nvarchar(128))
+                DECLARE @ForiegnKeyName nvarchar(128);
+                DECLARE @ChildTableName nvarchar(128);
+                DECLARE @ChildColumnName nvarchar(128);
+                DECLARE @ParentTableName nvarchar(128);
+                DECLARE @ParentColumnName nvarchar(128);
+
+                DECLARE cursor_AlterTable CURSOR FOR
+	                SELECT
+	                  k.[name] AS ForiegnKeyName
+	                , o.[name] AS ChildTableName
+	                , childColumn.[name] AS ChildColumnName
+	                , o2.[name] AS ParentTableName
+	                , parentColumn.[name] AS ParentColumnName
+	                FROM sys.foreign_keys k
+	                JOIN sys.objects o ON k.parent_object_id = o.object_id
+	                JOIN sys.objects o2 ON k.referenced_object_id = o2.object_id
+	                JOIN sys.foreign_key_columns kc ON k.object_id = kc.constraint_object_id
+	                JOIN sys.columns childColumn ON kc.parent_object_id = childColumn.object_id and kc.parent_column_id = childColumn.column_id
+	                JOIN sys.columns parentColumn ON kc.referenced_object_id = parentColumn.object_id and kc.referenced_column_id = parentColumn.column_id
+	                WHERE [is_disabled] = 1
+		                AND [is_not_trusted] = 1
+	                ORDER BY k.[name];
+
+                OPEN cursor_AlterTable;
+
+                FETCH NEXT FROM cursor_AlterTable INTO @ForiegnKeyName, @ChildTableName, @ChildColumnName, @ParentTableName, @ParentColumnName;
+                WHILE @@FETCH_STATUS = 0
+                BEGIN
+	                BEGIN TRY
+		                EXEC ('ALTER TABLE [dbo].[' + @ChildTableName + '] WITH CHECK CHECK CONSTRAINT [' + @ForiegnKeyName + '];');
+		                INSERT INTO @IndexSuccessTable(ForiegnKeyName, ChildTableName, ChildColumnName, ParentTableName, ParentColumnName)
+		                VALUES(@ForiegnKeyName, @ChildTableName, @ChildColumnName, @ParentTableName, @ParentColumnName)
+	                END TRY
+	                BEGIN CATCH
+		                INSERT INTO @IndexErrorTable(ForiegnKeyName, ChildTableName, ChildColumnName, ParentTableName, ParentColumnName)
+		                VALUES(@ForiegnKeyName, @ChildTableName, @ChildColumnName, @ParentTableName, @ParentColumnName)
+	                END CATCH
+
+	                FETCH NEXT FROM cursor_AlterTable INTO @ForiegnKeyName, @ChildTableName, @ChildColumnName, @ParentTableName, @ParentColumnName;
+                END;
+
+                CLOSE cursor_AlterTable;
+                DEALLOCATE cursor_AlterTable;
+
+                -- This will be a list of FK data that could not be enabled. Some cleaning up will need to be done using this data
+                SELECT * FROM @IndexErrorTable
+                SELECT * FROM @IndexSuccessTable";
+
+            var sqlParams = new Dictionary<string, object>();
+            var dataSet = Rock.Data.DbService.GetDataSet( sql, System.Data.CommandType.Text, sqlParams, commandTimeout );
+
+            // TODO: Summarize the results in the dataset and record it in the log.
+            return 0;
         }
 
         /// <summary>
