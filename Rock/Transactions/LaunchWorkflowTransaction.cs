@@ -26,6 +26,8 @@ namespace Rock.Transactions
     /// Launches a workflow and optionally sets the name and attribute values
     /// </summary>
     /// <seealso cref="Rock.Transactions.ITransaction" />
+    [Obsolete( "Use LaunchWorkflow Task instead." )]
+    [RockObsolete( "1.13" )]
     public class LaunchWorkflowTransaction : ITransaction
     {
         /// <summary>
@@ -51,14 +53,6 @@ namespace Rock.Transactions
         /// The name of the workflow.
         /// </value>
         public string WorkflowName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the initiator person alias identifier.
-        /// </summary>
-        /// <value>
-        /// The initiator person alias identifier.
-        /// </value>
-        public int? InitiatorPersonAliasId { get; set; }
 
         /// <summary>
         /// Gets or sets the workflow attribute values.
@@ -129,7 +123,6 @@ namespace Rock.Transactions
                 if ( workflowType != null && ( workflowType.IsActive ?? true ) )
                 {
                     var workflow = Rock.Model.Workflow.Activate( workflowType, WorkflowName );
-                    workflow.InitiatorPersonAliasId = InitiatorPersonAliasId;
 
                     foreach ( var keyVal in WorkflowAttributeValues )
                     {
@@ -155,6 +148,8 @@ namespace Rock.Transactions
     /// <summary>
     /// Writes any entity chnages that are configured to be tracked
     /// </summary>
+    [Obsolete( "Use LaunchWorkflow Task instead." )]
+    [RockObsolete( "1.13" )]
     public class LaunchWorkflowTransaction<T> : LaunchWorkflowTransaction
     where T : Rock.Data.Entity<T>, new()
     {
