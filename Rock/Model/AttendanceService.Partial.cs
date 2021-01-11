@@ -324,12 +324,13 @@ namespace Rock.Model
             if ( startDate.HasValue )
             {
                 startDate = startDate.Value.Date;
-                qryAttendance = qryAttendance.Where( a => a.Occurrence.OccurrenceDate >= startDate.Value );
+                qryAttendance = qryAttendance.Where( a => a.Occurrence.SundayDate >= startDate.Value );
             }
 
             if ( endDate.HasValue )
             {
-                qryAttendance = qryAttendance.Where( a => a.Occurrence.OccurrenceDate < endDate.Value );
+                endDate = endDate.Value.Date.AddDays(1);
+                qryAttendance = qryAttendance.Where( a => a.Occurrence.SundayDate < endDate.Value );
             }
 
             if ( dataViewId.HasValue )
@@ -2120,7 +2121,7 @@ namespace Rock.Model
         /// Creates attendance records if they don't exist for a designated occurrence and list of person IDs.
         /// </summary>
         /// <param name="occurrenceId">The ID of the AttendanceOccurrence record.</param>
-        /// <param name="personIdList">A a list of Person IDs.</param>
+        /// <param name="personIdList">A list of Person IDs.</param>
         public void RegisterRSVPRecipients( int occurrenceId, List<int> personIdList )
         {
             var rockContext = this.Context as RockContext;
