@@ -16,6 +16,7 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using Rock.Model;
 using Serilog;
@@ -175,6 +176,15 @@ namespace Rock.Logging
                 return;
             }
 
+            for ( int i = 0; i < propertyValues.Length; i++ )
+            {
+                var obj = propertyValues[i];
+                if ( obj is NameValueCollection )
+                {
+                    var nameValueCollection = ( NameValueCollection ) obj;
+                    propertyValues[i] = nameValueCollection.Cast<string>().ToDictionary( k => k, v => nameValueCollection[v] );
+                }
+            }
             var serilogLogLevel = GetLogEventLevelFromRockLogLevel( logLevel );
             _logger.Write( serilogLogLevel, GetMessageTemplateWithDomain( messageTemplate ), AddDomainToObjectArray( propertyValues, domain.ToUpper() ) );
         }
@@ -832,7 +842,7 @@ namespace Rock.Logging
         public void ReloadConfiguration()
         {
             Close();
-            
+
             // The ctor loads up all the settings from the DB.
             LogConfiguration = new RockLogConfiguration();
             LoadConfiguration( LogConfiguration );

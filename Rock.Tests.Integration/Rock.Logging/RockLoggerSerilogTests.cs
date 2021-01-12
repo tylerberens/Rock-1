@@ -15,6 +15,8 @@
 // </copyright>
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Rock.Logging;
@@ -942,6 +944,26 @@ namespace Rock.Tests.Integration.Logging
             Assert.That.FileContains( logger.LogConfiguration.LogPath, expectedLogMessage );
             Assert.That.FileContains( logger.LogConfiguration.LogPath, expectedLogMessage2 );
             Assert.That.FileDoesNotContains( logger.LogConfiguration.LogPath, excludedLogMessage );
+        }
+
+        [TestMethod]
+        public void LoggerInformationShouldLogNameValueCollection()
+        {
+            var logger = GetTestLogger();
+            var nameValueCollection = new NameValueCollection();
+            nameValueCollection.Add( "key1", "value1" );
+
+            var expectedLogMessages = new List<string>();
+            var logGuid = $"{Guid.NewGuid()}";
+            logger.Information( $"{logGuid} {{nameValueCollection}}", nameValueCollection );
+            expectedLogMessages.Add( "\"domain\":\"OTHER\",\"nameValueCollection\":{\"key1\":\"value1\"}" );
+
+            logger.Close();
+
+            foreach ( var expectedMessage in expectedLogMessages )
+            {
+                Assert.That.FileContains( logger.LogConfiguration.LogPath, expectedMessage );
+            }
         }
 
         #region Private Helper Code
