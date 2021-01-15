@@ -210,39 +210,74 @@ namespace RockWeb.Plugins.org_northpoint.RoomCheckin
         }
 
         /// <summary>
-        /// Handles the Click event of the btnPresent control.
+        /// Handles the Click event of the btnChangeRoom control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
-        protected void btnPresent_Click( object sender, RowEventArgs e )
+        protected void btnChangeRoom_Click( object sender, RowEventArgs e )
         {
-            var attendanceIds = GetRowAttendanceIds( e );
-            if ( !attendanceIds.Any() )
+            var attendanceIds = GetRowAttendanceIds( e ).ToList();
+            var mostRecentAttendance = new AttendanceService( new RockContext() ).GetByIds( attendanceIds ).OrderByDescending( a => a.StartDateTime ).AsNoTracking().Select( a => new
+            {
+                a.Id,
+                a.Occurrence.LocationId,
+                a.Occurrence.ScheduleId,
+                a.Occurrence.Group.GroupLocations
+            } ).FirstOrDefault();
+
+            if ( mostRecentAttendance == null )
             {
                 return;
             }
 
-            using ( var rockContext = new RockContext() )
+            hfChangeRoomAttendanceId.Value = mostRecentAttendance.Id.ToString();
+
+            // limit to Locations that are available for the selected attendence's occurrence's Group and Schedule.
+            var groupLocations = mostRecentAttendance.GroupLocations.ToList().ToList();
+            var availableGroupLocations = groupLocations.Where( a => a.Schedules.Any( s => s.Id == mostRecentAttendance.ScheduleId.Value ) );
+            var sortedLocations = availableGroupLocations.OrderBy( a => a.Order ).ThenBy( a => a.Location.Name ).Select( a => a.Location ).DistinctBy( a => a.Id );
+
+            ddlChangeRoomLocation.Items.Clear();
+
+            foreach ( var location in sortedLocations )
             {
-                var now = RockDateTime.Now;
-                var attendanceService = new AttendanceService( rockContext );
-                foreach ( var attendee in attendanceService
-                    .Queryable()
-                    .Where( a => attendanceIds.Contains( a.Id ) ) )
-                {
-                    attendee.PresentDateTime = now;
-                    attendee.PresentByPersonAliasId = CurrentPersonAliasId;
-
-                    // if they were Checked-out, clear the EndDateTime since they have been changed to Present
-                    if ( attendee.EndDateTime.HasValue )
-                    {
-                        attendee.EndDateTime = null;
-                    }
-                }
-
-                rockContext.SaveChanges();
+                ddlChangeRoomLocation.Items.Add( new ListItem( location.Name, location.Id.ToString() ) );
             }
 
+            ddlChangeRoomLocation.SetValue( mostRecentAttendance.LocationId );
+            mdChangeRoom.Show();
+        }
+
+        /// <summary>
+        /// Handles the SaveClick event of the mdChangeRoom control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void mdChangeRoom_SaveClick( object sender, EventArgs e )
+        {
+            mdChangeRoom.Hide();
+
+            var attendanceId = hfChangeRoomAttendanceId.Value.AsIntegerOrNull();
+            if ( attendanceId == null )
+            {
+                return;
+            }
+
+            var rockContext = new RockContext();
+            var attendanceService = new AttendanceService( rockContext );
+            var attendanceOccurrenceService = new AttendanceOccurrenceService( rockContext );
+            var attendance = new AttendanceService( rockContext ).Get( attendanceId.Value );
+            if ( attendance == null )
+            {
+                return;
+            }
+
+            var currentOccurrence = attendance.Occurrence;
+
+            var selectedLocationId = ddlChangeRoomLocation.SelectedValueAsId();
+            var newRoomsOccurrence = attendanceOccurrenceService.GetOrAdd( currentOccurrence.OccurrenceDate, currentOccurrence.GroupId, selectedLocationId, currentOccurrence.ScheduleId );
+            attendance.OccurrenceId = newRoomsOccurrence.Id;
+            rockContext.SaveChanges();
             BindGrid();
         }
 
@@ -415,8 +450,12 @@ namespace RockWeb.Plugins.org_northpoint.RoomCheckin
             return attendees;
         }
 
-        
+
 
         #endregion
+
+
+
+
     }
 }

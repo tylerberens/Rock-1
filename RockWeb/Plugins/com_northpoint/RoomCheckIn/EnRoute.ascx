@@ -4,10 +4,9 @@
     <ContentTemplate>
 
         <asp:Panel ID="pnlView" runat="server" CssClass="panel panel-block">
-        
+
             <div class="panel-heading">
-                <h1 class="panel-title">
-                    People En Route
+                <h1 class="panel-title">People En Route
                 </h1>
                 <div class="pull-right">
                     <asp:LinkButton ID="btnShowFilter" runat="server" CssClass="btn btn-xs btn-link room-list-criteria-exists" OnClick="btnShowFilter_Click">
@@ -29,22 +28,31 @@
                 </div>
             </asp:Panel>
             <div class="panel-body">
-                    <div class="grid grid-panel">
-                        <Rock:Grid ID="gAttendees" runat="server" DisplayType="Light" UseFullStylesForLightGrid="true" OnRowDataBound="gAttendees_RowDataBound" DataKeyNames="PersonGuid,AttendanceIds" ShowActionRow="false">
-                            <Columns>
-                                <Rock:RockLiteralField ID="lPhoto" ItemStyle-CssClass="avatar-column" ColumnPriority="TabletSmall" />
-                                <Rock:RockLiteralField ID="lName" HeaderText="Name" ItemStyle-CssClass="name js-name align-middle" />
-                                
-                                <Rock:RockLiteralField ID="lGroupNameAndPath" HeaderText="Group" Visible="true" />
-                                <Rock:RockBoundField DataField="ServiceTimes" HeaderText="Service Times" HeaderStyle-CssClass="d-none d-sm-table-cell" ItemStyle-CssClass="service-times d-none d-sm-table-cell align-middle" />
-                                <Rock:RockLiteralField ID="lLocation" HeaderText="Room" Visible="true" />
-                                
-                                <Rock:LinkButtonField ID="btnPresent" ItemStyle-CssClass="grid-columnaction" CssClass="btn btn-success btn-square js-mark-present" Text="<i class='fa fa-user-check'></i>" ToolTip="Mark Present" OnClick="btnPresent_Click" />
-                            </Columns>
-                        </Rock:Grid>
-                    </div>
-        
+                <div class="grid grid-panel">
+                    <Rock:Grid ID="gAttendees" runat="server" DisplayType="Light" UseFullStylesForLightGrid="true" OnRowDataBound="gAttendees_RowDataBound" DataKeyNames="PersonGuid,AttendanceIds" ShowActionRow="false">
+                        <Columns>
+                            <Rock:RockLiteralField ID="lPhoto" ItemStyle-CssClass="avatar-column" ColumnPriority="TabletSmall" />
+                            <Rock:RockLiteralField ID="lName" HeaderText="Name" ItemStyle-CssClass="name js-name align-middle" />
+
+                            <Rock:RockLiteralField ID="lGroupNameAndPath" HeaderText="Group" Visible="true" />
+                            <Rock:RockBoundField DataField="ServiceTimes" HeaderText="Service Times" HeaderStyle-CssClass="d-none d-sm-table-cell" ItemStyle-CssClass="service-times d-none d-sm-table-cell align-middle" />
+                            <Rock:RockLiteralField ID="lLocation" HeaderText="Room" Visible="true" />
+
+                            <Rock:LinkButtonField ID="btnChangeRoom" ItemStyle-CssClass="grid-columnaction" CssClass="btn btn-default btn-square" Text="<i class='fa fa-external-link-alt'></i>" ToolTip="Change Room" OnClick="btnChangeRoom_Click" />
+                        </Columns>
+                    </Rock:Grid>
+                </div>
         </asp:Panel>
+
+        <Rock:ModalDialog ID="mdChangeRoom" runat="server" Title="Change Room" SaveButtonText="Move" OnSaveClick="mdChangeRoom_SaveClick">
+            <Content>
+                <asp:HiddenField ID="hfChangeRoomAttendanceId" runat="server" />
+                <asp:Literal ID="lChangeRoomInstructions" runat="server" Text="Select a new location to change where this person is checked into." />
+
+                <Rock:RockDropDownList ID="ddlChangeRoomLocation" runat="server" Label="Location" Required="true" />
+
+            </Content>
+        </Rock:ModalDialog>
 
     </ContentTemplate>
 </asp:UpdatePanel>
