@@ -77,14 +77,14 @@ namespace RockWeb.Blocks.CheckIn.Manager
         private class AttributeKey
         {
             public const string PersonPage = "PersonPage";
-            public const string ShowAllAreas = "ShowAllAreas";
+            public const string ShowAllAreas = CheckinManagerHelper.BlockAttributeKey.ShowAllAreas;
             public const string AreaSelectPage = "AreaSelectPage";
 
             /// <summary>
             /// Gets or sets the current 'Check-in Configuration' Guid (which is a <see cref="Rock.Model.GroupType" /> Guid).
             /// For example "Weekly Service Check-in".
             /// </summary>
-            public const string CheckInAreaGuid = "CheckInAreaGuid";
+            public const string CheckInAreaGuid = CheckinManagerHelper.BlockAttributeKey.CheckInAreaGuid;
 
             public const string RosterPage = "RosterPage";
         }
@@ -98,7 +98,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             /// Gets or sets the current 'Check-in Configuration' Guid (which is a <see cref="Rock.Model.GroupType" /> Guid).
             /// For example "Weekly Service Check-in".
             /// </summary>
-            public const string Area = "Area";
+            public const string Area = CheckinManagerHelper.PageParameterKey.Area;
         }
 
         #endregion Page Parameter Keys
@@ -163,54 +163,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
         #region Methods
 
-        /// <summary>
-        /// If <seealso cref="AttributeKey.ShowAllAreas"/> is set to false, the 'Check-in Configuration' (which is a <see cref="Rock.Model.GroupType" /> Guid) to limit to
-        /// For example "Weekly Service Check-in".
-        /// </summary>
-        public GroupTypeCache GetCheckinAreaFilter()
-        {
-            // If a Check-in Area query string parameter is defined, it takes precedence.
-            Guid? checkinManagerPageParameterCheckinAreaGuid = PageParameter( PageParameterKey.Area ).AsGuidOrNull();
-            if ( checkinManagerPageParameterCheckinAreaGuid.HasValue )
-            {
-                var checkinManagerPageParameterCheckinArea = GroupTypeCache.Get( checkinManagerPageParameterCheckinAreaGuid.Value );
-
-                if ( checkinManagerPageParameterCheckinArea != null )
-                {
-                    return checkinManagerPageParameterCheckinArea;
-                }
-            }
-
-            // if ShowAllAreas is enabled, we won't filter by Check-in Area (unless there was a page parameter)
-            if ( this.GetAttributeValue( AttributeKey.ShowAllAreas ).AsBoolean() )
-            {
-                return null;
-            }
-
-            // we ShowAllAreas is false, get the area filter from the cookie
-            var checkinManagerCookieCheckinAreaGuid = CheckinManagerHelper.GetCheckinManagerConfigurationFromCookie().CheckinAreaGuid;
-            if ( checkinManagerCookieCheckinAreaGuid != null )
-            {
-                var checkinManagerCookieCheckinArea = GroupTypeCache.Get( checkinManagerCookieCheckinAreaGuid.Value );
-                if ( checkinManagerCookieCheckinArea != null )
-                {
-                    return checkinManagerCookieCheckinArea;
-                }
-            }
-
-            // Next, check the Block AttributeValue.
-            var checkinManagerBlockAttributeCheckinAreaGuid = this.GetAttributeValue( AttributeKey.CheckInAreaGuid ).AsGuidOrNull();
-            if ( checkinManagerBlockAttributeCheckinAreaGuid.HasValue )
-            {
-                var checkinManagerBlockAttributeCheckinArea = GroupTypeCache.Get( checkinManagerBlockAttributeCheckinAreaGuid.Value );
-                if ( checkinManagerBlockAttributeCheckinArea != null )
-                {
-                    return checkinManagerBlockAttributeCheckinArea;
-                }
-            }
-
-            return null;
-        }
+        
 
         /// <summary>
         /// Determines if the Filter
@@ -235,12 +188,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 return true;
             }
 
-            GroupTypeCache checkinAreaFilter = null;
-
             // if ShowAllAreas is false, the CheckinAreaFilter is required
             if ( this.GetAttributeValue( AttributeKey.ShowAllAreas ).AsBoolean() == false )
             {
-                checkinAreaFilter = GetCheckinAreaFilter();
+                var checkinAreaFilter = CheckinManagerHelper.GetCheckinAreaFilter( this );
                 if ( checkinAreaFilter == null )
                 {
                     if ( NavigateToLinkedPage( AttributeKey.AreaSelectPage ) )
@@ -271,7 +222,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 return;
             }
 
-            var checkinAreaFilter = GetCheckinAreaFilter();
+            var checkinAreaFilter = CheckinManagerHelper.GetCheckinAreaFilter( this );
             CampusCache campus = GetCampusFromContext();
 
             var selectedScheduleIds = lbSchedules.SelectedValues.AsIntegerList();
@@ -492,6 +443,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var lCheckedOutCount = e.Row.FindControl( "lCheckedOutCount" ) as Literal;
 
             lRoomName.Text = roomInfo.LocationName;
+
 
             lGroupNameAndPath.Text = roomInfo.GroupsPathHTML;
             if ( roomInfo.RoomCounts != null )

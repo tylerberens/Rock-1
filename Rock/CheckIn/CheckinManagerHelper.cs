@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using Rock.Model;
+using Rock.Web.Cache;
 using Rock.Web.UI;
 
 namespace Rock.CheckIn
@@ -28,6 +29,87 @@ namespace Rock.CheckIn
     /// </summary>
     public static class CheckinManagerHelper
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        public class PageParameterKey
+        {
+            /// <summary>
+            /// Gets or sets the current 'Check-in Configuration' Guid (which is a <see cref="Rock.Model.GroupType" /> Guid).
+            /// For example "Weekly Service Check-in".
+            /// </summary>
+            public const string Area = "Area";
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public class BlockAttributeKey
+        {
+            /// <summary>
+            /// Show all areas (Weekly Service Checkin, Volunteer Checkin, etc)
+            /// </summary>
+            public const string ShowAllAreas = "ShowAllAreas";
+
+            /// <summary>
+            /// Gets or sets the current 'Check-in Configuration' Guid (which is a <see cref="Rock.Model.GroupType" /> Guid).
+            /// For example "Weekly Service Check-in".
+            /// </summary>
+            public const string CheckInAreaGuid = "CheckInAreaGuid";
+        }
+
+        /// <summary>
+        /// Gets the checkin area filter that the (Checkin Manager) block uses.
+        /// Determined by 'Area' PageParameter, 'ShowAllAreas' block setting, Cookie or 'CheckInAreaGuid' block setting
+        /// </summary>
+        /// <param name="rockBlock">The rock block.</param>
+        /// <returns></returns>
+        public static GroupTypeCache GetCheckinAreaFilter( RockBlock rockBlock )
+        {
+            // If a Check-in Area query string parameter is defined, it takes precedence.
+            Guid? checkinManagerPageParameterCheckinAreaGuid = rockBlock.PageParameter( PageParameterKey.Area ).AsGuidOrNull();
+            if ( checkinManagerPageParameterCheckinAreaGuid.HasValue )
+            {
+                var checkinManagerPageParameterCheckinArea = GroupTypeCache.Get( checkinManagerPageParameterCheckinAreaGuid.Value );
+
+                if ( checkinManagerPageParameterCheckinArea != null )
+                {
+                    return checkinManagerPageParameterCheckinArea;
+                }
+            }
+
+            // if ShowAllAreas is enabled, we won't filter by Check-in Area (unless there was a page parameter)
+            if ( rockBlock.GetAttributeValue( BlockAttributeKey.ShowAllAreas ).AsBoolean() )
+            {
+                return null;
+            }
+
+            // we ShowAllAreas is false, get the area filter from the cookie
+            var checkinManagerCookieCheckinAreaGuid = CheckinManagerHelper.GetCheckinManagerConfigurationFromCookie().CheckinAreaGuid;
+            if ( checkinManagerCookieCheckinAreaGuid != null )
+            {
+                var checkinManagerCookieCheckinArea = GroupTypeCache.Get( checkinManagerCookieCheckinAreaGuid.Value );
+                if ( checkinManagerCookieCheckinArea != null )
+                {
+                    return checkinManagerCookieCheckinArea;
+                }
+            }
+
+            // Next, check the Block AttributeValue.
+            var checkinManagerBlockAttributeCheckinAreaGuid = rockBlock.GetAttributeValue( BlockAttributeKey.CheckInAreaGuid ).AsGuidOrNull();
+            if ( checkinManagerBlockAttributeCheckinAreaGuid.HasValue )
+            {
+                var checkinManagerBlockAttributeCheckinArea = GroupTypeCache.Get( checkinManagerBlockAttributeCheckinAreaGuid.Value );
+                if ( checkinManagerBlockAttributeCheckinArea != null )
+                {
+                    return checkinManagerBlockAttributeCheckinArea;
+                }
+            }
+
+            return null;
+        }
+
+
         /// <summary>
         /// Saves the campus location configuration to the response cookie
         /// </summary>
@@ -83,6 +165,17 @@ namespace Rock.CheckIn
         }
 
         /// <summary>
+        /// Saves plugin custom settings to cookie.
+        /// </summary>
+        /// <param name="customSettings">The custom settings.</param>
+        public static void SaveCustomSettingsToCookie( Dictionary<string, string> customSettings )
+        {
+            CheckinManagerConfiguration checkinManagerConfiguration = GetCheckinManagerConfigurationFromCookie();
+            checkinManagerConfiguration.CustomSettings = customSettings;
+            SaveCheckinManagerConfigurationToCookie( checkinManagerConfiguration );
+        }
+
+        /// <summary>
         /// Saves the checkin manager configuration to response cookie.
         /// </summary>
         /// <param name="checkinManagerConfiguration">The checkin manager configuration.</param>
@@ -122,7 +215,53 @@ namespace Rock.CheckIn
                 checkinManagerConfiguration.RoomListScheduleIdsFilter = new int[0];
             }
 
+            if ( checkinManagerConfiguration.CustomSettings == null )
+            {
+                checkinManagerConfiguration.CustomSettings = new Dictionary<string, string>();
+            }
+
             return checkinManagerConfiguration;
+        }
+
+        /// <summary>
+        /// If an attendence's GroupType' AllowCheckout is false, remove all Attendees whose schedules are not currently active.
+        /// </summary>
+        /// <param name="currentDateTime">The current date time.</param>
+        /// <param name="attendanceList">The attendance list.</param>
+        /// <returns></returns>
+        public static List<Attendance> FilterByActiveCheckins( DateTime currentDateTime, List<Attendance> attendanceList )
+        {
+            var groupTypeIds = attendanceList.Select( a => a.Occurrence.Group.GroupTypeId ).Distinct().ToList();
+            var groupTypes = groupTypeIds.Select( a => GroupTypeCache.Get( a ) );
+            var groupTypeIdsWithAllowCheckout = groupTypes
+                .Where( gt => gt.GetCheckInConfigurationAttributeValue( Rock.SystemKey.GroupTypeAttributeKey.CHECKIN_GROUPTYPE_ALLOW_CHECKOUT ).AsBoolean() )
+                .Where( a => a != null )
+                .Select( a => a.Id )
+                .Distinct();
+
+            attendanceList = attendanceList.Where( a =>
+            {
+                var allowCheckout = groupTypeIdsWithAllowCheckout.Contains( a.Occurrence.Group.GroupTypeId );
+                if ( !allowCheckout )
+                {
+                    /* 
+                       If AllowCheckout is false, remove all Attendees whose schedules are not currently active. Per the 'WasSchedule...ActiveForCheckOut()'
+                       method below: "Check-out can happen while check-in is active or until the event ends (start time + duration)." This will help to keep
+                       the list of 'Present' attendees cleaned up and accurate, based on the room schedules, since the volunteers have no way to manually mark
+                       an Attendee as 'Checked-out'.
+
+                       If, on the other hand, AllowCheckout is true, it will be the volunteers' responsibility to click the [Check-out] button when an
+                       Attendee leaves the room, in order to keep the list of 'Present' Attendees in order. This will also allow the volunteers to continue
+                       'Checking-out' Attendees in the case that the parents are running late in picking them up.
+                   */
+                    return a.Occurrence.Schedule.WasScheduleOrCheckInActiveForCheckOut( currentDateTime );
+                }
+                else
+                {
+                    return true;
+                }
+            } ).ToList();
+            return attendanceList;
         }
 
         /// <summary>
@@ -238,5 +377,13 @@ namespace Rock.CheckIn
         /// The room list schedule ids filter.
         /// </value>
         public int[] RoomListScheduleIdsFilter { get; set; }
+
+        /// <summary>
+        /// Gets or sets the custom settings that can be used by plugins
+        /// </summary>
+        /// <value>
+        /// The custom settings.
+        /// </value>
+        public Dictionary<string, string> CustomSettings { get; set; }
     }
 }

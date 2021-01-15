@@ -196,6 +196,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
             /// The location identifier
             /// </summary>
             public const string LocationId = "LocationId";
+
+            /// <summary>
+            /// The attendance identifier parameter (if Person isn't specified in URL, get the Person from the Attendance instead
+            /// </summary>
+            public const string AttendanceId = "AttendanceId";
         }
 
         #endregion
@@ -282,6 +287,24 @@ namespace RockWeb.Blocks.CheckIn.Manager
         protected override void OnLoad( EventArgs e )
         {
             base.OnLoad( e );
+
+            var personId = this.PageParameter( PageParameterKey.PersonId ).AsIntegerOrNull();
+            if ( !personId.HasValue )
+            {
+                // if a PersonId wasn't  specified, but an AttendanceId parameter was, reload page with the PersonId in the URL
+                // this will help any other blocks on this page that need to know the PersonId
+                var attendanceId = this.PageParameter( PageParameterKey.AttendanceId ).AsIntegerOrNull();
+                if ( attendanceId.HasValue )
+                {
+                    personId = new AttendanceService( new RockContext() ).GetSelect( attendanceId.Value, s => ( int? ) s.PersonAlias.PersonId );
+                    if ( personId.HasValue )
+                    {
+                        var extraParams = new Dictionary<string, string>();
+                        extraParams.Add( PageParameterKey.PersonId, personId.ToString() );
+                        NavigateToCurrentPageReference( extraParams );
+                    }
+                }
+            }
 
             Guid personGuid = GetPersonGuid();
 
@@ -794,8 +817,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
                 // Text Message
                 var phoneNumber = person.PhoneNumbers.FirstOrDefault( n => n.IsMessagingEnabled && n.Number.IsNotNullOrWhiteSpace() );
-                //if ( GetAttributeValue( AttributeKey.SMSFrom ).IsNotNullOrWhiteSpace() && phoneNumber != null )
-                if (phoneNumber != null)
+                if ( GetAttributeValue( AttributeKey.SMSFrom ).IsNotNullOrWhiteSpace() && phoneNumber != null )
                 {
                     SmsPhoneNumberId = phoneNumber.Id;
                 }
@@ -1073,6 +1095,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
         #endregion
 
-       
+
     }
 }

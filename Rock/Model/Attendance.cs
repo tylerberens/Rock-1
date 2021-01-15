@@ -809,7 +809,7 @@ namespace Rock.Model
             {
                 sb.AppendFormat( " on {0} at {1}", StartDateTime.ToShortDateString(), StartDateTime.ToShortTimeString() );
 
-                var end = EndDateTime ?? Occurrence?.OccurrenceDate;
+                var end = EndDateTime;
                 if ( end.HasValue )
                 {
                     sb.AppendFormat( " until {0} at {1}", end.Value.ToShortDateString(), end.Value.ToShortTimeString() );

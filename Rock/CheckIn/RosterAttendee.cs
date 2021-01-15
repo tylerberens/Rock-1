@@ -288,6 +288,14 @@ namespace Rock.CheckIn
         public int ScheduleId { get; private set; }
 
         /// <summary>
+        /// Gets the name of the room (Occurrence Location.Name)
+        /// </summary>
+        /// <value>
+        /// The name of the room.
+        /// </value>
+        public string RoomName { get; private set; }
+
+        /// <summary>
         /// Gets the name of Checkin Group of the attendance
         /// </summary>
         /// <value>
@@ -472,6 +480,8 @@ namespace Rock.CheckIn
 
             // ScheduleId should have a value, but just in case, we'll do some null safety
             this.ScheduleId = latestAttendance.Occurrence?.ScheduleId ?? 0;
+
+            this.RoomName = latestAttendance.Occurrence?.Location?.Name;
         }
 
         /// <summary>
