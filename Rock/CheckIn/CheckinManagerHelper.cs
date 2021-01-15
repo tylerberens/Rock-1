@@ -18,9 +18,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
 using Rock.Web.UI;
+using Rock.Web.UI.Controls;
 
 namespace Rock.CheckIn
 {
@@ -39,6 +41,11 @@ namespace Rock.CheckIn
             /// For example "Weekly Service Check-in".
             /// </summary>
             public const string Area = "Area";
+
+            /// <summary>
+            /// The location identifier
+            /// </summary>
+            public const string LocationId = "LocationId";
         }
 
         /// <summary>
@@ -109,6 +116,98 @@ namespace Rock.CheckIn
             return null;
         }
 
+        /// <summary>
+        /// Sets the selected location
+        /// </summary>
+        /// <param name="rockBlock">The rock block.</param>
+        /// <param name="lpLocation">The lp location.</param>
+        /// <param name="locationId">The identifier of the location.</param>
+        /// <param name="campusId">The campus identifier.</param>
+        public static void SetSelectedLocation( RockBlock rockBlock, LocationPicker lpLocation, int? locationId, int campusId )
+        {
+            if ( locationId.HasValue && locationId > 0 )
+            {
+                CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( campusId, locationId );
+                var pageParameterLocationId = rockBlock.PageParameter( PageParameterKey.LocationId ).AsIntegerOrNull();
+                if ( !pageParameterLocationId.HasValue || pageParameterLocationId.Value != locationId )
+                {
+                    var additionalQueryParameters = new Dictionary<string, string>();
+                    additionalQueryParameters.Add( PageParameterKey.LocationId, locationId.ToString() );
+                    rockBlock.NavigateToCurrentPageReference( additionalQueryParameters );
+                    return;
+                }
+
+                using ( var rockContext = new RockContext() )
+                {
+                    Location location = new LocationService( rockContext ).Get( locationId.Value );
+                    if ( location != null )
+                    {
+                        lpLocation.Location = location;
+                    }
+                }
+            }
+            else
+            {
+                lpLocation.Location = null;
+                CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( campusId, null );
+            }
+        }
+
+        /// <summary>
+        /// Gets the selected location.
+        /// </summary>
+        /// <param name="rockBlock">The rock block.</param>
+        /// <param name="campus">The campus.</param>
+        /// <param name="lpLocation">The lp location.</param>
+        /// <returns></returns>
+        public static int? GetSelectedLocation( RockBlock rockBlock, CampusCache campus, LocationPicker lpLocation )
+        {
+            // If the Campus selection has changed, we need to reload the LocationItemPicker with the Locations specific to that Campus.
+            lpLocation.NamedPickerRootLocationId = campus.LocationId.GetValueOrDefault();
+
+            // Check the LocationPicker for the Location ID.
+            int locationId = lpLocation.Location != null
+                ? lpLocation.Location.Id
+                : 0;
+
+            if ( locationId > 0 )
+            {
+                return locationId;
+            }
+
+            // If not defined on the LocationPicker, check first for a LocationId Page parameter.
+            locationId = rockBlock.PageParameter( PageParameterKey.LocationId ).AsInteger();
+
+            if ( locationId > 0 )
+            {
+                // If the Page parameter was set, make sure it's valid for the selected Campus.
+                using ( var rockContext = new RockContext() )
+                {
+                    var locationCampusId = new LocationService( rockContext ).GetCampusIdForLocation( locationId );
+                    if ( locationCampusId != campus.Id )
+                    {
+                        return null;
+                    }
+                }
+            }
+
+            if ( locationId > 0 )
+            {
+                CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( campus.Id, locationId );
+            }
+            else
+            {
+                // If still not defined, check for a Block user preference.
+                locationId = CheckinManagerHelper.GetCheckinManagerConfigurationFromCookie().LocationIdFromSelectedCampusId.GetValueOrNull( campus.Id ) ?? 0;
+
+                if ( locationId <= 0 )
+                {
+                    return null;
+                }
+            }
+
+            return locationId;
+        }
 
         /// <summary>
         /// Saves the campus location configuration to the response cookie

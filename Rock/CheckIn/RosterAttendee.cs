@@ -33,6 +33,14 @@ namespace Rock.CheckIn
         private Person _person;
 
         /// <summary>
+        /// Gets the person.
+        /// </summary>
+        /// <value>
+        /// The person.
+        /// </value>
+        public Person Person => _person;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="RosterAttendee"/> class.
         /// </summary>
         /// <param name="person">The person.</param>

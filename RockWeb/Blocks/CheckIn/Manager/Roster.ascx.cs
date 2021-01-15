@@ -252,11 +252,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
             Location location = lpLocation.Location;
             if ( location != null )
             {
-                SetSelectedLocation( location.Id );
+                CheckinManagerHelper.SetSelectedLocation( this, lpLocation, location.Id, CurrentCampusId );
             }
             else
             {
-                SetSelectedLocation( 0 );
+                CheckinManagerHelper.SetSelectedLocation( this, lpLocation, 0, CurrentCampusId );
             }
         }
 
@@ -309,52 +309,16 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 return;
             }
 
-            // If the Campus selection has changed, we need to reload the LocationItemPicker with the Locations specific to that Campus.
-            if ( campus.Id != CurrentCampusId )
+            int? locationId = CheckinManagerHelper.GetSelectedLocation( this, campus, lpLocation );
+            if ( !locationId.HasValue )
             {
-                CurrentCampusId = campus.Id;
-                lpLocation.NamedPickerRootLocationId = campus.LocationId.GetValueOrDefault();
+                ShowWarningMessage( "Please select a location", false );
+                return;
             }
 
-            // Check the LocationPicker for the Location ID.
-            int locationId = lpLocation.Location != null
-                ? lpLocation.Location.Id
-                : 0;
+            CheckinManagerHelper.SetSelectedLocation( this, lpLocation, locationId, CurrentCampusId );
 
-            if ( locationId <= 0 )
-            {
-                // If not defined on the LocationPicker, check first for a LocationId Page parameter.
-                locationId = PageParameter( PageParameterKey.LocationId ).AsInteger();
-
-                if ( locationId > 0 )
-                {
-                    // If the Page parameter was set, make sure it's valid for the selected Campus.
-                    if ( !IsLocationWithinCampus( locationId ) )
-                    {
-                        locationId = 0;
-                    }
-                }
-
-                if ( locationId > 0 )
-                {
-                    CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( CurrentCampusId, locationId );
-                }
-                else
-                {
-                    // If still not defined, check for a Block user preference.
-                    locationId = CheckinManagerHelper.GetCheckinManagerConfigurationFromCookie().LocationIdFromSelectedCampusId.GetValueOrNull( CurrentCampusId ) ?? 0;
-
-                    if ( locationId <= 0 )
-                    {
-                        ShowWarningMessage( "Please select a Location.", false );
-                        return;
-                    }
-                }
-
-                SetSelectedLocation( locationId );
-            }
-
-            InitializeSubPageNav( locationId );
+            InitializeSubPageNav( locationId.Value );
 
             // Check the ButtonGroup for the StatusFilter value.
             RosterStatusFilter statusFilter = GetStatusFilterValueFromControl();
@@ -372,7 +336,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 SetStatusFilterControl( statusFilter );
             }
 
-            CurrentLocationId = locationId;
+            CurrentLocationId = locationId.Value;
 
             BindGrid();
         }
@@ -1048,53 +1012,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
             lpLocation.Visible = !hideLocationPicker;
             pnlSubPageNav.Visible = false;
             pnlRoster.Visible = false;
-        }
-
-        /// <summary>
-        /// Determines whether the specified location is within the current campus.
-        /// </summary>
-        /// <param name="locationId">The location identifier.</param>
-        private bool IsLocationWithinCampus( int locationId )
-        {
-            using ( var rockContext = new RockContext() )
-            {
-                var locationCampusId = new LocationService( rockContext ).GetCampusIdForLocation( locationId );
-                return locationCampusId == CurrentCampusId;
-            }
-        }
-
-        /// <summary>
-        /// Sets the selected location
-        /// </summary>
-        /// <param name="locationId">The identifier of the location.</param>
-        private void SetSelectedLocation( int? locationId )
-        {
-            if ( locationId.HasValue && locationId > 0 )
-            {
-                CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( CurrentCampusId, locationId );
-                var pageParameterLocationId = this.PageParameter( PageParameterKey.LocationId ).AsIntegerOrNull();
-                if ( !pageParameterLocationId.HasValue || pageParameterLocationId.Value != locationId )
-                {
-                    var additionalQueryParameters = new Dictionary<string, string>();
-                    additionalQueryParameters.Add( PageParameterKey.LocationId, locationId.ToString() );
-                    NavigateToCurrentPageReference( additionalQueryParameters );
-                    return;
-                }
-
-                using ( var rockContext = new RockContext() )
-                {
-                    Location location = new LocationService( rockContext ).Get( locationId.Value );
-                    if ( location != null )
-                    {
-                        lpLocation.Location = location;
-                    }
-                }
-            }
-            else
-            {
-                lpLocation.Location = null;
-                CheckinManagerHelper.SaveCampusLocationConfigurationToCookie( CurrentCampusId, null );
-            }
         }
 
         /// <summary>
