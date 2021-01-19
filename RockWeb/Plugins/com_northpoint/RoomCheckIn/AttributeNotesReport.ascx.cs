@@ -48,10 +48,16 @@ namespace RockWeb.Plugins.org_northpoint.RoomCheckin
         AllowMultiple = true,
         Order = 0 )]
 
-    [TextField( "Panel Title",
-        Key = AttributeKey.PanelTitle,
+    [TextField( "Report Title",
+        Key = AttributeKey.ReportTitle,
         DefaultValue = "Attribute Notes Report",
         Order = 1 )]
+
+    [BooleanField( "Show Only If Has Attribute Value",
+        Key = AttributeKey.ShowOnlyIfHasAttributeValue,
+        Description = "When checked, a person will only appear on the report if the configured attributes have a value for the person",
+        DefaultBooleanValue = true,
+        Order = 2 )]
 
     public partial class AttributeNotesReport : RockBlock
     {
@@ -63,7 +69,8 @@ namespace RockWeb.Plugins.org_northpoint.RoomCheckin
         private static class AttributeKey
         {
             public const string PersonAttributes = "PersonAttributes";
-            public const string PanelTitle = "PanelTitle";
+            public const string ReportTitle = "PanelTitle";
+            public const string ShowOnlyIfHasAttributeValue = "ShowOnlyIfHasAttributeValue";
         }
 
         #endregion
@@ -302,7 +309,7 @@ namespace RockWeb.Plugins.org_northpoint.RoomCheckin
         /// </summary>
         private void BindGrid()
         {
-            lPanelTitle.Text = GetAttributeValue( AttributeKey.PanelTitle );
+            lPanelTitle.Text = GetAttributeValue( AttributeKey.ReportTitle );
 
             var checkinAreaFilter = CheckinManagerHelper.GetCheckinAreaFilter( this );
             CampusCache campus = GetCampusFromContext();
@@ -332,9 +339,18 @@ namespace RockWeb.Plugins.org_northpoint.RoomCheckin
 
             // filter attendees to ones that have an attribute value
             var attributesToShow = GetAttributeValues( AttributeKey.PersonAttributes ).AsGuidList().Select( a => AttributeCache.Get( a ) );
+            var showOnlyIfHasAttributeValue = GetAttributeValue( AttributeKey.ShowOnlyIfHasAttributeValue ).AsBoolean();
             attendees = attendees.Where( a =>
             {
                 var person = a.Person;
+
+                if ( !showOnlyIfHasAttributeValue )
+                {
+                    // if we aren't filtering to people that have a value for the attributes, include everybody
+                    return true;
+                }
+
+                // if showOnlyIfHasAttributeValue is true, limit to people that have a value for at least one of the attributes
                 if ( person.Attributes == null )
                 {
                     person.LoadAttributes();
@@ -357,6 +373,7 @@ namespace RockWeb.Plugins.org_northpoint.RoomCheckin
                 .ThenBy( a => a.PersonGuid )
                 .ToList();
 
+            // tell the Grid where to get Attributes from since we aren't passing a list of Person to the grid
             gAttendees.ObjectList = attendeesSorted.Select( a => a.Person ).ToDictionary( k => k.Guid.ToString(), v => ( object ) v );
 
             gAttendees.DataSource = attendeesSorted;
@@ -381,6 +398,13 @@ namespace RockWeb.Plugins.org_northpoint.RoomCheckin
                 currentDateTime = RockDateTime.Now;
             }
 
+            var locationId = CheckinManagerHelper.GetSelectedLocation( this, campusCache, lpLocation );
+            if ( !locationId.HasValue )
+            {
+                // shouldn't happen, locationId is checked BindGrid
+                return null;
+            }
+
             // Get all Attendance records for the current day and location
             var attendanceQuery = new AttendanceService( rockContext ).Queryable().Where( a =>
                 a.StartDateTime >= startDateTime
@@ -391,6 +415,8 @@ namespace RockWeb.Plugins.org_northpoint.RoomCheckin
                 && a.Occurrence.ScheduleId.HasValue
                 && a.Occurrence.LocationId.HasValue
                 && a.Occurrence.ScheduleId.HasValue );
+
+            attendanceQuery = attendanceQuery.Where( a => a.Occurrence.LocationId.Value == locationId.Value );
 
             attendanceQuery = CheckinManagerHelper.FilterByRosterStatusFilter( attendanceQuery, RosterStatusFilter.CheckedIn );
 
