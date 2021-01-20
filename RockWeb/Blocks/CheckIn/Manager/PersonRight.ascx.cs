@@ -292,7 +292,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
             lCheckinScheduleName.Text = attendanceInfo.ScheduleName;
             if ( lWhoCheckedIn != null && attendanceInfo.CheckInByPersonGuid.HasValue )
             {
-                var oldWayUrl = string.Format( "{0}{1}{2}{3}?Person={4}", Request.Url.Scheme, Uri.SchemeDelimiter, Request.Url.Authority, Request.Url.AbsolutePath, attendanceInfo.CheckInByPersonGuid );
                 var queryParams = new Dictionary<string, string>();
                 queryParams.Add( "Person", attendanceInfo.CheckInByPersonGuid.ToString() );
                 var urlWithPersonParameter = GetCurrentPageUrl( queryParams );
