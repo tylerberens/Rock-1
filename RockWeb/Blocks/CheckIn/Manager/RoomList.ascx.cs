@@ -19,6 +19,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+
 using Rock;
 using Rock.Attribute;
 using Rock.CheckIn;
@@ -163,8 +164,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
         #region Methods
 
-        
-
         /// <summary>
         /// Determines if the Filter
         /// </summary>
@@ -294,8 +293,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 a.StartDateTime >= startDateTime
                 && a.DidAttend == true
                 && a.StartDateTime <= currentDateTime
-                && a.Occurrence.GroupId.HasValue
                 && a.PersonAliasId.HasValue
+                && a.Occurrence.GroupId.HasValue
                 && a.Occurrence.LocationId.HasValue
                 && a.Occurrence.ScheduleId.HasValue );
 
@@ -337,7 +336,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             // if the same person is checked in multiple times, only count the most recent attendance
             attendanceCheckinTimeInfoList = attendanceCheckinTimeInfoList.GroupBy( a => a.PersonId )
-                .Select( s => s.OrderByDescending( o => o.StartDateTime ).FirstOrDefault() );
+                .Select( s => s.OrderByDescending( o => o.StartDateTime ).FirstOrDefault() ).ToList();
 
             attendanceCheckinTimeInfoList = attendanceCheckinTimeInfoList.Where( a =>
             {
@@ -361,41 +360,65 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 {
                     return true;
                 }
-            } );
+            } ).ToList();
+            
+            Dictionary<int, List<AttendanceCheckinTimeInfo>> attendancesByLocationId = attendanceCheckinTimeInfoList
+                .GroupBy( a => a.LocationId ).ToDictionary( k => k.Key, v => v.ToList() );
 
-            var locationCountLookup = attendanceCheckinTimeInfoList.GroupBy( a => a.LocationId ).ToDictionary(
-                k => k.Key,
-                v => new RoomCounts
+            Dictionary<int, Dictionary<int, List<AttendanceCheckinTimeInfo>>> attendancesByLocationIdAndGroupId = attendancesByLocationId.ToDictionary(
+                   k => k.Key,
+                   v => v.Value.GroupBy( x => x.GroupId ).ToDictionary( x => x.Key, xx => xx.ToList() ) );
+
+            var checkinAreaPathsLookupByGroupTypeId = checkinAreaPaths.ToDictionary( k => k.GroupTypeId, v => v );
+
+            var roomList = groupLocationList
+                .Select( a =>
                 {
-                    CheckedInCount = v.Where( x => RosterAttendee.GetRosterAttendeeStatus( x.EndDateTime, x.PresentDateTime ) == RosterAttendeeStatus.CheckedIn ).Count(),
-                    PresentCount = v.Where( x => RosterAttendee.GetRosterAttendeeStatus( x.EndDateTime, x.PresentDateTime ) == RosterAttendeeStatus.Present ).Count(),
-                    CheckedOutCount = v.Where( x => RosterAttendee.GetRosterAttendeeStatus( x.EndDateTime, x.PresentDateTime ) == RosterAttendeeStatus.CheckedOut ).Count()
+                    List<AttendanceCheckinTimeInfo> attendancesForLocationAndGroup = null;
+                    Dictionary<int, List<AttendanceCheckinTimeInfo>> attendancesForLocation = attendancesByLocationIdAndGroupId.GetValueOrNull( a.LocationId );
+                    if ( attendancesForLocation != null )
+                    {
+                        attendancesForLocationAndGroup = attendancesForLocation.GetValueOrNull( a.GroupId );
+                    }
+
+                    RoomCounts roomCounts = null;
+
+                    if ( attendancesForLocationAndGroup != null)
+                    {
+                        roomCounts = new RoomCounts
+                        {
+                            CheckedInCount = attendancesForLocationAndGroup.Where( x => RosterAttendee.GetRosterAttendeeStatus( x.EndDateTime, x.PresentDateTime ) == RosterAttendeeStatus.CheckedIn ).Count(),
+                            PresentCount = attendancesForLocationAndGroup.Where( x => RosterAttendee.GetRosterAttendeeStatus( x.EndDateTime, x.PresentDateTime ) == RosterAttendeeStatus.Present ).Count(),
+                            CheckedOutCount = attendancesForLocationAndGroup.Where( x => RosterAttendee.GetRosterAttendeeStatus( x.EndDateTime, x.PresentDateTime ) == RosterAttendeeStatus.CheckedOut ).Count(),
+                        };
+                    }
+
+                    var groupAndRoomInfo = new GroupAndRoomInfo
+                    {
+                        LocationId = a.LocationId,
+                        GroupId = a.GroupId,
+                        GroupName = a.GroupName,
+                        LocationName = a.LocationName,
+                        RoomCounts = roomCounts,
+                        GroupPath = new RoomGroupPathInfo
+                        {
+                            GroupId = a.GroupId,
+                            GroupName = a.GroupName,
+                            GroupTypePath = checkinAreaPathsLookupByGroupTypeId.GetValueOrNull( a.GroupTypeId )
+                        }
+                    };
+
+                    return groupAndRoomInfo;
                 } );
 
-            var checkinAreaPathsLookup = checkinAreaPaths.ToDictionary( k => k.GroupTypeId, v => v );
-
-            var roomList = groupLocationList.GroupBy( a => a.LocationId ).Select( a => new RoomInfo
-            {
-                Id = a.Key,
-                LocationName = a.FirstOrDefault().LocationName,
-                RoomCounts = locationCountLookup.GetValueOrNull( a.Key ),
-                GroupList = a.Select( g => new RoomGroupPathInfo
-                {
-                    GroupId = g.GroupId,
-                    GroupName = g.GroupName,
-                    GroupTypeId = g.GroupTypeId,
-                    GroupTypePath = checkinAreaPathsLookup.GetValueOrNull( g.GroupTypeId )
-                } ).ToList()
-            } );
-
-            var sortedRoomList = roomList.OrderBy( a => a.LocationName ).ToList();
+            var sortedRoomList = roomList.OrderBy( a => a.LocationName ).ThenBy( a => a.GroupName ).ToList();
 
             var lCheckedOutCountField = gRoomList.ColumnsOfType<RockLiteralField>().FirstOrDefault( a => a.ID == "lCheckedOutCount" );
             var lPresentCount = gRoomList.ColumnsOfType<RockLiteralField>().FirstOrDefault( a => a.ID == "lPresentCount" );
             lCheckedOutCountField.Visible = groupTypeIdsWithAllowCheckout.Any();
             lPresentCount.Visible = groupTypeIdsWithEnablePresence.Any();
 
-            gRoomList.DataKeyNames = new string[1] { "Id" };
+            gRoomList.DataKeyNames = new string[2] { "LocationId", "GroupId" };
             gRoomList.DataSource = sortedRoomList;
             gRoomList.DataBind();
         }
@@ -430,8 +453,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="GridViewRowEventArgs"/> instance containing the event data.</param>
         protected void gRoomList_RowDataBound( object sender, GridViewRowEventArgs e )
         {
-            RoomInfo roomInfo = e.Row.DataItem as RoomInfo;
-            if ( roomInfo == null )
+            GroupAndRoomInfo groupAndRoomInfo = e.Row.DataItem as GroupAndRoomInfo;
+            if ( groupAndRoomInfo == null )
             {
                 return;
             }
@@ -442,15 +465,14 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var lPresentCount = e.Row.FindControl( "lPresentCount" ) as Literal;
             var lCheckedOutCount = e.Row.FindControl( "lCheckedOutCount" ) as Literal;
 
-            lRoomName.Text = roomInfo.LocationName;
+            lRoomName.Text = groupAndRoomInfo.LocationName;
 
-
-            lGroupNameAndPath.Text = roomInfo.GroupsPathHTML;
-            if ( roomInfo.RoomCounts != null )
+            lGroupNameAndPath.Text = groupAndRoomInfo.GroupsPathHTML;
+            if ( groupAndRoomInfo.RoomCounts != null )
             {
-                lCheckedInCount.Text = roomInfo.RoomCounts.CheckedInCount.ToString();
-                lPresentCount.Text = roomInfo.RoomCounts.PresentCount.ToString();
-                lCheckedOutCount.Text = roomInfo.RoomCounts.CheckedOutCount.ToString();
+                lCheckedInCount.Text = groupAndRoomInfo.RoomCounts.CheckedInCount.ToString();
+                lPresentCount.Text = groupAndRoomInfo.RoomCounts.PresentCount.ToString();
+                lCheckedOutCount.Text = groupAndRoomInfo.RoomCounts.CheckedOutCount.ToString();
             }
         }
 
@@ -517,7 +539,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void btnClearFilter_Click( object sender, EventArgs e )
         {
-            lbSchedules.SelectedValue = string.Empty;
+            lbSchedules.SetValues( new int[0] );
         }
 
         /// <summary>
@@ -538,13 +560,15 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// <summary>
         /// 
         /// </summary>
-        private class RoomInfo
+        private class GroupAndRoomInfo
         {
-            public int Id { get; internal set; }
+            public int LocationId { get; internal set; }
+
+            public int GroupId { get; internal set; }
 
             public string LocationName { get; internal set; }
 
-            public List<RoomGroupPathInfo> GroupList { get; internal set; }
+            public RoomGroupPathInfo GroupPath { get; internal set; }
 
             public RoomCounts RoomCounts { get; set; }
 
@@ -556,11 +580,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
 @"<div class='group-name'>{0}</div>
 <div class='small text-muted text-wrap'>{1}</div>";
 
-                    var sortGroupList = GroupList.OrderBy( x => x.GroupTypePath.Path );
-                    var groupsPathList = sortGroupList.Select( s => string.Format( groupsHtmlFormat, s.GroupName, s.GroupTypePath.Path ) ).ToList();
-                    return groupsPathList.AsDelimited( "<br>" );
+                    return string.Format( groupsHtmlFormat, GroupPath.GroupName, GroupPath.GroupTypePath );
                 }
             }
+
+            public string GroupName { get; internal set; }
         }
 
         /// <summary>

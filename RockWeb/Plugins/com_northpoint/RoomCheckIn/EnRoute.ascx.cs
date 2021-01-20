@@ -16,21 +16,18 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
 using System.Data.Entity;
 using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 
 using Rock;
+using Rock.CheckIn;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
-using Rock.Web.UI.Controls;
-using Rock.Attribute;
 using Rock.Web.UI;
-using Rock.CheckIn;
-using Rock.Lava;
+using Rock.Web.UI.Controls;
 
 namespace RockWeb.Plugins.org_northpoint.RoomCheckin
 {
@@ -328,9 +325,7 @@ namespace RockWeb.Plugins.org_northpoint.RoomCheckin
             var lGroupNameAndPath = e.Row.FindControl( "lGroupNameAndPath" ) as Literal;
             if ( lGroupNameAndPath != null && lGroupNameAndPath.Visible )
             {
-                lGroupNameAndPath.Text = string.Format(
-@"<div class='group-name'>{0}</div>
-<div class='small text-muted text-wrap'>{1}</div>", attendee.GroupName, attendee.GroupTypePath );
+                lGroupNameAndPath.Text = lGroupNameAndPath.Text = attendee.GetGroupNameAndPathHtml();
             }
 
             var lLocation = e.Row.FindControl( "lLocation" ) as Literal;
@@ -450,12 +445,6 @@ namespace RockWeb.Plugins.org_northpoint.RoomCheckin
             return attendees;
         }
 
-
-
         #endregion
-
-
-
-
     }
 }

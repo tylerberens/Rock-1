@@ -1,4 +1,4 @@
-﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="AttributeNotesReport.ascx.cs" Inherits="RockWeb.Plugins.org_northpoint.RoomCheckin.AttributeNotesReport" %>
+﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="EvacReport.ascx.cs" Inherits="RockWeb.Plugins.org_northpoint.RoomCheckin.EvacReport" %>
 
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
@@ -36,6 +36,8 @@
 
                             <Rock:RockLiteralField ID="lGroupNameAndPath" HeaderText="Group" Visible="true" />
                             <Rock:RockBoundField DataField="Tag" HeaderText="Tag" HeaderStyle-CssClass="d-none d-sm-table-cell" ItemStyle-CssClass="tag d-none d-sm-table-cell align-middle" />
+                            <Rock:RockBoundField DataField="ServiceTimes" HeaderText="Service Times" HeaderStyle-CssClass="d-none d-sm-table-cell" ItemStyle-CssClass="service-times d-none d-sm-table-cell align-middle" />
+                            <Rock:RockLiteralField ID="lCheckbox" HeaderText="" Text="<i class='fa fa-square-o'></i>" ItemStyle-CssClass="tag d-none d-sm-table-cell align-middle" />
                         </Columns>
                     </Rock:Grid>
                 </div>

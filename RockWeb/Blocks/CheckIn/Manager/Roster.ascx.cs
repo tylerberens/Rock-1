@@ -376,7 +376,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var lGroupNameAndPath = e.Row.FindControl( "lGroupNameAndPath" ) as Literal;
             if ( lGroupNameAndPath != null && lGroupNameAndPath.Visible )
             {
-                lGroupNameAndPath.Text = string.Format( "<div class='group-name'>{0}</div>\n<div class='small text-muted text-wrap'>{1}</div>", attendee.GroupName, attendee.GroupTypePath );
+                lGroupNameAndPath.Text = attendee.GetGroupNameAndPathHtml();
             }
 
             // Mobile only.
@@ -524,17 +524,28 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 && a.PersonAliasId.HasValue
                 && a.Occurrence.GroupId.HasValue
                 && a.Occurrence.ScheduleId.HasValue
+                && a.Occurrence.LocationId.HasValue
                 && a.Occurrence.LocationId == CurrentLocationId
                 && a.Occurrence.ScheduleId.HasValue );
 
             var checkinAreaFilter = CheckinManagerHelper.GetCheckinAreaFilter( this );
+            List<int> groupTypeIds;
 
             if ( checkinAreaFilter != null )
             {
                 // if there is a checkin area filter, limit to groups within the selected check-in area
-                var checkinAreaGroupTypeIds = new GroupTypeService( new RockContext() ).GetCheckinAreaDescendants( checkinAreaFilter.Id ).Select( a => a.Id ).ToList();
-                attendanceQuery = attendanceQuery.Where( a => checkinAreaGroupTypeIds.Contains( a.Occurrence.Group.GroupTypeId ) );
+                groupTypeIds = new GroupTypeService( new RockContext() ).GetCheckinAreaDescendants( checkinAreaFilter.Id ).Select( a => a.Id ).ToList();
             }
+            else
+            {
+                groupTypeIds = new GroupTypeService( new RockContext() ).GetAllCheckinAreaPaths().Select( a => a.GroupTypeId ).ToList();
+            }
+
+            attendanceQuery = attendanceQuery.Where( a => groupTypeIds.Contains( a.Occurrence.Group.GroupTypeId ) );
+
+            // limit to Groups that are configured for the selected location
+            var groupIdsForLocation = new GroupLocationService( rockContext ).Queryable().Where( a => a.LocationId == CurrentLocationId ).Select( a => a.GroupId ).Distinct().ToList();
+            attendanceQuery = attendanceQuery.Where( a => groupIdsForLocation.Contains( a.Occurrence.GroupId.Value ) );
 
             var unfilteredAttendanceCheckinAreas = attendanceQuery.Select( a => a.Occurrence.Group.GroupTypeId ).ToList().Select( a => GroupTypeCache.Get( a ) ).ToArray();
 
@@ -551,7 +562,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 .ToList();
 
             attendanceList = CheckinManagerHelper.FilterByActiveCheckins( currentDateTime, attendanceList );
-
             attendanceList = attendanceList.Where( a => a.PersonAlias != null && a.PersonAlias.Person != null ).ToList();
             var attendees = RosterAttendee.GetFromAttendanceList( attendanceList );
 

@@ -437,6 +437,15 @@ namespace Rock.CheckIn
             return badgesSb.ToString();
         }
 
+        /// <summary>
+        /// Gets the group name and path HTML. Group Name with GroupType Path underneath.
+        /// </summary>
+        /// <returns></returns>
+        public string GetGroupNameAndPathHtml()
+        {
+            return $@"<div class='group-name'>{this.GroupName}</div> <div class='small text-muted text-wrap'>{this.GroupTypePath}</div>";
+        }
+
         #endregion HTML
 
         #region Private methods

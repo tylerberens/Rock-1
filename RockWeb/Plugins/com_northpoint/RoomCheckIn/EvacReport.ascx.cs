@@ -29,35 +29,20 @@ using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
 using Rock.Web.UI;
-using Rock.Web.UI.Controls;
 
 namespace RockWeb.Plugins.org_northpoint.RoomCheckin
 {
     /// <summary>
     /// </summary>
-    [DisplayName( "Attribute Notes Report" )]
+    [DisplayName( "Evac Report" )]
     [Category( "NorthPoint > CheckinManager " )]
-    [Description( "Lists the people who are checked-in and have values for the configured attributes." )]
-
-    [AttributeField( "Attributes",
-        Key = AttributeKey.PersonAttributes,
-        Description = "Attributes to show in the grid.",
-        EntityTypeGuid = Rock.SystemGuid.EntityType.PERSON,
-        AllowMultiple = true,
-        Order = 0 )]
+    [Description( "Lists the people who are checked-in for evacuation/fire hazard." )]
 
     [TextField( "Report Title",
         Key = AttributeKey.ReportTitle,
-        DefaultValue = "Attribute Notes Report",
+        DefaultValue = "Evac Report",
         Order = 1 )]
-
-    [BooleanField( "Show Only If Has Attribute Value",
-        Key = AttributeKey.ShowOnlyIfHasAttributeValue,
-        Description = "When checked, a person will only appear on the report if the configured attributes have a value for the person",
-        DefaultBooleanValue = true,
-        Order = 2 )]
-
-    public partial class AttributeNotesReport : RockBlock
+    public partial class EvacReport : RockBlock
     {
         #region Keys
 
@@ -66,9 +51,7 @@ namespace RockWeb.Plugins.org_northpoint.RoomCheckin
         /// </summary>
         private static class AttributeKey
         {
-            public const string PersonAttributes = "PersonAttributes";
             public const string ReportTitle = "ReportTitle";
-            public const string ShowOnlyIfHasAttributeValue = "ShowOnlyIfHasAttributeValue";
         }
 
         #endregion
@@ -158,20 +141,8 @@ namespace RockWeb.Plugins.org_northpoint.RoomCheckin
 
             if ( !Page.IsPostBack )
             {
-                AddDynamicAttributeColumns();
                 BindGrid();
             }
-        }
-
-        /// <summary>
-        /// Restores the view-state information from a previous user control request that was saved by the <see cref="M:System.Web.UI.UserControl.SaveViewState" /> method.
-        /// </summary>
-        /// <param name="savedState">An <see cref="T:System.Object" /> that represents the user control state to be restored.</param>
-        protected override void LoadViewState( object savedState )
-        {
-            base.LoadViewState( savedState );
-
-            AddDynamicAttributeColumns();
         }
 
         #endregion
@@ -335,44 +306,11 @@ namespace RockWeb.Plugins.org_northpoint.RoomCheckin
                 attendees = GetAttendees( rockContext );
             }
 
-            // filter attendees to ones that have an attribute value
-            var attributesToShow = GetAttributeValues( AttributeKey.PersonAttributes ).AsGuidList().Select( a => AttributeCache.Get( a ) );
-            var showOnlyIfHasAttributeValue = GetAttributeValue( AttributeKey.ShowOnlyIfHasAttributeValue ).AsBoolean();
-            attendees = attendees.Where( a =>
-            {
-                var person = a.Person;
-
-                if ( !showOnlyIfHasAttributeValue )
-                {
-                    // if we aren't filtering to people that have a value for the attributes, include everybody
-                    return true;
-                }
-
-                // if showOnlyIfHasAttributeValue is true, limit to people that have a value for at least one of the attributes
-                if ( person.Attributes == null )
-                {
-                    person.LoadAttributes();
-                }
-
-                foreach ( var attribute in attributesToShow )
-                {
-                    if ( person.GetAttributeValue( attribute.Key ).IsNotNullOrWhiteSpace() )
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
-            } ).ToList();
-
             // sort by CheckinTime, and also by PersonGuid (so that stay in a consistent order in cases where CheckinTimes are identical
             var attendeesSorted = attendees
                 .OrderByDescending( a => a.CheckInTime )
                 .ThenBy( a => a.PersonGuid )
                 .ToList();
-
-            // tell the Grid where to get Attributes from since we aren't passing a list of Person to the grid
-            gAttendees.ObjectList = attendeesSorted.Select( a => a.Person ).ToDictionary( k => k.Guid.ToString(), v => ( object ) v );
 
             gAttendees.DataSource = attendeesSorted;
             gAttendees.DataBind();
@@ -432,29 +370,6 @@ namespace RockWeb.Plugins.org_northpoint.RoomCheckin
             var attendees = RosterAttendee.GetFromAttendanceList( attendanceList );
 
             return attendees;
-        }
-
-        /// <summary>
-        /// Adds the dynamic attribute columns.
-        /// </summary>
-        private void AddDynamicAttributeColumns()
-        {
-            var attributesToShow = GetAttributeValues( AttributeKey.PersonAttributes ).AsGuidList().Select( a => AttributeCache.Get( a ) );
-            foreach ( var attribute in attributesToShow )
-            {
-                bool columnExists = gAttendees.Columns.OfType<AttributeField>().FirstOrDefault( a => a.AttributeId == attribute.Id ) != null;
-                if ( !columnExists )
-                {
-                    AttributeField boundField = new AttributeField();
-                    boundField.DataField = attribute.Key;
-                    boundField.AttributeId = attribute.Id;
-                    boundField.HeaderText = attribute.Name;
-                    boundField.ItemStyle.HorizontalAlign = HorizontalAlign.Left;
-                    boundField.ItemStyle.CssClass = "tag d-none d-sm-table-cell align-middle";
-
-                    gAttendees.Columns.Add( boundField );
-                }
-            }
         }
 
         #endregion
