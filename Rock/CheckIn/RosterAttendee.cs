@@ -101,6 +101,22 @@ namespace Rock.CheckIn
         public string FullName => _person.FullName;
 
         /// <summary>
+        /// Gets the name of the nick.
+        /// </summary>
+        /// <value>
+        /// The name of the nick.
+        /// </value>
+        public string NickName => _person.NickName;
+
+        /// <summary>
+        /// Gets the last name.
+        /// </summary>
+        /// <value>
+        /// The last name.
+        /// </value>
+        public string LastName => _person.LastName;
+
+        /// <summary>
         /// Gets the parent names (if attendee is a child)
         /// </summary>
         /// <value>
