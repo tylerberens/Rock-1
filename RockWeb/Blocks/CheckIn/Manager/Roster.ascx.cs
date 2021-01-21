@@ -101,7 +101,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
     [BooleanField(
         "Enable Mark Present",
         Key = AttributeKey.EnableMarkPresentButton,
-        Description = "When enabled, a button will be shown in 'Checkedout' mode allowing the person to be marked present.",
+        Description = "When enabled, a button will be shown in 'Checked-out' mode allowing the person to be marked present.",
         DefaultBooleanValue = false,
         Order = 9 )]
 
@@ -309,6 +309,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 return;
             }
 
+            CurrentCampusId = campus.Id;
+
             int? locationId = CheckinManagerHelper.GetSelectedLocation( this, campus, lpLocation );
             if ( !locationId.HasValue )
             {
@@ -386,7 +388,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
             // Desktop only.
             // Show how it has been since they have checked in (and not yet marked present)
             var lElapsedCheckInTime = e.Row.FindControl( "lElapsedCheckInTime" ) as Literal;
-            lElapsedCheckInTime.Text = RockFilters.HumanizeTimeSpan( attendee.CheckInTime, DateTime.Now, unit: "Second" );
+            lElapsedCheckInTime.Text = string.Format(
+                "<span title='{0}'>{1}</span>",
+                attendee.CheckInTime.ToShortTimeString(),
+                RockFilters.HumanizeTimeSpan( attendee.CheckInTime, DateTime.Now, unit: "Second" ) );
+
 
             // Desktop only.
             var lStatusTag = e.Row.FindControl( "lStatusTag" ) as Literal;
@@ -430,9 +436,23 @@ namespace RockWeb.Blocks.CheckIn.Manager
         protected void btnPresent_DataBound( object sender, RowEventArgs e )
         {
             var rosterAttendee = e.Row.DataItem as RosterAttendee;
-            var btnNotPresentLinkButton = e.Row.ControlsOfTypeRecursive<LinkButton>().FirstOrDefault( a => a.ID == "btnNotPresent" );
             var btnPresentLinkButton = e.Row.ControlsOfTypeRecursive<LinkButton>().FirstOrDefault( a => a.ID == "btnPresent" );
             btnPresentLinkButton.Visible = rosterAttendee.RoomHasEnablePresence;
+        }
+
+        /// <summary>
+        /// Handles the DataBound event of the btnNotPresent control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="RowEventArgs"/> instance containing the event data.</param>
+        protected void btnNotPresent_DataBound( object sender, RowEventArgs e )
+        {
+            var rosterAttendee = e.Row.DataItem as RosterAttendee;
+            var btnNotPresentLinkButton = e.Row.ControlsOfTypeRecursive<LinkButton>().FirstOrDefault( a => a.ID == "btnNotPresent" );
+            if ( btnNotPresentLinkButton.Visible && !rosterAttendee.RoomHasEnablePresence )
+            {
+                btnNotPresentLinkButton.Visible = false;
+            }
         }
 
         /// <summary>
@@ -549,8 +569,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             var unfilteredAttendanceCheckinAreas = attendanceQuery.Select( a => a.Occurrence.Group.GroupTypeId ).ToList().Select( a => GroupTypeCache.Get( a ) ).ToArray();
 
+            RemoveUnneededStatusFilters( unfilteredAttendanceCheckinAreas );
             var currentStatusFilter = GetStatusFilterValueFromControl();
-            RemoveUnneededStatusFilters( unfilteredAttendanceCheckinAreas, currentStatusFilter );
+
             attendanceQuery = CheckinManagerHelper.FilterByRosterStatusFilter( attendanceQuery, currentStatusFilter );
 
             List<Attendance> attendanceList = attendanceQuery
@@ -921,12 +942,15 @@ namespace RockWeb.Blocks.CheckIn.Manager
             mdConfirmCheckoutAll.Hide();
             var rockContext = new RockContext();
 
-            var displayedAttendeeIds = GetAttendees( rockContext ).SelectMany( a => a.AttendanceIds ).ToList();
+            var displayedAttendees = GetAttendees( rockContext );
+
+            // only checkout attendees that are in a room that allows checkout
+            var displayedAttendanceIdsWithAllowCheckout = displayedAttendees.Where( a => a.RoomHasAllowCheckout ).SelectMany( a => a.AttendanceIds ).ToList();
 
             var selectedScheduleIds = cblSchedulesCheckoutAll.SelectedValuesAsInt;
 
             var attendancesToCheckout = new AttendanceService( rockContext )
-                .GetByIds( displayedAttendeeIds )
+                .GetByIds( displayedAttendanceIdsWithAllowCheckout )
                 .Where( x => selectedScheduleIds.Contains( x.Occurrence.ScheduleId.Value ) ).ToList();
 
             SetAttendancesAsCheckedOut( attendancesToCheckout, rockContext );
@@ -1069,8 +1093,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// Removes the unneeded status filters based on the whether any of the rooms have EnablePresence and/or AllowCheckout
         /// </summary>
         /// <param name="attendees">The attendees.</param>
-        private void RemoveUnneededStatusFilters( GroupTypeCache[] checkinAreas, RosterStatusFilter rosterStatusFilter )
+        private void RemoveUnneededStatusFilters( GroupTypeCache[] checkinAreas )
         {
+            var selectedStatusFilter = GetStatusFilterValueFromControl();
+
             // Reset the visibility, just in case the control was previously hidden.
             bgStatus.Visible = true;
 
@@ -1090,17 +1116,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             if ( !showPresenceControls )
             {
-                // When EnablePresence is false for a given Check-in Area, the [Attendance].[PresentDateTime] value will have already been set upon check-in.
-                if ( !showAllowCheckoutControls )
-                {
-                    // If there aren't any attendees that are in rooms that have EnabledPresence or AllowCheckout,
-                    // it doesn't make sense to show the status filters at all.
-                    bgStatus.Visible = false;
-                    rosterStatusFilter = RosterStatusFilter.Present;
-
-                    return;
-                }
-
                 // If EnablePresence is false, it doesn't make sense to show the 'Checked-in' filter.
                 var checkedInItem = bgStatus.Items.FindByValue( RosterStatusFilter.CheckedIn.ToString( "d" ) );
                 if ( checkedInItem != null )
@@ -1108,8 +1123,18 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     bgStatus.Items.Remove( checkedInItem );
                 }
 
-                if ( rosterStatusFilter == RosterStatusFilter.CheckedIn )
+                // When EnablePresence is false for a given Check-in Area, the [Attendance].[PresentDateTime] value will have already been set upon check-in.
+                if ( !showAllowCheckoutControls )
                 {
+                    // If there aren't any attendees that are in rooms that have EnabledPresence or AllowCheckout,
+                    // it doesn't make sense to show the status filters at all.
+                    bgStatus.Visible = false;
+                    SetStatusFilterControl( RosterStatusFilter.Present );
+                }
+
+                if ( selectedStatusFilter == RosterStatusFilter.CheckedIn )
+                {
+                    // if Presence is NOT enabled, there isn't a CheckedIn status. 
                     SetStatusFilterControl( RosterStatusFilter.Present );
                 }
             }
@@ -1135,7 +1160,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var btnCheckOutField = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnCheckOut" );
             var btnStaying = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnStaying" );
             var btnNotPresent = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnNotPresent" );
-            btnCheckoutAll.Visible = GetAttributeValue( AttributeKey.EnableCheckoutAll ).AsBoolean();
+            btnCheckoutAll.Visible = GetAttributeValue( AttributeKey.EnableCheckoutAll ).AsBoolean() && anyRoomHasAllowCheckout;
 
             mobileIconField.Visible = rosterStatusFilter == RosterStatusFilter.All;
             serviceTimesField.Visible = rosterStatusFilter == RosterStatusFilter.All || rosterStatusFilter == RosterStatusFilter.Present || rosterStatusFilter == RosterStatusFilter.CheckedOut;

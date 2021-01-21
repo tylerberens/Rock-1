@@ -300,6 +300,11 @@ namespace Rock.SystemGuid
         public const string CHECK_IN_MANAGER_SEARCH = "5BB14114-BE20-4330-943A-5BC7E367116E";
 
         /// <summary>
+        /// The check in manager room list page
+        /// </summary>
+        public const string CHECK_IN_MANAGER_ROOM_LIST = "CF03D854-AC02-412C-9B21-FB27B9F56BAB";
+
+        /// <summary>
         /// The Check-in Manager room manager page
         /// </summary>
         public const string CHECK_IN_MANAGER_ROOM_MANAGER = "CECB1460-10D4-4054-B5C3-903991CA40AB";

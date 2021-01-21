@@ -37,6 +37,11 @@ namespace Rock.SystemGuid
         public const string CAMPUS_DETAIL_GROUP_MEMBER_LIST = "318B80EE-7349-4BF4-82F2-64FC38A5AB0B";
 
         /// <summary>
+        /// The checkin manager navigation block guid
+        /// </summary>
+        public const string CHECKIN_MANAGER_NAVIGATION = "B569F42E-6687-45C4-90A4-CC7D99427372";
+
+        /// <summary>
         /// The bio block
         /// </summary>
         public const string BIO = "B5C1FDB6-0224-43E4-8E26-6B2EAF86253A";
