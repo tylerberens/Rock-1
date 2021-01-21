@@ -13,7 +13,7 @@ namespace Rock.Migrations
         
         string IMigrationMetadata.Id
         {
-            get { return "202101151850599_CheckinManagerEnhancements"; }
+            get { return "202101211627543_CheckinManagerEnhancements"; }
         }
         
         string IMigrationMetadata.Source

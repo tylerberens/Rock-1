@@ -31,6 +31,7 @@ namespace Rock.Migrations
         {
             PagesBlocksMigration_Up();
             PagesBlockChanges_Up();
+            ReprintLabelsSecurity_Up();
         }
 
         /// <summary>
@@ -39,6 +40,44 @@ namespace Rock.Migrations
         public override void Down()
         {
             PagesBlocksMigration_Down();
+        }
+
+        /// <summary>
+        /// Up for ReprintLabels security.
+        /// </summary>
+        private void ReprintLabelsSecurity_Up()
+        {
+            // set security on PersonRight block's 'ReprintLabels' to whatever is the security on the 'Rock Manager' site
+            Sql( $@"
+DECLARE @entityTypeIdSite INT = (
+		SELECT TOP 1 Id
+		FROM EntityType
+		WHERE [Guid] = '{Rock.SystemGuid.EntityType.SITE}'
+		), @siteIdCheckinManager INT = (
+		SELECT TOP 1 Id
+		FROM [Site]
+		WHERE [Guid] = '{Rock.SystemGuid.Site.CHECK_IN_MANAGER}'
+		), @entityTypeIdBlock INT = (
+		SELECT TOP 1 Id
+		FROM EntityType
+		WHERE [Guid] = '{Rock.SystemGuid.EntityType.BLOCK}'
+		), @blockIdPersonRightCheckinPerson INT = (
+		SELECT Id
+		FROM [Block]
+		WHERE [Guid] = '{Rock.SystemGuid.Block.CHECKIN_MANAGER_PERSON_RECENT_ATTENDANCES}'
+		)
+
+INSERT INTO [dbo].[Auth] ([EntityTypeId], [EntityId], [Order], [Action], [AllowOrDeny], [SpecialRole], [GroupId], [Guid])
+SELECT @entityTypeIdBlock [EntityTypeId], @blockIdPersonRightCheckinPerson [EntityId], a.[Order], 'ReprintLabels', a.[AllowOrDeny], a.[SpecialRole], a.[GroupId], NEWID()
+FROM [Auth] a
+WHERE a.EntityTypeId = @entityTypeIdSite AND a.EntityId = @siteIdCheckinManager AND NOT EXISTS (
+		SELECT *
+		FROM [Auth] aa
+		WHERE [Action] = 'ReprintLabels' AND aa.[Order] = a.[Order] AND aa.EntityId = @blockIdPersonRightCheckinPerson AND aa.EntityTypeId = @entityTypeIdBlock
+		)
+
+
+" );
         }
 
         /// <summary>

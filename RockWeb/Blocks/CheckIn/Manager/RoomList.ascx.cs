@@ -413,10 +413,32 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             var sortedRoomList = roomList.OrderBy( a => a.LocationName ).ThenBy( a => a.GroupName ).ToList();
 
-            var lCheckedOutCountField = gRoomList.ColumnsOfType<RockLiteralField>().FirstOrDefault( a => a.ID == "lCheckedOutCount" );
-            var lPresentCount = gRoomList.ColumnsOfType<RockLiteralField>().FirstOrDefault( a => a.ID == "lPresentCount" );
-            lCheckedOutCountField.Visible = groupTypeIdsWithAllowCheckout.Any();
-            lPresentCount.Visible = groupTypeIdsWithEnablePresence.Any();
+            var checkedInCountField = gRoomList.ColumnsOfType<RockLiteralField>().FirstOrDefault( a => a.ID == "lCheckedInCount" );
+            var presentCountField = gRoomList.ColumnsOfType<RockLiteralField>().FirstOrDefault( a => a.ID == "lPresentCount" );
+            var checkedOutCountField = gRoomList.ColumnsOfType<RockLiteralField>().FirstOrDefault( a => a.ID == "lCheckedOutCount" );
+
+            checkedOutCountField.Visible = groupTypeIdsWithAllowCheckout.Any();
+
+
+            // Always show Present Count regardless of the 'Enable Presense' setting, (a person gets automatically marked present if 'Enable Presence' is disable)
+            presentCountField.Visible = true;
+            if ( groupTypeIdsWithEnablePresence.Any() )
+            {
+                // Presence is enabled, so records could be in the 'Checked-in' state
+                // and Present column should be labeled 'Present'
+                checkedInCountField.Visible = true;
+                presentCountField.HeaderText = "Present";
+            }
+            else
+            {
+                //* https://app.asana.com/0/0/1199637795718017/f */
+                // 'Enable Presence' is disabled, so a person automatically gets marked present.
+                // So, no records wil be in the 'Checked-In (but no present)' state.
+                // Also, a user thinks of 'Present' as 'Checked-In' if they don't use the 'Enable Presence' feature
+                checkedInCountField.Visible = false;
+                presentCountField.HeaderText = "Checked-In";
+            }
+            
 
             gRoomList.DataKeyNames = new string[2] { "LocationId", "GroupId" };
             gRoomList.DataSource = sortedRoomList;

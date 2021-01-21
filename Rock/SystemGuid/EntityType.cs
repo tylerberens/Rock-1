@@ -472,5 +472,10 @@ namespace Rock.SystemGuid
         /// The SMS Conversation Action
         /// </summary>
         public const string SMS_ACTION_CONVERSATION = "E808A9FD-06A7-4FB2-AD01-C826A53B0ABB";
+
+        /// <summary>
+        /// Rock.Model.Site EntityType guid
+        /// </summary>
+        public const string SITE = "7244C10B-5D87-467B-A7F5-12DC29910CA8";
     }
 }
