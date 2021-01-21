@@ -500,11 +500,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             ToggleColumnVisibility( anyRoomHasAllowCheckout, currentStatusFilter );
 
-            // sort by Attendees that are present, then CheckinTime, and also by PersonGuid (so that stay in a consistent order in cases where CheckinTimes are identical
+            // sort by Attendees by Name, then Guid  to keep sorting consistent in case names are the same
             var attendeesSorted = attendees
-                .OrderByDescending( a => a.Status == RosterAttendeeStatus.Present )
-                .ThenByDescending( a => a.CheckInTime )
-                .ThenBy( a => a.PersonGuid ).ToList();
+             .OrderBy( a => a.NickName )
+             .ThenBy( a => a.LastName )
+             .ThenBy( a => a.PersonGuid ).ToList();
 
             var lGroupNameAndPathField = gAttendees.ColumnsOfType<RockLiteralField>().FirstOrDefault( a => a.ID == "lGroupNameAndPath" );
             if ( lGroupNameAndPathField != null )
