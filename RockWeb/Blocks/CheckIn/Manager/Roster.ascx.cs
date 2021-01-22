@@ -393,7 +393,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 attendee.CheckInTime.ToShortTimeString(),
                 RockFilters.HumanizeTimeSpan( attendee.CheckInTime, DateTime.Now, unit: "Second" ) );
 
-
             // Desktop only.
             var lStatusTag = e.Row.FindControl( "lStatusTag" ) as Literal;
             lStatusTag.Text = attendee.GetStatusIconHtmlTag( false );
@@ -494,11 +493,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 attendees = GetAttendees( rockContext );
             }
 
-            bool anyRoomHasAllowCheckout = attendees.Any( a => a.RoomHasAllowCheckout );
-
             var currentStatusFilter = GetStatusFilterValueFromControl();
 
-            ToggleColumnVisibility( anyRoomHasAllowCheckout, currentStatusFilter );
+            ToggleColumnVisibility( attendees, currentStatusFilter );
 
             // sort by Attendees by Name, then Guid  to keep sorting consistent in case names are the same
             var attendeesSorted = attendees
@@ -1142,10 +1139,15 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
         /// <summary>
         /// Toggles the column visibility within the gAttendees grid based on the current filter
+        /// and the AllowCheckout and EnablePresence settings for the rooms in the attendee list
         /// </summary>
-        /// <param name="anyRoomHasAllowCheckout">if set to <c>true</c> [any room has allow checkout].</param>
-        private void ToggleColumnVisibility( bool anyRoomHasAllowCheckout, RosterStatusFilter rosterStatusFilter )
+        /// <param name="attendees">The attendees.</param>
+        /// <param name="rosterStatusFilter">The roster status filter.</param>
+        private void ToggleColumnVisibility( IEnumerable<RosterAttendee> attendees, RosterStatusFilter rosterStatusFilter )
         {
+            bool anyRoomHasAllowCheckout = attendees.Any( a => a.RoomHasAllowCheckout );
+            bool anyRoomHasEnablePresence = attendees.Any( a => a.RoomHasEnablePresence );
+
             // StatusFilter.All:
             var mobileIconField = gAttendees.ColumnsOfType<RockLiteralField>().First( c => c.ID == "lMobileIcon" );
             var serviceTimesField = gAttendees.ColumnsOfType<RockBoundField>().First( c => c.DataField == "ServiceTimes" );
@@ -1158,8 +1160,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             // StatusFilter.Present:
             var btnCheckOutField = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnCheckOut" );
-            var btnStaying = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnStaying" );
-            var btnNotPresent = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnNotPresent" );
+            var btnStayingField = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnStaying" );
+            var btnNotPresentField = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnNotPresent" );
             btnCheckoutAll.Visible = GetAttributeValue( AttributeKey.EnableCheckoutAll ).AsBoolean()
                 && anyRoomHasAllowCheckout
                 && rosterStatusFilter == RosterStatusFilter.Present;
@@ -1193,8 +1195,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 btnPresentField.Visible = false;
             }
 
-            btnStaying.Visible = rosterStatusFilter == RosterStatusFilter.Present && GetAttributeValue( AttributeKey.EnableStayingButton ).AsBoolean();
-            btnNotPresent.Visible = rosterStatusFilter == RosterStatusFilter.Present && GetAttributeValue( AttributeKey.EnableNotPresentButton ).AsBoolean();
+            btnStayingField.Visible = rosterStatusFilter == RosterStatusFilter.Present && GetAttributeValue( AttributeKey.EnableStayingButton ).AsBoolean();
+            btnNotPresentField.Visible = anyRoomHasEnablePresence &&
+                rosterStatusFilter == RosterStatusFilter.Present
+                && GetAttributeValue( AttributeKey.EnableNotPresentButton ).AsBoolean();
 
             if ( anyRoomHasAllowCheckout )
             {
