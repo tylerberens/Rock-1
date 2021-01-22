@@ -282,21 +282,35 @@ namespace Rock.CheckIn
         {
             var checkinManagerConfigurationJson = checkinManagerConfiguration.ToJson( Newtonsoft.Json.Formatting.None );
             Rock.Web.UI.RockPage.AddOrUpdateCookie( CheckInManagerCookieKey.CheckinManagerConfiguration, checkinManagerConfigurationJson, RockDateTime.Now.AddYears( 1 ) );
+
+            // Also save the Configuration in the Request.Items so that we can grab the configuration from there instead of the Cookie if the configuration changes
+            // from what is in the request cookie
+            HttpContext.Current.AddOrReplaceItem( CheckInManagerCookieKey.CheckinManagerConfiguration, checkinManagerConfigurationJson );
         }
 
         /// <summary>
         /// Gets the roster configuration from the request cookie.
-        /// NOTE: This is the value from the Browser. It doesn't have the changes that were saved to the response cookie during this request.
         /// Always returns a non-null CheckinManagerConfiguration.
         /// </summary>
         /// <returns></returns>
         public static CheckinManagerConfiguration GetCheckinManagerConfigurationFromCookie()
         {
             CheckinManagerConfiguration checkinManagerConfiguration = null;
-            var checkinManagerRosterConfigurationCookie = HttpContext.Current.Request.Cookies[CheckInManagerCookieKey.CheckinManagerConfiguration];
-            if ( checkinManagerRosterConfigurationCookie != null )
+
+            // First check Request.Items in case we have changed the configuration during this request
+            var currentlySavedCheckinManagerConfigurationJson = HttpContext.Current.Items[CheckInManagerCookieKey.CheckinManagerConfiguration] as string;
+            if ( currentlySavedCheckinManagerConfigurationJson.IsNotNullOrWhiteSpace() )
             {
-                checkinManagerConfiguration = checkinManagerRosterConfigurationCookie.Value.FromJsonOrNull<CheckinManagerConfiguration>();
+                checkinManagerConfiguration = currentlySavedCheckinManagerConfigurationJson.FromJsonOrNull<CheckinManagerConfiguration>();
+            }
+            else
+            {
+                // if we haven't changed the configuration in this request yet, get it from the cookie
+                var checkinManagerRosterConfigurationRequestCookie = HttpContext.Current.Request.Cookies[CheckInManagerCookieKey.CheckinManagerConfiguration];
+                if ( checkinManagerRosterConfigurationRequestCookie != null )
+                {
+                    checkinManagerConfiguration = checkinManagerRosterConfigurationRequestCookie.Value.FromJsonOrNull<CheckinManagerConfiguration>();
+                }
             }
 
             if ( checkinManagerConfiguration == null )
@@ -484,5 +498,6 @@ namespace Rock.CheckIn
         /// The custom settings.
         /// </value>
         public Dictionary<string, string> CustomSettings { get; set; }
+
     }
 }
