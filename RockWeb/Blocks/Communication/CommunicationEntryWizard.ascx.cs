@@ -33,6 +33,7 @@ using Rock.Communication;
 using Rock.Data;
 using Rock.Model;
 using Rock.Security;
+using Rock.Tasks;
 using Rock.Utility;
 using Rock.Web.Cache;
 using Rock.Web.UI;
@@ -2480,9 +2481,11 @@ sendCountTerm.PluralizeIf( sendCount != 1 ) );
                 // send approval email if needed (now that we have a communication id)
                 if ( communication.Status == CommunicationStatus.PendingApproval )
                 {
-                    var approvalTransaction = new Rock.Transactions.SendCommunicationApprovalEmail();
-                    approvalTransaction.CommunicationId = communication.Id;
-                    Rock.Transactions.RockQueue.TransactionQueue.Enqueue( approvalTransaction );
+                    var approvalTransactionMsg = new ProcessSendCommunicationApprovalEmail.Message
+                    {
+                        CommunicationId = communication.Id
+                    };
+                    approvalTransactionMsg.Send();
                 }
 
                 if ( communication.Status == CommunicationStatus.Approved &&
@@ -2490,10 +2493,11 @@ sendCountTerm.PluralizeIf( sendCount != 1 ) );
                 {
                     if ( GetAttributeValue( AttributeKey.SendWhenApproved ).AsBoolean() )
                     {
-                        var transaction = new Rock.Transactions.SendCommunicationTransaction();
-                        transaction.CommunicationId = communication.Id;
-                        transaction.PersonAlias = CurrentPersonAlias;
-                        Rock.Transactions.RockQueue.TransactionQueue.Enqueue( transaction );
+                        var processSendCommunicationMsg = new ProcessSendCommunication.Message
+                        {
+                            CommunicationId = communication.Id,
+                        };
+                        processSendCommunicationMsg.Send();
                     }
                 }
 
