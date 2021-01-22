@@ -2,10 +2,6 @@
 
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
-        <%-- TODO Temp Style --%>
-        <style>
-            .criteria-exists{color:#fff;background-color:#f0ad4e;border:1px solid #eea236}
-        </style>
 
         <asp:Panel ID="pnlView" runat="server" CssClass="panel panel-block">
 

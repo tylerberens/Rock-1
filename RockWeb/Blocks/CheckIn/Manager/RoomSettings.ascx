@@ -3,8 +3,6 @@
 <Rock:RockUpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
 
-
-
         <asp:Panel ID="pnlContent" runat="server">
 
             <div class="page-title-inject d-flex flex-wrap justify-content-between align-items-center">
