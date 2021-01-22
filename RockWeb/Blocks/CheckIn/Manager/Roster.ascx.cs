@@ -1160,7 +1160,9 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var btnCheckOutField = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnCheckOut" );
             var btnStaying = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnStaying" );
             var btnNotPresent = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnNotPresent" );
-            btnCheckoutAll.Visible = GetAttributeValue( AttributeKey.EnableCheckoutAll ).AsBoolean() && anyRoomHasAllowCheckout;
+            btnCheckoutAll.Visible = GetAttributeValue( AttributeKey.EnableCheckoutAll ).AsBoolean()
+                && anyRoomHasAllowCheckout
+                && rosterStatusFilter == RosterStatusFilter.CheckedOut;
 
             mobileIconField.Visible = rosterStatusFilter == RosterStatusFilter.All;
             serviceTimesField.Visible = rosterStatusFilter == RosterStatusFilter.All || rosterStatusFilter == RosterStatusFilter.Present || rosterStatusFilter == RosterStatusFilter.CheckedOut;
