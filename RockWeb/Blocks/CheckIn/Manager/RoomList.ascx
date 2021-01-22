@@ -9,7 +9,7 @@
                 <h1 class="panel-title">Room List
                 </h1>
                 <div class="panel-labels">
-                    <asp:LinkButton ID="btnShowFilter" runat="server" CssClass="btn btn-default btn-xs room-list-criteria-exists" OnClick="btnShowFilter_Click">
+                    <asp:LinkButton ID="btnShowFilter" runat="server" CssClass="btn btn-default btn-xs" OnClick="btnShowFilter_Click">
                         <i class="fa fa-filter"></i>
                         Filters
                     </asp:LinkButton>

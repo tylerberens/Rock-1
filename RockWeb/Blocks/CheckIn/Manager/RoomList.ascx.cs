@@ -227,11 +227,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var selectedScheduleIds = lbSchedules.SelectedValues.AsIntegerList();
             if ( selectedScheduleIds.Any() )
             {
-                btnShowFilter.AddCssClass( "criteria-exists" );
+                btnShowFilter.AddCssClass( "criteria-exists bg-warning" );
             }
             else
             {
-                btnShowFilter.RemoveCssClass( "criteria-exists" );
+                btnShowFilter.RemoveCssClass( "criteria-exists bg-warning" );
             }
 
             CheckinManagerHelper.SaveRoomListFilterToCookie( selectedScheduleIds.ToArray() );
@@ -343,7 +343,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 var allowCheckout = groupTypeIdsWithAllowCheckout.Contains( a.GroupTypeId );
                 if ( !allowCheckout )
                 {
-                    /* 
+                    /*
                         If AllowCheckout is false, remove all Attendees whose schedules are not currently active. Per the 'WasSchedule...ActiveForCheckOut()'
                         method below: "Check-out can happen while check-in is active or until the event ends (start time + duration)." This will help to keep
                         the list of 'Present' attendees cleaned up and accurate, based on the room schedules, since the volunteers have no way to manually mark
@@ -361,7 +361,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                     return true;
                 }
             } ).ToList();
-            
+
             Dictionary<int, List<AttendanceCheckinTimeInfo>> attendancesByLocationId = attendanceCheckinTimeInfoList
                 .GroupBy( a => a.LocationId ).ToDictionary( k => k.Key, v => v.ToList() );
 
@@ -438,7 +438,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 checkedInCountField.Visible = false;
                 presentCountField.HeaderText = "Checked-In";
             }
-            
+
 
             gRoomList.DataKeyNames = new string[2] { "LocationId", "GroupId" };
             gRoomList.DataSource = sortedRoomList;
@@ -580,7 +580,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         private class GroupAndRoomInfo
         {
@@ -610,7 +610,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         private class RoomGroupPathInfo
         {
