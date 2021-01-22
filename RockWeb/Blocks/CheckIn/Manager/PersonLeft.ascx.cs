@@ -87,6 +87,15 @@ namespace RockWeb.Blocks.CheckIn.Manager
         Order = 6
         )]
 
+    [LinkedPage(
+        "Profile Page",
+        Description = "The Page to go to when a family member of the attendee is clicked.",
+        Key = AttributeKey.PersonProfilePage,
+        DefaultValue = Rock.SystemGuid.Page.PERSON_PROFILE_CHECK_IN_MANAGER,
+        IsRequired = false,
+        Order = 6
+        )]
+
     public partial class PersonLeft : Rock.Web.UI.RockBlock
     {
         #region Attribute Keys
@@ -99,6 +108,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             public const string AdultAttributeCategory = "AdultAttributeCategory";
             public const string SharePersonPage = "SharePersonPage";
             public const string ShowSharePersonButton = "ShowSharePersonButton";
+            public const string PersonProfilePage = "PersonProfilePage";
         }
 
         #endregion
@@ -571,12 +581,10 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// </summary>
         private string GetRelatedPersonUrl( Rock.Model.Person currentPerson, Guid relatedPersonGuid, int relatedPersonId )
         {
-            var template = "{0}={1}";
-            var relatedPersonUrl = Request.Url.ToString()
-                .ReplaceCaseInsensitive( string.Format( template, PageParameterKey.PersonGuid, currentPerson.Guid ), string.Format( template, PageParameterKey.PersonGuid, relatedPersonGuid ) )
-                .ReplaceCaseInsensitive( string.Format( template, PageParameterKey.PersonId, currentPerson.Id ), string.Format( template, PageParameterKey.PersonId, relatedPersonId ) );
+            var queryParams = new Dictionary<string, string>();
+            queryParams.Add( PageParameterKey.PersonGuid, relatedPersonGuid.ToString() );
 
-            return relatedPersonUrl;
+            return LinkedPageUrl( AttributeKey.PersonProfilePage, queryParams );
         }
 
         /// <summary>
