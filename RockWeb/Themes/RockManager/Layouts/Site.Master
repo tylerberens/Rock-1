@@ -58,9 +58,9 @@
     <asp:label id="myRequestCookie"></asp:label>
     <form id="form1" runat="server">
 
-        <div class="page-wrapper">
+        <div class="page-wrapper m-print-0">
 
-            <nav class="navbar navbar-fixed-top rock-top-header">
+            <nav class="navbar navbar-fixed-top rock-top-header d-print-none">
                 <Rock:Lava ID="siteNameLava" runat="server">
                 {% if CurrentPerson %}
                 <div class="navbar-toggle navbar-toggle-side-left collapsed" data-toggle="collapse" data-target=".navbar-static-side">
@@ -77,14 +77,14 @@
                 </div>
             </nav>
 
-            <nav class="navbar-default navbar-static-side collapse" role="navigation">
+            <nav class="navbar-default navbar-static-side collapse d-print-none" role="navigation">
                 <div class="navbar-toggle-side-left" data-toggle="collapse" data-target=".navbar-static-side">
                     <i class="fa fa-bars"></i>
                 </div>
                 <Rock:Zone Name="Navigation" runat="server" />
             </nav>
 
-            <div id="content-wrapper">
+            <div id="content-wrapper" class="m-print-0">
                 <asp:ContentPlaceHolder ID="feature" runat="server"></asp:ContentPlaceHolder>
 
                 <div class="main-content">

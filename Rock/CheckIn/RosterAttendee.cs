@@ -394,7 +394,7 @@ namespace Rock.CheckIn
             var result = $@"
 <div class='name'>
     <span class='js-checkin-person-name'>{this.FullName}</span>
-     <span class='badges d-sm-none'>{this.GetBadgesHtml( true )}</span>
+     <span class='badges d-sm-none d-print-inline'>{this.GetBadgesHtml( true )}</span>
 </div>
 <div class='parent-name small text-muted text-wrap'>{this.ParentNames}</div>";
 

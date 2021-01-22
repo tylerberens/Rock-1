@@ -4,16 +4,17 @@
     Sys.Application.add_load(function () {
         $(".photo a").fluidbox();
 
-        $('.js-share-editperson').on('click', function (event) {
-            event.stopImmediatePropagation();
+        var shareUrl = $('.js-share-editperson-url').val();
 
-            // see https://css-tricks.com/how-to-use-the-web-share-api/
-            var shareUrl = $('.js-share-editperson-url').val();
-            var personName = $('h1.js-checkin-person-name').first().text().trim();
-            if (navigator.share && shareUrl) {
+        if (navigator.share && shareUrl) {
+            $('.js-share-editperson').show().on('click', function (event) {
+                event.stopImmediatePropagation();
+
+                // see https://css-tricks.com/how-to-use-the-web-share-api/
+                var personName = $('h1.js-checkin-person-name').first().text().trim();
                 navigator.share({ title: personName, url: shareUrl });
-            }
-        });
+            });
+        }
     });
 </script>
 
@@ -30,7 +31,7 @@
             <div class="d-flex flex-column align-items-center p-2 pb-3 py-lg-3 px-lg-4">
                 <h1 class="h3 title name js-checkin-person-name mt-0 text-center">
                     <asp:Literal ID="lName" runat="server" />
-                    <a id="btnShare" runat="server" class="btn-link btn-default js-share-editperson"><i class="fa fa-share-alt-square hand"></i></a></h1>
+                    <a id="btnShare" runat="server" class="btn btn-lg btn-link text-muted p-0 js-share-editperson" style="display:none;"><i class="fa fa-share-alt-square hand"></i></a></h1>
                 <Rock:HighlightLabel ID="hlCampus" runat="server" LabelType="Campus" />
             </div>
 

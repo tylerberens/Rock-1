@@ -9,7 +9,7 @@
                 <div class="my-2">
                     <Rock:LocationPicker ID="lpLocation" runat="server" AllowedPickerModes="Named" IncludeInactiveNamedLocations="true" CssClass="picker-lg" OnSelectLocation="lpLocation_SelectLocation" />
                 </div>
-                <asp:Panel ID="pnlSubPageNav" runat="server" CssClass="my-2">
+                <asp:Panel ID="pnlSubPageNav" runat="server" CssClass="d-print-none my-2">
                     <Rock:PageNavButtons ID="pbSubPages" runat="server" IncludeCurrentQueryString="true" />
                 </asp:Panel>
             </div>
