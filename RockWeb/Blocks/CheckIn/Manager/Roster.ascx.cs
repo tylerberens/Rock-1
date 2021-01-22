@@ -1162,7 +1162,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var btnNotPresent = gAttendees.ColumnsOfType<LinkButtonField>().First( c => c.ID == "btnNotPresent" );
             btnCheckoutAll.Visible = GetAttributeValue( AttributeKey.EnableCheckoutAll ).AsBoolean()
                 && anyRoomHasAllowCheckout
-                && rosterStatusFilter == RosterStatusFilter.CheckedOut;
+                && rosterStatusFilter == RosterStatusFilter.Present;
 
             mobileIconField.Visible = rosterStatusFilter == RosterStatusFilter.All;
             serviceTimesField.Visible = rosterStatusFilter == RosterStatusFilter.All || rosterStatusFilter == RosterStatusFilter.Present || rosterStatusFilter == RosterStatusFilter.CheckedOut;

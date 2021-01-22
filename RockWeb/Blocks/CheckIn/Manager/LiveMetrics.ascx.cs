@@ -763,6 +763,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                         a.StartDateTime <= currentCampusDateTime &&
                         a.DidAttend.HasValue &&
                         a.DidAttend.Value &&
+                        a.PersonAliasId.HasValue &&
                         checkinAreaGroupTypeIds.Contains( a.Occurrence.Group.GroupTypeId ) &&
                         groupIds.Contains( a.Occurrence.GroupId.Value ) &&
                         locationIds.Contains( a.Occurrence.LocationId.Value ) );

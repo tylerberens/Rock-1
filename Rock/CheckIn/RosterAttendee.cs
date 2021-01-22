@@ -437,17 +437,17 @@ namespace Rock.CheckIn
 
             if ( this.HasHealthNote )
             {
-                badgesSb.Append( $"{openDiv}&nbsp;<i class='fa fa-notes-medical{fa2x} text-danger'></i>{openDiv}" );
+                badgesSb.Append( $"{openDiv}&nbsp;<i class='fa fa-notes-medical{fa2x} text-danger' title='Health Note'></i>{openDiv}" );
             }
 
             if ( this.HasLegalNote )
             {
-                badgesSb.Append( $"{openDiv}&nbsp;<i class='fa fa-clipboard{fa2x}'></i>{closeDiv}" );
+                badgesSb.Append( $"{openDiv}&nbsp;<i class='fa fa-clipboard{fa2x}' title='Legal Note'></i>{closeDiv}" );
             }
 
             if ( this.IsFirstTime )
             {
-                badgesSb.Append( $"{openDiv}&nbsp;<i class='fa fa-star{fa2x} text-warning'></i>{closeDiv}" );
+                badgesSb.Append( $"{openDiv}&nbsp;<i class='fa fa-star{fa2x} text-warning' title='First Time'></i>{closeDiv}" );
             }
 
             return badgesSb.ToString();
