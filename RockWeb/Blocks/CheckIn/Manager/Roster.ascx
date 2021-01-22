@@ -50,7 +50,7 @@
             <!-- Check Out All button -->
             <div class="row">
                 <div class="col-md-12">
-                    <asp:LinkButton ID="btnCheckoutAll" runat="server" CssClass="btn btn-primary btn-sm pull-right mb-2" Text="Check Out All" OnClick="btnCheckoutAll_Click" />
+                    <asp:LinkButton ID="btnCheckoutAll" runat="server" CssClass="btn btn-primary btn-sm pull-right mb-2" Visible="false" Text="Check Out All" OnClick="btnCheckoutAll_Click" />
                 </div>
             </div>
 
