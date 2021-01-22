@@ -12,20 +12,18 @@
             <div class="panel-heading">
                 <h1 class="panel-title">Room List
                 </h1>
-                <div class="pull-right">
-                    <asp:LinkButton ID="btnShowFilter" runat="server" CssClass="btn btn-xs btn-link room-list-criteria-exists" OnClick="btnShowFilter_Click">
+                <div class="panel-labels">
+                    <asp:LinkButton ID="btnShowFilter" runat="server" CssClass="btn btn-default btn-xs room-list-criteria-exists" OnClick="btnShowFilter_Click">
                         <i class="fa fa-filter"></i>
                         Filters
                     </asp:LinkButton>
                 </div>
             </div>
             <asp:Panel ID="pnlFilterCriteria" runat="server" CssClass="panel-heading" Visible="false">
-                <div class="row">
-                    <div class="col-md-12">
-                        <Rock:RockListBox ID="lbSchedules" runat="server" Label="Schedules" ValidationGroup="vgFilterCriteria" />
-                    </div>
+                <div class="w-100">
+                    <Rock:RockListBox ID="lbSchedules" runat="server" Label="Schedules" ValidationGroup="vgFilterCriteria" />
                 </div>
-                <div class="actions margin-t-md">
+                <div class="actions mt-2">
                     <asp:LinkButton ID="btnApplyFilter" runat="server" CssClass="filter btn btn-action btn-xs" Text="Apply Filter" OnClick="btnApplyFilter_Click" ValidationGroup="vgFilterCriteria" CausesValidation="true" />
                     <asp:LinkButton ID="btnClearFilter" runat="server" CssClass="filter-clear btn btn-default btn-xs" Text="Clear Filter" OnClick="btnClearFilter_Click" CausesValidation="false" />
                 </div>

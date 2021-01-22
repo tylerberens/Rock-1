@@ -29,7 +29,7 @@
         }
     });
 </script>
-<Rock:RockUpdatePanel ID="upnlContent" runat="server">
+<Rock:RockUpdatePanel ID="upnlContent" class="overflow-visible" runat="server">
     <ContentTemplate>
 
 
@@ -50,7 +50,7 @@
             <!-- Check Out All button -->
             <div class="row">
                 <div class="col-md-12">
-                    <asp:LinkButton ID="btnCheckoutAll" runat="server" CssClass="btn btn-primary btn-sm pull-right margin-b-md" Text="Check Out All" OnClick="btnCheckoutAll_Click" />
+                    <asp:LinkButton ID="btnCheckoutAll" runat="server" CssClass="btn btn-primary btn-sm pull-right mb-2" Text="Check Out All" OnClick="btnCheckoutAll_Click" />
                 </div>
             </div>
 
@@ -111,8 +111,6 @@
                     <Rock:RockCheckBoxList ID="cblSchedulesCheckoutAll" runat="server" Label="Schedules" RepeatDirection="Horizontal" Required="true" ValidationGroup="vgConfirmCheckoutAll" />
                 </Content>
             </Rock:ModalDialog>
-
         </asp:Panel>
-
     </ContentTemplate>
 </Rock:RockUpdatePanel>

@@ -182,6 +182,10 @@ textarea,
 // 2. Bootstrap Overrides    */
 // -------------------------
 
+.overflow-visible {
+  overflow: visible !important;
+}
+
 .well {
   .box-shadow(none);
 }
@@ -198,6 +202,11 @@ textarea,
 
 .btn-square,
 .btn-security {
+  width: 38px;
+  height: 38px;
+  padding-left: 0;
+  padding-right: 0;
+
   &.btn-xs {
     width: 25px;
     height: 25px;
@@ -517,7 +526,6 @@ textarea,
 
 .modal {
   .box-shadow(@shadow-modal);
-  border-radius: 0;
 
   .modal-content {
     .box-shadow(none);
