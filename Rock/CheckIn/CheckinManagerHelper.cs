@@ -186,7 +186,7 @@ namespace Rock.CheckIn
                     var locationCampusId = new LocationService( rockContext ).GetCampusIdForLocation( locationId );
                     if ( locationCampusId != campus.Id )
                     {
-                        return null;
+                        locationId = 0;
                     }
                 }
             }
@@ -197,7 +197,7 @@ namespace Rock.CheckIn
             }
             else
             {
-                // If still not defined, check for a Block user preference.
+                // If still not defined, check for cookie setting
                 locationId = CheckinManagerHelper.GetCheckinManagerConfigurationFromCookie().LocationIdFromSelectedCampusId.GetValueOrNull( campus.Id ) ?? 0;
 
                 if ( locationId <= 0 )
