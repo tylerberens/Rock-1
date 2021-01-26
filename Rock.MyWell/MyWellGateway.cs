@@ -302,7 +302,7 @@ namespace Rock.MyWell
             var tokenResponse = ( hostedPaymentInfoControl as MyWellHostedPaymentControl ).PaymentInfoTokenRaw.FromJsonOrNull<TokenizerResponse>();
             if ( tokenResponse?.IsSuccessStatus() != true )
             {
-                if ( tokenResponse.HasValidationError() )
+                if ( tokenResponse?.HasValidationError()  == true )
                 {
                     errorMessage = tokenResponse.ValidationMessage;
                 }

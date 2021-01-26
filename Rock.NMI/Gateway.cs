@@ -114,7 +114,7 @@ namespace Rock.NMI
         Order = 8 )]
 
     [DecimalField(
-        "Credit Card Fee Coverage Percentage",
+        "Credit Card Fee Coverage Percentage (Future)",
         Key = AttributeKey.CreditCardFeeCoveragePercentage,
         Description = @"The credit card fee percentage that will be used to determine what to add to the person's donation, if they want to cover the fee.",
         IsRequired = false,
@@ -122,7 +122,7 @@ namespace Rock.NMI
         Order = 9 )]
 
     [CurrencyField(
-        "ACH Transaction Fee Coverage Amount",
+        "ACH Transaction Fee Coverage Amount (Future)",
         Key = AttributeKey.ACHTransactionFeeCoverageAmount,
         Description = "The dollar amount to add to an ACH transaction, if they want to cover the fee.",
         IsRequired = false,

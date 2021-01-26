@@ -70,7 +70,7 @@
                             <%-- Cover the Fee checkbox (When a Saved Account is selected and we know the currency type already) --%>
                             <asp:Panel ID="pnlGiveNowCoverTheFee" runat="server" CssClass="js-coverthefee-container">
                                 <Rock:RockCheckBox ID="cbGiveNowCoverTheFee" runat="server" Text="Hello $<span class='js-coverthefee-checkbox-fee-amount-text'></span> World" CssClass="js-givenow-coverthefee" Visible="true" />
-                             </asp:Panel>
+                            </asp:Panel>
 
                             <Rock:BootstrapButton ID="btnGiveNow" runat="server" CssClass="btn btn-primary btn-give-now" Text="Give Now" OnClick="btnGiveNow_Click" />
 
@@ -95,17 +95,20 @@
 
                             <Rock:NotificationBox ID="nbPaymentTokenError" runat="server" NotificationBoxType="Validation" Visible="false" />
 
-                            <%-- Cover the Fee checkbox (When a Saved Account is not selected and we know the currency type already) --%>
-                            <Rock:RockCheckBox ID="cbGetPaymentInfoCoverTheFee" runat="server" Text="##" CssClass="js-getpaymentinfo-coverthefee" Visible="false" />
+                            <%-- Cover the Fee checkbox (When a Saved Account is not selected and we know the amount already) --%>
+                            <asp:Panel ID="pnlGetPaymentInfoCoverTheFee" runat="server">
+                                <Rock:RockCheckBox ID="cbGetPaymentInfoCoverTheFeeCreditCard" runat="server" Text="##" CssClass="js-getpaymentinfo-coverthefee-creditcard" Visible="false" />
+                                <Rock:RockCheckBox ID="cbGetPaymentInfoCoverTheFeeACH" runat="server" Text="##" CssClass="js-getpaymentinfo-coverthefee-ach" Visible="false" />
+                            </asp:Panel>
 
                             <div class="navigation actions">
                                 <asp:LinkButton ID="btnGetPaymentInfoBack" runat="server" CssClass="btn btn-default" Text="Back" OnClick="btnGetPaymentInfoBack_Click" />
 
 
-								<%-- NOTE: btnGetPaymentInfoNext ends up telling the HostedPaymentControl (via the js-submit-hostedpaymentinfo hook) to request a token, which will cause the _hostedPaymentInfoControl_TokenReceived postback
+                                <%-- NOTE: btnGetPaymentInfoNext ends up telling the HostedPaymentControl (via the js-submit-hostedpaymentinfo hook) to request a token, which will cause the _hostedPaymentInfoControl_TokenReceived postback
                                		Even though this is a LinkButton, btnGetPaymentInfoNext won't autopostback  (see $('.js-submit-hostedpaymentinfo').off().on('click').. )
-                            	--%>
-                                <Rock:BootstrapButton ID="btnGetPaymentInfoNext" runat="server" Text="Next" CssClass="btn btn-primary js-submit-hostedpaymentinfo pull-right"  DataLoadingText="Processing..." />
+                                --%>
+                                <Rock:BootstrapButton ID="btnGetPaymentInfoNext" runat="server" Text="Next" CssClass="btn btn-primary js-submit-hostedpaymentinfo pull-right" DataLoadingText="Processing..." />
                             </div>
                         </asp:Panel>
 
@@ -299,7 +302,7 @@
                 var coverTheFeePercent = Number($('.js-coverthefee-percent').val()) || 0.00;
                 if (coverTheFeePercent > 0.00) {
                     updateCoverTheFeePercent(coverTheFeePercent);
-                    
+
                     // As amounts are entered, update the 'cover the fees' checkbox text
                     $('.js-amount-input input').on('change', function () {
                         updateCoverTheFeePercent(coverTheFeePercent);
