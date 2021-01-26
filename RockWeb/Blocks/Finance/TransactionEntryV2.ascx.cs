@@ -1120,7 +1120,7 @@ mission. We are so grateful for your commitment.</p>
 
             pnlScheduledTransaction.Visible = allowScheduledTransactions;
 
-            ConfigureCoverTheFees();
+            
 
             return true;
         }
@@ -1130,7 +1130,6 @@ mission. We are so grateful for your commitment.</p>
         /// </summary>
         private void ConfigureCoverTheFees()
         {
-
             cbGetPaymentInfoCoverTheFee.Visible = false;
             cbGiveNowCoverTheFee.Visible = false;
             var enableFeeCoverage = this.GetAttributeValue( AttributeKey.EnableFeeCoverage ).AsBoolean();
@@ -2346,6 +2345,26 @@ mission. We are so grateful for your commitment.</p>
         }
 
         /// <summary>
+        /// Handles the SelectedIndexChanged event of the ddlPersonSavedAccount control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void ddlPersonSavedAccount_SelectedIndexChanged( object sender, EventArgs e )
+        {
+            UpdateGivingControlsForSelections();
+        }
+
+        /// <summary>
+        /// Handles the SelectionChanged event of the ddlPersonSavedAccount control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void ddlPersonSavedAccount_SelectionChanged( object sender, EventArgs e )
+        {
+            UpdateGivingControlsForSelections();
+        }
+
+        /// <summary>
         /// Handles the SelectionChanged event of the ddlFrequency control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
@@ -2420,17 +2439,11 @@ mission. We are so grateful for your commitment.</p>
             {
                 dtpStartDate.SelectedDate = earliestScheduledStartDate;
             }
+
+            ConfigureCoverTheFees();
         }
 
-        /// <summary>
-        /// Handles the SelectionChanged event of the ddlPersonSavedAccount control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        protected void ddlPersonSavedAccount_SelectionChanged( object sender, EventArgs e )
-        {
-            UpdateGivingControlsForSelections();
-        }
+        
 
         /// <summary>
         /// Processes the transaction.
@@ -3135,9 +3148,6 @@ mission. We are so grateful for your commitment.</p>
 
         #endregion navigation
 
-        protected void ddlPersonSavedAccount_SelectedIndexChanged( object sender, EventArgs e )
-        {
-
-        }
+        
     }
 }

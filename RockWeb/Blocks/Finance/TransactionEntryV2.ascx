@@ -66,8 +66,11 @@
                             <Rock:NotificationBox ID="nbPromptForAmountsWarning" runat="server" NotificationBoxType="Validation" Visible="false" />
 
                             <Rock:HiddenFieldWithClass ID="hfCoverTheFeeCreditCardPercent" runat="server" CssClass="js-coverthefee-percent" Value="3.14" />
-                            <Rock:RockCheckBox ID="cbGiveNowCoverTheFee" runat="server" Text="Hello $<span class='js-coverthefee-checkbox-fee-amount-text'></span> World" CssClass="js-givenow-coverthefee" Visible="true" />
-                            <asp:CheckBox ID="cbTest" runat="server" Text="asp checkbox" />
+
+                            <%-- Cover the Fee checkbox (When a Saved Account is selected and we know the currency type already) --%>
+                            <asp:Panel ID="pnlGiveNowCoverTheFee" runat="server" CssClass="js-coverthefee-container">
+                                <Rock:RockCheckBox ID="cbGiveNowCoverTheFee" runat="server" Text="Hello $<span class='js-coverthefee-checkbox-fee-amount-text'></span> World" CssClass="js-givenow-coverthefee" Visible="true" />
+                             </asp:Panel>
 
                             <Rock:BootstrapButton ID="btnGiveNow" runat="server" CssClass="btn btn-primary btn-give-now" Text="Give Now" OnClick="btnGiveNow_Click" />
 
@@ -92,6 +95,7 @@
 
                             <Rock:NotificationBox ID="nbPaymentTokenError" runat="server" NotificationBoxType="Validation" Visible="false" />
 
+                            <%-- Cover the Fee checkbox (When a Saved Account is not selected and we know the currency type already) --%>
                             <Rock:RockCheckBox ID="cbGetPaymentInfoCoverTheFee" runat="server" Text="##" CssClass="js-getpaymentinfo-coverthefee" Visible="false" />
 
                             <div class="navigation actions">
@@ -246,6 +250,31 @@
                 }
             }
 
+            function updateCoverTheFeePercent(feePercent) {
+                var $coverTheFeeContainer = $('.js-coverthefee-container');
+                var $coverTheFeeAmountText = $('.js-coverthefee-checkbox-fee-amount-text');
+
+                var totalAmt = Number(0);
+
+                $('.js-amount-input .form-control').each(function (index) {
+                    var itemValue = $(this).val();
+                    if (!isNaN(itemValue)) {
+                        var num = Number(itemValue);
+                        totalAmt = totalAmt + num;
+                    }
+                });
+
+                var feeAmount = (totalAmt * (feePercent / 100)).toFixed(2);
+
+                $coverTheFeeAmountText.html(feeAmount);
+                if (feeAmount > 0) {
+                    $coverTheFeeContainer.show();
+                }
+                else {
+                    $coverTheFeeContainer.hide();
+                }
+            }
+
             Sys.Application.add_load(function () {
 
                 $('.js-submit-hostedpaymentinfo').off().on('click', function (e) {
@@ -267,33 +296,17 @@
                     });
                 }
 
-                
-                debugger
                 var coverTheFeePercent = Number($('.js-coverthefee-percent').val()) || 0.00;
                 if (coverTheFeePercent > 0.00) {
-
-                    var $coverTheFeeAmountText = $('.js-coverthefee-checkbox-fee-amount-text');
+                    updateCoverTheFeePercent(coverTheFeePercent);
+                    
                     // As amounts are entered, update the 'cover the fees' checkbox text
                     $('.js-amount-input input').on('change', function () {
-                        var totalAmt = Number(0);
-                        debugger
+                        updateCoverTheFeePercent(coverTheFeePercent);
 
-                        $('.js-amount-input .form-control').each(function (index) {
-                            var itemValue = $(this).val();
-                            if (!isNaN(itemValue)) {
-                                var num = Number(itemValue);
-                                totalAmt = totalAmt + num;
-                            }
-                        });
-
-                        var feeAmount = totalAmt * (coverTheFeePercent/100);
-
-                        $coverTheFeeAmountText.html('$' + feeAmount.toFixed(2));
                         return false;
                     });
                 }
-
-
             });
         </script>
 
