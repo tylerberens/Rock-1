@@ -166,6 +166,20 @@ namespace RockWeb.Blocks.Finance
         Category = AttributeCategory.None,
         Order = 25 )]
 
+    [BooleanField(
+        "Enable Fee Coverage",
+        Description = "Determines if the fee coverage feature is enabled or not.",
+        Key = AttributeKey.EnableFeeCoverage,
+        DefaultBooleanValue = false,
+        Order = 26 )]
+
+    [BooleanField(
+        "Fee Coverage Default State",
+        Description = "Determines if checkbox for 'Cover the fee' defaults to checked.",
+        Key = AttributeKey.FeeCoverageDefaultState,
+        DefaultBooleanValue = false,
+        Order = 27 )]
+
     #region Scheduled Transactions
 
     [BooleanField(
@@ -729,6 +743,10 @@ mission. We are so grateful for your commitment.</p>
             public const string PersonConnectionStatus = "PersonConnectionStatus";
 
             public const string PersonRecordStatus = "PersonRecordStatus";
+
+            public const string EnableFeeCoverage = "EnableFeeCoverage";
+
+            public const string FeeCoverageDefaultState = "FeeCoverageDefaultState";
         }
 
         #endregion Attribute Keys
@@ -1102,7 +1120,46 @@ mission. We are so grateful for your commitment.</p>
 
             pnlScheduledTransaction.Visible = allowScheduledTransactions;
 
+            ConfigureCoverTheFees();
+
             return true;
+        }
+
+        /// <summary>
+        /// Configures the Cover the Fees feature
+        /// </summary>
+        private void ConfigureCoverTheFees()
+        {
+
+            cbGetPaymentInfoCoverTheFee.Visible = false;
+            cbGiveNowCoverTheFee.Visible = false;
+            var enableFeeCoverage = this.GetAttributeValue( AttributeKey.EnableFeeCoverage ).AsBoolean();
+            if ( !enableFeeCoverage )
+            {
+                return;
+            }
+
+            var feeCoverageGatewayComponent = FinancialGateway.GetGatewayComponent() as IFeeCoverageGatewayComponent;
+            if ( feeCoverageGatewayComponent == null )
+            {
+                return;
+            }
+
+            var creditCardFeeCoveragePercentage = feeCoverageGatewayComponent.GetCreditCardFeeCoveragePercentage( FinancialGateway );
+            if ( !creditCardFeeCoveragePercentage.HasValue || creditCardFeeCoveragePercentage.Value == 0.00M )
+            {
+                return;
+            }
+
+            bool feeCoverageDefaultState = this.GetAttributeValue( AttributeKey.FeeCoverageDefaultState ).AsBoolean();
+
+            cbGiveNowCoverTheFee.Visible = true;
+            cbGiveNowCoverTheFee.Checked = feeCoverageDefaultState;
+            cbGiveNowCoverTheFee.Text = string.Format( "Optionally add {0}<span class='js-coverthefee-checkbox-fee-amount-text'></span> to cover processing fee.", GlobalAttributesCache.Value( "CurrencySymbol" ) );
+            hfCoverTheFeeCreditCardPercent.Value = creditCardFeeCoveragePercentage.ToString();
+
+            cbGetPaymentInfoCoverTheFee.Visible = true;
+            cbGetPaymentInfoCoverTheFee.Checked = feeCoverageDefaultState;
         }
 
         /// <summary>
@@ -2083,7 +2140,7 @@ mission. We are so grateful for your commitment.</p>
 
             switch ( personInputSource )
             {
-                
+
                 case PersonInputSource.Business:
                     {
                         tbEmail = tbEmailBusiness;
@@ -2096,7 +2153,8 @@ mission. We are so grateful for your commitment.</p>
                 case PersonInputSource.BusinessContact:
                     {
                         tbEmail = tbBusinessContactEmail;
-                        pnbPhone = pnbBusinessContactPhone;;
+                        pnbPhone = pnbBusinessContactPhone;
+                        ;
                         numberTypeId = DefinedValueCache.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_HOME ) ).Id;
                         locationTypeGuid = GetAttributeValue( AttributeKey.PersonAddressType ).AsGuid();
                         acAddress = null;
@@ -2216,6 +2274,7 @@ mission. We are so grateful for your commitment.</p>
             {
                 a.Id,
                 a.Name,
+                a.FinancialPaymentDetail.CurrencyTypeValueId,
                 a.FinancialPaymentDetail.AccountNumberMasked,
             } ).ToList();
 
@@ -3075,5 +3134,10 @@ mission. We are so grateful for your commitment.</p>
         }
 
         #endregion navigation
+
+        protected void ddlPersonSavedAccount_SelectedIndexChanged( object sender, EventArgs e )
+        {
+
+        }
     }
 }

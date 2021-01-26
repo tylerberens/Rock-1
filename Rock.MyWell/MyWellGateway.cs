@@ -24,13 +24,11 @@ using System.Web.UI;
 using Newtonsoft.Json;
 using RestSharp;
 using Rock.Attribute;
-using Rock.Data;
 using Rock.Financial;
 using Rock.Model;
-using Rock.Security;
 using Rock.MyWell.Controls;
+using Rock.Security;
 using Rock.Web.Cache;
-
 // Use Newtonsoft RestRequest which is the same as RestSharp.RestRequest but uses the JSON.NET serializer
 using RestRequest = RestSharp.Newtonsoft.Json.RestRequest;
 
@@ -57,19 +55,35 @@ namespace Rock.MyWell
         "Public API Key",
         Key = AttributeKey.PublicApiKey,
         Description = "The public API Key used for web client operations",
-        Order = 2
-        )]
+        Order = 2 )]
 
-    [CustomRadioListField( "Mode",
+    [CustomRadioListField(
+        "Mode",
         Key = AttributeKey.Mode,
         Description = "Set to Sandbox mode to use the sandbox test gateway instead of the production app gateway",
         ListSource = "Live,Sandbox",
         IsRequired = true,
+        DefaultValue = "Live",
+        Order = 3 )]
 
-        DefaultValue = "Live" )]
+    [DecimalField(
+        "Credit Card Fee Coverage Percentage",
+        Key = AttributeKey.CreditCardFeeCoveragePercentage,
+        Description = @"The credit card fee percentage that will be used to determine what to add to the person's donation, if they want to cover the fee.",
+        IsRequired = false,
+        DefaultValue = null,
+        Order = 4 )]
+
+    [CurrencyField(
+        "ACH Transaction Fee Coverage Amount",
+        Key = AttributeKey.ACHTransactionFeeCoverageAmount,
+        Description = "The  dollar amount to add to an ACH transaction, if they want to cover the fee.",
+        IsRequired = false,
+        DefaultValue = null,
+        Order = 5 )]
 
     #endregion Component Attributes
-    public class MyWellGateway : GatewayComponent, IHostedGatewayComponent, IAutomatedGatewayComponent
+    public class MyWellGateway : GatewayComponent, IHostedGatewayComponent, IAutomatedGatewayComponent, IFeeCoverageGatewayComponent
     {
         #region Attribute Keys
 
@@ -92,6 +106,16 @@ namespace Rock.MyWell
             /// The mode
             /// </summary>
             public const string Mode = "Mode";
+
+            /// <summary>
+            /// The credit card fee coverage percentage
+            /// </summary>
+            public const string CreditCardFeeCoveragePercentage = "CreditCardFeeCoveragePercentage";
+
+            /// <summary>
+            /// The ach transaction fee coverage amount
+            /// </summary>
+            public const string ACHTransactionFeeCoverageAmount = "ACHTransactionFeeCoverageAmount";
         }
 
         #endregion Attribute Keys
@@ -215,6 +239,22 @@ namespace Rock.MyWell
         }
 
         #endregion IAutomatedGatewayComponent
+
+        #region IFeeCoverageGatewayComponent
+
+        /// <inheritdoc/>
+        public decimal? GetCreditCardFeeCoveragePercentage( FinancialGateway financialGateway )
+        {
+            return this.GetAttributeValue( financialGateway, AttributeKey.CreditCardFeeCoveragePercentage )?.AsDecimalOrNull();
+        }
+
+        /// <inheritdoc/>
+        public decimal? GetACHFeeCoverageAmount( FinancialGateway financialGateway )
+        {
+            return this.GetAttributeValue( financialGateway, AttributeKey.ACHTransactionFeeCoverageAmount )?.AsDecimalOrNull();
+        }
+
+        #endregion IFeeCoverageGatewayComponent
 
         #region IHostedGatewayComponent
 

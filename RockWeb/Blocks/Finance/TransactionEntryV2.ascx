@@ -54,7 +54,7 @@
                                 </div>
 
                                 <asp:Panel ID="pnlSavedAccounts" runat="server" class="form-group" Visible="false">
-                                    <Rock:RockDropDownList ID="ddlPersonSavedAccount" runat="server" Label="Giving Method" />
+                                    <Rock:RockDropDownList ID="ddlPersonSavedAccount" runat="server" Label="Giving Method" AutoPostBack="true" OnSelectedIndexChanged="ddlPersonSavedAccount_SelectedIndexChanged" />
                                 </asp:Panel>
 
                                 <Rock:DatePicker ID="dtpStartDate" runat="server" AllowPastDateSelection="false" Label="Start Date" />
@@ -64,6 +64,11 @@
                             <Rock:RockTextBox ID="tbCommentEntry" runat="server" Required="true" Label="Comment" />
 
                             <Rock:NotificationBox ID="nbPromptForAmountsWarning" runat="server" NotificationBoxType="Validation" Visible="false" />
+
+                            <Rock:HiddenFieldWithClass ID="hfCoverTheFeeCreditCardPercent" runat="server" CssClass="js-coverthefee-percent" Value="3.14" />
+                            <Rock:RockCheckBox ID="cbGiveNowCoverTheFee" runat="server" Text="Hello $<span class='js-coverthefee-checkbox-fee-amount-text'></span> World" CssClass="js-givenow-coverthefee" Visible="true" />
+                            <asp:CheckBox ID="cbTest" runat="server" Text="asp checkbox" />
+
                             <Rock:BootstrapButton ID="btnGiveNow" runat="server" CssClass="btn btn-primary btn-give-now" Text="Give Now" OnClick="btnGiveNow_Click" />
 
                             <a id="aHistoryBackButton" runat="server" class="btn btn-link">Previous</a>
@@ -86,6 +91,8 @@
                             </div>
 
                             <Rock:NotificationBox ID="nbPaymentTokenError" runat="server" NotificationBoxType="Validation" Visible="false" />
+
+                            <Rock:RockCheckBox ID="cbGetPaymentInfoCoverTheFee" runat="server" Text="##" CssClass="js-getpaymentinfo-coverthefee" Visible="false" />
 
                             <div class="navigation actions">
                                 <asp:LinkButton ID="btnGetPaymentInfoBack" runat="server" CssClass="btn btn-default" Text="Back" OnClick="btnGetPaymentInfoBack_Click" />
@@ -259,6 +266,33 @@
                         showSaveAccount();
                     });
                 }
+
+                
+                debugger
+                var coverTheFeePercent = Number($('.js-coverthefee-percent').val()) || 0.00;
+                if (coverTheFeePercent > 0.00) {
+
+                    var $coverTheFeeAmountText = $('.js-coverthefee-checkbox-fee-amount-text');
+                    // As amounts are entered, update the 'cover the fees' checkbox text
+                    $('.js-amount-input input').on('change', function () {
+                        var totalAmt = Number(0);
+                        debugger
+
+                        $('.js-amount-input .form-control').each(function (index) {
+                            var itemValue = $(this).val();
+                            if (!isNaN(itemValue)) {
+                                var num = Number(itemValue);
+                                totalAmt = totalAmt + num;
+                            }
+                        });
+
+                        var feeAmount = totalAmt * (coverTheFeePercent/100);
+
+                        $coverTheFeeAmountText.html('$' + feeAmount.toFixed(2));
+                        return false;
+                    });
+                }
+
 
             });
         </script>

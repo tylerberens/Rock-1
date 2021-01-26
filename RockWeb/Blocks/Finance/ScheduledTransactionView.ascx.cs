@@ -34,10 +34,11 @@ namespace RockWeb.Blocks.Finance
 {
     /// <summary>
     /// view an existing scheduled transaction.
+    /// This is the *Internal* block for editing scheduled transactions
     /// </summary>
     [DisplayName( "Scheduled Transaction View" )]
     [Category( "Finance" )]
-    [Description( "View an existing scheduled transaction." )]
+    [Description( "View/Edit an existing scheduled transaction." )]
 
     #region Block Attributes
 
