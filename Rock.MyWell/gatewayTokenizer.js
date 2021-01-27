@@ -5,7 +5,8 @@ function initializeTokenizer(controlId) {
         // control hasn't been rendered so skip
         return;
     }
-    var postbackScript = $control.attr('data-postback-script');
+    var tokenizerPostbackScript = $control.attr('data-tokenizer-postback-script');
+    var currencyChangePostbackScript = $control.attr('data-currencychange-postback-script');
 
     var enabledPaymentTypes = JSON.parse($('.js-enabled-payment-types', $control).val());;
 
@@ -33,8 +34,8 @@ function initializeTokenizer(controlId) {
             $('.js-response-token', $control).val(resp.token);
             $('.js-tokenizer-raw-response', $control).val(JSON.stringify(resp, null, 2));
 
-            if (postbackScript) {
-                window.location = postbackScript;
+            if (tokenizerPostbackScript) {
+                window.location = tokenizerPostbackScript;
             }
         },
         settings: {
@@ -108,6 +109,10 @@ function initializeTokenizer(controlId) {
             $selectedPaymentType.val('card');
             $creditCardContainer.show();
             $achContainer.hide();
+            $('.js-currency-type').val('cc');
+            if (currencyChangePostbackScript) {
+                window.location = currencyChangePostbackScript;
+            }
         });
     };
 
@@ -129,9 +134,14 @@ function initializeTokenizer(controlId) {
             $selectedPaymentType.val('ach');
             $creditCardContainer.hide();
             $achContainer.show();
+            $('.js-currency-type').val('ach');
+            if (currencyChangePostbackScript) {
+                window.location = currencyChangePostbackScript;
+            }
         });
     };
 
+    var $paymentTypeSelector = $control.find('.js-gateway-paymenttype-selector');
     var $paymentTypeSelector = $control.find('.js-gateway-paymenttype-selector');
     if (enabledPaymentTypes.length > 1) {
         $paymentTypeSelector.show();

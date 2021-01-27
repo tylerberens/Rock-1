@@ -62,14 +62,6 @@ namespace Rock.Financial
         int? EntityId { get; set; }
 
         /// <summary>
-        /// Gets or sets the fee amount.
-        /// </summary>
-        /// <value>
-        /// The fee amount.
-        /// </value>
-        decimal? FeeAmount { get; set; }
-
-        /// <summary>
         /// Gets or sets the fee coverage amount.
         /// </summary>
         /// <value>

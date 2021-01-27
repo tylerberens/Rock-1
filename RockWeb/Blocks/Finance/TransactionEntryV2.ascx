@@ -261,7 +261,7 @@
 
                 $('.js-amount-input .form-control').each(function (index) {
                     var itemValue = $(this).val();
-                    if (!isNaN(itemValue)) {
+                    if (itemValue && !isNaN(itemValue)) {
                         var num = Number(itemValue);
                         totalAmt = totalAmt + num;
                     }
@@ -304,10 +304,9 @@
                     updateCoverTheFeePercent(coverTheFeePercent);
 
                     // As amounts are entered, update the 'cover the fees' checkbox text
-                    $('.js-amount-input input').on('change', function () {
+                    // Do it on 'keyup' instead of 'change'. Otherwise, they might not see if if they go straight to the GiveNow button
+                    $('.js-amount-input input').keyup(function () {
                         updateCoverTheFeePercent(coverTheFeePercent);
-
-                        return false;
                     });
                 }
             });

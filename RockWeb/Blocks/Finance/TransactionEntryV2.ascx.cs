@@ -962,6 +962,11 @@ mission. We are so grateful for your commitment.</p>
                 ( _hostedPaymentInfoControl as IHostedGatewayPaymentControlTokenEvent ).TokenReceived += _hostedPaymentInfoControl_TokenReceived;
             }
 
+            if ( this.GetAttributeValue( AttributeKey.EnableFeeCoverage ).AsBoolean() && _hostedPaymentInfoControl is IHostedGatewayPaymentControlCurrencyTypeEvent )
+            {
+                ( _hostedPaymentInfoControl as IHostedGatewayPaymentControlCurrencyTypeEvent ).CurrencyTypeChange += TransactionEntryV2_HostedPaymentControlCurrencyTypeChange;
+            }
+
             tglIndividualOrBusiness.Visible = this.GetAttributeValue( AttributeKey.EnableBusinessGiving ).AsBoolean();
 
             cbGiveAnonymouslyIndividual.Visible = this.GetAttributeValue( AttributeKey.EnableAnonymousGiving ).AsBoolean();
@@ -1167,6 +1172,16 @@ mission. We are so grateful for your commitment.</p>
                 cbGetPaymentInfoCoverTheFeeACH.Text = string.Format( "Optionally add {0} to cover ACH processing fee.", achFeeCoverageAmount.FormatAsCurrency() );
             }
 
+            if ( achFeeCoverageAmount > 0 || creditCardFeeCoveragePercentage > 0 )
+            {
+                if ( _hostedPaymentInfoControl is IHostedGatewayPaymentControlCurrencyTypeEvent )
+                {
+                    var paymentControlCurrencyTypeValue = ( _hostedPaymentInfoControl as IHostedGatewayPaymentControlCurrencyTypeEvent ).CurrencyTypeValue;
+                    var paymentControlCurrencyTypeGuid = paymentControlCurrencyTypeValue != null ? paymentControlCurrencyTypeValue.Guid : ( Guid? ) null;
+                    SetControlsForSelectedPaymentCurrencyType( paymentControlCurrencyTypeGuid );
+                }
+            }
+
             var financialPersonSavedAccountId = ddlPersonSavedAccount.SelectedValue.AsInteger();
             if ( financialPersonSavedAccountId == 0 )
             {
@@ -1200,6 +1215,44 @@ mission. We are so grateful for your commitment.</p>
             }
 
             cbGiveNowCoverTheFee.Visible = true;
+        }
+
+        /// <summary>
+        /// Handles the HostedPaymentControlCurrencyTypeChange event of the TransactionEntryV2 control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="HostedGatewayPaymentControlCurrencyTypeEventArgs"/> instance containing the event data.</param>
+        private void TransactionEntryV2_HostedPaymentControlCurrencyTypeChange( object sender, HostedGatewayPaymentControlCurrencyTypeEventArgs e )
+        {
+            var currencyTypeValueGuid = e.hostedGatewayPaymentControl.CurrencyTypeValue != null ? e.hostedGatewayPaymentControl.CurrencyTypeValue.Guid : ( Guid? ) null;
+            SetControlsForSelectedPaymentCurrencyType( currencyTypeValueGuid );
+        }
+
+        /// <summary>
+        /// Sets the type of the controls for selected payment currency.
+        /// </summary>
+        /// <param name="currencyTypeValueGuid">The currency type value unique identifier.</param>
+        private void SetControlsForSelectedPaymentCurrencyType( Guid? currencyTypeValueGuid )
+        {
+            var feeCoverageGatewayComponent = FinancialGateway.GetGatewayComponent() as IFeeCoverageGatewayComponent;
+            if ( feeCoverageGatewayComponent == null )
+            {
+                return;
+            }
+
+            var achSelected = currencyTypeValueGuid == Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH.AsGuid();
+            if ( achSelected )
+            {
+                var feeCoverageACHAmount = feeCoverageGatewayComponent.GetACHFeeCoverageAmount( this.FinancialGateway );
+                cbGetPaymentInfoCoverTheFeeACH.Visible = feeCoverageACHAmount > 0;
+                cbGetPaymentInfoCoverTheFeeCreditCard.Visible = false;
+            }
+            else
+            {
+                var creditCardFeeCoveragePercentage = feeCoverageGatewayComponent.GetCreditCardFeeCoveragePercentage( this.FinancialGateway );
+                cbGetPaymentInfoCoverTheFeeACH.Visible = false;
+                cbGetPaymentInfoCoverTheFeeCreditCard.Visible = creditCardFeeCoveragePercentage > 0;
+            }
         }
 
         /// <summary>
@@ -2966,12 +3019,12 @@ mission. We are so grateful for your commitment.</p>
             foreach ( var selectedAccountAmount in selectedAccountAmounts )
             {
                 var transactionDetail = new T();
-                
+
                 transactionDetail.AccountId = selectedAccountAmount.AccountId;
-                if (totalFeeCoverageAmount > 0)
+                if ( totalFeeCoverageAmount > 0 )
                 {
-                    var portionOfTotalAmount = Decimal.Divide( selectedAccountAmount.Amount.Value, totalSelectedAmounts );
-                    var feeCoverageAmountForAccount = Decimal.Round( portionOfTotalAmount * selectedAccountAmount.Amount.Value );
+                    decimal portionOfTotalAmount = Decimal.Divide( selectedAccountAmount.Amount.Value, totalSelectedAmounts );
+                    decimal feeCoverageAmountForAccount = Decimal.Round( portionOfTotalAmount * totalFeeCoverageAmount, 2 );
                     transactionDetail.Amount = selectedAccountAmount.Amount.Value + feeCoverageAmountForAccount;
                     transactionDetail.FeeCoverageAmount = feeCoverageAmountForAccount;
                 }
@@ -3005,9 +3058,8 @@ mission. We are so grateful for your commitment.</p>
 
             var selectedAccountAmounts = caapPromptForAccountAmounts.AccountAmounts.Where( a => a.Amount.HasValue && a.Amount != 0 ).ToArray();
 
-            decimal? feeCoverageCreditCardPercent = 0.00M;
-            decimal? feeCoverageACHAmount = 0.00M;
-            
+            decimal? feeCoverageCreditCardPercent = null;
+            decimal? feeCoverageACHAmount = null;
 
             if ( UsingPersonSavedAccount() )
             {
@@ -3025,13 +3077,13 @@ mission. We are so grateful for your commitment.</p>
             }
             else
             {
-                if ( cbGetPaymentInfoCoverTheFeeACH.Checked )
+                if ( cbGetPaymentInfoCoverTheFeeACH.Checked && cbGetPaymentInfoCoverTheFeeACH.Visible )
                 {
                     // todo, how do we know it is ACH or CC
                     feeCoverageACHAmount = feeCoverageGatewayComponent.GetACHFeeCoverageAmount( this.FinancialGateway );
                 }
 
-                if ( cbGetPaymentInfoCoverTheFeeCreditCard.Checked )
+                if ( cbGetPaymentInfoCoverTheFeeCreditCard.Checked && cbGetPaymentInfoCoverTheFeeCreditCard.Visible )
                 {
                     // todo, how do we know it is ACH or CC
                     feeCoverageCreditCardPercent = feeCoverageGatewayComponent.GetCreditCardFeeCoveragePercentage( this.FinancialGateway );
@@ -3039,11 +3091,11 @@ mission. We are so grateful for your commitment.</p>
             }
 
             decimal totalAmount = selectedAccountAmounts.Sum( a => a.Amount.Value );
-            if ( feeCoverageACHAmount.HasValue )
+            if ( feeCoverageACHAmount.HasValue && feeCoverageACHAmount > 0.00M )
             {
                 totalFeeCoverageAmount = feeCoverageACHAmount.Value;
             }
-            else if ( feeCoverageCreditCardPercent.HasValue )
+            else if ( feeCoverageCreditCardPercent.HasValue && feeCoverageCreditCardPercent > 0.00M )
             {
                 totalFeeCoverageAmount = totalAmount * ( feeCoverageCreditCardPercent.Value / 100.0M );
                 totalFeeCoverageAmount = Decimal.Round( totalFeeCoverageAmount, 2 );
@@ -3178,7 +3230,7 @@ mission. We are so grateful for your commitment.</p>
             {
                 nbPromptForAmountsWarning.Visible = false;
                 pnlPersonalInformation.Visible = false;
-                var totalAmount = caapPromptForAccountAmounts.AccountAmounts.Sum( a => a.Amount ?? 0.00M );
+
 
                 // get the accountId(s) that have an amount specified
                 var amountAccountIds = caapPromptForAccountAmounts.AccountAmounts
@@ -3196,6 +3248,9 @@ mission. We are so grateful for your commitment.</p>
 
                 lAmountSummaryText.Text = GetAttributeValue( AttributeKey.AmountSummaryTemplate ).ResolveMergeFields( amountSummaryMergeFields );
 
+                var totalPreFeeAmount = caapPromptForAccountAmounts.AccountAmounts.Sum( a => a.Amount ?? 0.00M );
+                var coverTheFeeAmount = GetSelectedFeeCoverageAmount();
+                var totalAmount = totalPreFeeAmount + coverTheFeeAmount;
                 lAmountSummaryAmount.Text = totalAmount.FormatAsCurrency();
 
                 if ( UsingPersonSavedAccount() )

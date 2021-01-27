@@ -7,8 +7,17 @@ using Rock.Web.Cache;
 
 namespace Rock.Financial
 {
-    interface IHostedGatewayPaymentControlCurrencyTypeEvent
+    /// <summary>
+    /// 
+    /// </summary>
+    public interface IHostedGatewayPaymentControlCurrencyTypeEvent
     {
+        /// <summary>
+        /// Gets the currency type value.
+        /// </summary>
+        /// <value>
+        /// The currency type value.
+        /// </value>
         DefinedValueCache CurrencyTypeValue { get; }
 
         /// <summary>
@@ -23,7 +32,10 @@ namespace Rock.Financial
     /// <seealso cref="System.EventArgs" />
     public class HostedGatewayPaymentControlCurrencyTypeEventArgs : EventArgs
     {
-        //
+        /// <summary>
+        /// The hosted gateway payment control
+        /// </summary>
+        public IHostedGatewayPaymentControlCurrencyTypeEvent hostedGatewayPaymentControl;
     }
 
 
