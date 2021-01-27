@@ -109,7 +109,6 @@ function initializeTokenizer(controlId) {
             $selectedPaymentType.val('card');
             $creditCardContainer.show();
             $achContainer.hide();
-            $('.js-currency-type').val('cc');
             if (currencyChangePostbackScript) {
                 window.location = currencyChangePostbackScript;
             }
@@ -134,14 +133,12 @@ function initializeTokenizer(controlId) {
             $selectedPaymentType.val('ach');
             $creditCardContainer.hide();
             $achContainer.show();
-            $('.js-currency-type').val('ach');
             if (currencyChangePostbackScript) {
                 window.location = currencyChangePostbackScript;
             }
         });
     };
-
-    var $paymentTypeSelector = $control.find('.js-gateway-paymenttype-selector');
+    
     var $paymentTypeSelector = $control.find('.js-gateway-paymenttype-selector');
     if (enabledPaymentTypes.length > 1) {
         $paymentTypeSelector.show();
@@ -156,15 +153,16 @@ function initializeTokenizer(controlId) {
     }
 
     if (selectedPaymentTypeVal == 'card' && enabledPaymentTypes.includes('card')) {
-        $paymentButtonACH.removeClass('active');
-        $paymentButtonCreditCard.addClass('active');
+        $paymentButtonACH.removeClass('active btn-primary').addClass('btn-default');
+        $paymentButtonCreditCard.removeClass('btn-default').addClass('btn-primary active');
         $selectedPaymentType.val('card');
         $creditCardContainer.show();
         $achContainer.hide();
     }
     else {
-        $paymentButtonCreditCard.removeClass('active');
-        $paymentButtonACH.addClass('active');
+        $paymentButtonCreditCard.removeClass('active btn-primary').addClass('btn-default');
+        $paymentButtonACH.removeClass('btn-default').addClass('btn-primary active')
+
         $selectedPaymentType.val('ach');
         $creditCardContainer.hide();
         $achContainer.show();

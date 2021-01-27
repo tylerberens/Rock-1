@@ -18,6 +18,7 @@ using System;
 using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+
 using Rock.Financial;
 using Rock.Web.Cache;
 using Rock.Web.UI;
@@ -44,7 +45,6 @@ namespace Rock.MyWell.Controls
         #region Controls
 
         private HiddenFieldWithClass _hfPaymentInfoToken;
-        private HiddenFieldWithClass _hfCurrencyType;
         private HiddenFieldWithClass _hfTokenizerRawResponse;
         private HiddenFieldWithClass _hfEnabledPaymentTypesJSON;
         private HiddenFieldWithClass _hfSelectedPaymentType;
@@ -75,12 +75,18 @@ namespace Rock.MyWell.Controls
         /// </summary>
         public event EventHandler<HostedGatewayPaymentControlCurrencyTypeEventArgs> CurrencyTypeChange;
 
+        /// <summary>
+        /// Gets the currency type value.
+        /// </summary>
+        /// <value>
+        /// The currency type value.
+        /// </value>
         public DefinedValueCache CurrencyTypeValue
         {
             get
             {
                 EnsureChildControls();
-                var currencyTypeValue = _hfCurrencyType.Value.ConvertToEnumOrNull<MyWellPaymentType>();
+                var currencyTypeValue = _hfSelectedPaymentType.Value.ConvertToEnumOrNull<MyWellPaymentType>();
                 if ( currencyTypeValue == MyWellPaymentType.ach )
                 {
                     return DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH );
@@ -242,15 +248,6 @@ namespace Rock.MyWell.Controls
                 this.Attributes["data-currencychange-postback-script"] = $"javascript:__doPostBack('{postbackControlId}', '{this.ID}={PostbackKey.CurrencyTypeChange}')";
             }
 
-            if ( EnabledPaymentTypes.Contains( MyWellPaymentType.card ) )
-            {
-                _hfCurrencyType.Value = MyWellPaymentType.card.ConvertToString( false );
-            }
-            else
-            {
-                _hfCurrencyType.Value = MyWellPaymentType.ach.ConvertToString( false );
-            }
-
             base.Render( writer );
         }
 
@@ -349,16 +346,13 @@ namespace Rock.MyWell.Controls
             _hfPaymentInfoToken = new HiddenFieldWithClass() { ID = "_hfPaymentInfoToken", CssClass = "js-response-token" };
             Controls.Add( _hfPaymentInfoToken );
 
-            // This will have 'ach' or 'card' as a value.
-            _hfCurrencyType = new HiddenFieldWithClass() { ID = "_hfCurrencyType", CssClass = "js-currency-type" };
-            Controls.Add( _hfCurrencyType );
-
             _hfTokenizerRawResponse = new HiddenFieldWithClass() { ID = "_hfTokenizerRawResponse", CssClass = "js-tokenizer-raw-response" };
             Controls.Add( _hfTokenizerRawResponse );
 
             _hfEnabledPaymentTypesJSON = new HiddenFieldWithClass() { ID = "_hfEnabledPaymentTypesJSON", CssClass = "js-enabled-payment-types" };
             Controls.Add( _hfEnabledPaymentTypesJSON );
 
+            // This will have 'ach' or 'card' as a value.
             _hfSelectedPaymentType = new HiddenFieldWithClass() { ID = "_hfSelectedPaymentType", CssClass = "js-selected-payment-type" };
             Controls.Add( _hfSelectedPaymentType );
 

@@ -3077,15 +3077,20 @@ mission. We are so grateful for your commitment.</p>
             }
             else
             {
-                if ( cbGetPaymentInfoCoverTheFeeACH.Checked && cbGetPaymentInfoCoverTheFeeACH.Visible )
+                bool isAch = false;
+                if ( _hostedPaymentInfoControl is IHostedGatewayPaymentControlCurrencyTypeEvent )
                 {
-                    // todo, how do we know it is ACH or CC
-                    feeCoverageACHAmount = feeCoverageGatewayComponent.GetACHFeeCoverageAmount( this.FinancialGateway );
+                    IHostedGatewayPaymentControlCurrencyTypeEvent hostedGatewayPaymentControlCurrencyTypeEvent = _hostedPaymentInfoControl as IHostedGatewayPaymentControlCurrencyTypeEvent;
+                    isAch = ( hostedGatewayPaymentControlCurrencyTypeEvent.CurrencyTypeValue != null
+                        && hostedGatewayPaymentControlCurrencyTypeEvent.CurrencyTypeValue.Guid == Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH.AsGuid() );
                 }
 
-                if ( cbGetPaymentInfoCoverTheFeeCreditCard.Checked && cbGetPaymentInfoCoverTheFeeCreditCard.Visible )
+                if ( isAch && cbGetPaymentInfoCoverTheFeeACH.Checked )
                 {
-                    // todo, how do we know it is ACH or CC
+                    feeCoverageACHAmount = feeCoverageGatewayComponent.GetACHFeeCoverageAmount( this.FinancialGateway );
+                }
+                else if ( cbGetPaymentInfoCoverTheFeeCreditCard.Checked )
+                {
                     feeCoverageCreditCardPercent = feeCoverageGatewayComponent.GetCreditCardFeeCoveragePercentage( this.FinancialGateway );
                 }
             }

@@ -57,7 +57,8 @@
                     }
                 }
 
-                self.postbackScript = $control.attr('data-postback-script');
+                self.tokenizerPostbackScript = $control.attr('data-tokenizer-postback-script');
+                self.currencyChangePostbackScript = $control.attr('data-currencychange-postback-script');
                 var enabledPaymentTypes = JSON.parse($('.js-enabled-payment-types', $control).val());
 
                 self.$creditCardContainer = $('.js-gateway-creditcard-container', $control);
@@ -350,6 +351,9 @@
                     self.$selectedPaymentType.val('card');
                     self.$creditCardContainer.show();
                     self.$achContainer.hide();
+                    if (currencyChangePostbackScript) {
+                        window.location = self.currencyChangePostbackScript;
+                    }
                 }
                 else {
                     self.$paymentButtonCreditCard.removeClass('active');
@@ -357,6 +361,9 @@
                     self.$selectedPaymentType.val('ach');
                     self.$creditCardContainer.hide();
                     self.$achContainer.show();
+                    if (currencyChangePostbackScript) {
+                        window.location = self.currencyChangePostbackScript;
+                    }
                 }
             },
 
@@ -366,9 +373,9 @@
                 self.$responseToken.val(tokenResponse.token);
                 self.$rawResponseToken.val(JSON.stringify(tokenResponse, null, 2));
 
-                if (self.postbackScript) {
+                if (self.tokenizerPostbackScript) {
                     self.tokenResponseSent(true);
-                    window.location = self.postbackScript;
+                    window.location = self.tokenizerPostbackScript;
                 }
             },
 
