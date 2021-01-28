@@ -1160,7 +1160,7 @@ mission. We are so grateful for your commitment.</p>
                 pnlGetPaymentInfoCoverTheFee.Visible = true;
                 cbGetPaymentInfoCoverTheFeeCreditCard.Visible = this.GetAttributeValue( AttributeKey.EnableCreditCard ).AsBoolean();
                 var totalAmount = caapPromptForAccountAmounts.AccountAmounts.Sum( a => a.Amount ?? 0.00M );
-                var creditCardFeeCoverageAmount = Decimal.Round( totalAmount * ( creditCardFeeCoveragePercentage.Value / 100.0M ), 2 );
+                var creditCardFeeCoverageAmount = decimal.Round( totalAmount * ( creditCardFeeCoveragePercentage.Value / 100.0M ), 2 );
                 cbGetPaymentInfoCoverTheFeeCreditCard.Text = string.Format( "Optionally add {0} to cover processing fee.", creditCardFeeCoverageAmount.FormatAsCurrency() );
             }
 
@@ -1306,6 +1306,7 @@ mission. We are so grateful for your commitment.</p>
                 {
                     frequencyEditable = frequencyOptions[0].AsBooleanOrNull() ?? true;
                 }
+
                 if ( defaultFrequencyValueId.HasValue )
                 {
                     pageParameterFrequency = DefinedValueCache.Get( defaultFrequencyValueId.Value );
@@ -1400,7 +1401,7 @@ mission. We are so grateful for your commitment.</p>
             mergeFields.Add( "GiftTerm", this.GetAttributeValue( AttributeKey.GiftTerm ) ?? "Gift" );
 
             Dictionary<string, object> linkedPages = new Dictionary<string, object>();
-            linkedPages.Add( "ScheduledTransactionEditPage", LinkedPageRoute( AttributeKey.ScheduledTransactionEditPage ) ?? "" );
+            linkedPages.Add( "ScheduledTransactionEditPage", LinkedPageRoute( AttributeKey.ScheduledTransactionEditPage ) );
             mergeFields.Add( "LinkedPages", linkedPages );
 
             FinancialScheduledTransactionService financialScheduledTransactionService = new FinancialScheduledTransactionService( rockContext );
@@ -2253,7 +2254,6 @@ mission. We are so grateful for your commitment.</p>
 
             switch ( personInputSource )
             {
-
                 case PersonInputSource.Business:
                     {
                         tbEmail = tbEmailBusiness;
@@ -2263,17 +2263,17 @@ mission. We are so grateful for your commitment.</p>
                         acAddress = acAddressBusiness;
                         break;
                     }
+
                 case PersonInputSource.BusinessContact:
                     {
                         tbEmail = tbBusinessContactEmail;
                         pnbPhone = pnbBusinessContactPhone;
-                        ;
                         numberTypeId = DefinedValueCache.Get( new Guid( Rock.SystemGuid.DefinedValue.PERSON_PHONE_TYPE_HOME ) ).Id;
                         locationTypeGuid = GetAttributeValue( AttributeKey.PersonAddressType ).AsGuid();
                         acAddress = null;
                         break;
-
                     }
+
                 case PersonInputSource.Person:
                     {
                         // PersonInput
@@ -2284,6 +2284,7 @@ mission. We are so grateful for your commitment.</p>
                         acAddress = acAddressIndividual;
                         break;
                     }
+
                 default:
                     {
                         throw new Exception( "Unexpected PersonInputSource" );
@@ -3025,8 +3026,8 @@ mission. We are so grateful for your commitment.</p>
                 transactionDetail.AccountId = selectedAccountAmount.AccountId;
                 if ( totalFeeCoverageAmount > 0 )
                 {
-                    decimal portionOfTotalAmount = Decimal.Divide( selectedAccountAmount.Amount.Value, totalSelectedAmounts );
-                    decimal feeCoverageAmountForAccount = Decimal.Round( portionOfTotalAmount * totalFeeCoverageAmount, 2 );
+                    decimal portionOfTotalAmount = decimal.Divide( selectedAccountAmount.Amount.Value, totalSelectedAmounts );
+                    decimal feeCoverageAmountForAccount = decimal.Round( portionOfTotalAmount * totalFeeCoverageAmount, 2 );
                     transactionDetail.Amount = selectedAccountAmount.Amount.Value + feeCoverageAmountForAccount;
                     transactionDetail.FeeCoverageAmount = feeCoverageAmountForAccount;
                 }
@@ -3083,8 +3084,8 @@ mission. We are so grateful for your commitment.</p>
                 if ( _hostedPaymentInfoControl is IHostedGatewayPaymentControlCurrencyTypeEvent )
                 {
                     IHostedGatewayPaymentControlCurrencyTypeEvent hostedGatewayPaymentControlCurrencyTypeEvent = _hostedPaymentInfoControl as IHostedGatewayPaymentControlCurrencyTypeEvent;
-                    isAch = ( hostedGatewayPaymentControlCurrencyTypeEvent.CurrencyTypeValue != null
-                        && hostedGatewayPaymentControlCurrencyTypeEvent.CurrencyTypeValue.Guid == Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH.AsGuid() );
+                    isAch = hostedGatewayPaymentControlCurrencyTypeEvent.CurrencyTypeValue != null
+                        && hostedGatewayPaymentControlCurrencyTypeEvent.CurrencyTypeValue.Guid == Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH.AsGuid();
                 }
 
                 if ( isAch && cbGetPaymentInfoCoverTheFeeACH.Checked )
@@ -3105,7 +3106,7 @@ mission. We are so grateful for your commitment.</p>
             else if ( feeCoverageCreditCardPercent.HasValue && feeCoverageCreditCardPercent > 0.00M )
             {
                 totalFeeCoverageAmount = totalAmount * ( feeCoverageCreditCardPercent.Value / 100.0M );
-                totalFeeCoverageAmount = Decimal.Round( totalFeeCoverageAmount, 2 );
+                totalFeeCoverageAmount = decimal.Round( totalFeeCoverageAmount, 2 );
             }
 
             return totalFeeCoverageAmount;
@@ -3238,7 +3239,6 @@ mission. We are so grateful for your commitment.</p>
                 nbPromptForAmountsWarning.Visible = false;
                 pnlPersonalInformation.Visible = false;
 
-
                 // get the accountId(s) that have an amount specified
                 var amountAccountIds = caapPromptForAccountAmounts.AccountAmounts
                     .Where( a => a.Amount.HasValue && a.Amount != 0.00M ).Select( a => a.AccountId )
@@ -3330,7 +3330,5 @@ mission. We are so grateful for your commitment.</p>
         }
 
         #endregion navigation
-
-
     }
 }

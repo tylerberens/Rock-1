@@ -61,7 +61,7 @@
                                     <Columns>
                                         <Rock:RockLiteralField ID="lAccountsEditAccountName" HeaderText="Accounts" />
                                         <Rock:RockBoundField DataField="Summary" SortExpression="Summary" />
-                                        <Rock:CurrencyField HeaderText="Coveraged Fees" DataField="FeeCoverageAmount" SortExpression="FeeCoverageAmount" ItemStyle-HorizontalAlign="Right" HeaderStyle-HorizontalAlign="Right" />
+                                        <Rock:CurrencyField HeaderText="Covered Fees" DataField="FeeCoverageAmount" SortExpression="FeeCoverageAmount" ItemStyle-HorizontalAlign="Right" HeaderStyle-HorizontalAlign="Right" />
                                         <Rock:CurrencyField HeaderText="Processing Fees" DataField="FeeAmount" SortExpression="FeeAmount" ItemStyle-HorizontalAlign="Right" HeaderStyle-HorizontalAlign="Right" />
                                         <Rock:RockLiteralField ID="lAccountsEditAmountMinusFeeCoverageAmount" HeaderText="Amount" SortExpression="Amount" ItemStyle-HorizontalAlign="Right" HeaderStyle-HorizontalAlign="Right" />
                                     </Columns>
@@ -159,7 +159,7 @@
                                 <Columns>
                                     <Rock:RockLiteralField ID="lAccountsViewAccountName" HeaderText="Accounts" />
                                     <Rock:RockBoundField DataField="Summary" SortExpression="Summary" />
-                                    <Rock:CurrencyField HeaderText="Coveraged Fees" DataField="FeeCoverageAmount" SortExpression="FeeCoverageAmount" ItemStyle-HorizontalAlign="Right" HeaderStyle-HorizontalAlign="Right" />
+                                    <Rock:CurrencyField HeaderText="Covered Fees" DataField="FeeCoverageAmount" SortExpression="FeeCoverageAmount" ItemStyle-HorizontalAlign="Right" HeaderStyle-HorizontalAlign="Right" />
                                     <Rock:CurrencyField HeaderText="Processing Fees" DataField="FeeAmount" SortExpression="FeeAmount" ItemStyle-HorizontalAlign="Right" HeaderStyle-HorizontalAlign="Right" />
                                     <Rock:RockLiteralField ID="lAccountsViewAmountMinusFeeCoverageAmount" HeaderText="Amount" SortExpression="Amount" ItemStyle-HorizontalAlign="Right" HeaderStyle-HorizontalAlign="Right" />
                                 </Columns>

@@ -219,6 +219,8 @@ namespace Rock.Model
                         }
 
                         History.EvaluateChange( HistoryChangeList, acct, entry.OriginalValues["Amount"].ToStringSafe().AsDecimal().FormatAsCurrency(), Amount.FormatAsCurrency() );
+                        History.EvaluateChange( HistoryChangeList, acct, entry.OriginalValues["FeeAmount"].ToStringSafe().AsDecimal().FormatAsCurrency(), FeeAmount.FormatAsCurrency() );
+                        History.EvaluateChange( HistoryChangeList, acct, entry.OriginalValues["FeeCoverageAmount"].ToStringSafe().AsDecimal().FormatAsCurrency(), FeeCoverageAmount.FormatAsCurrency() );
 
                         break;
                     }

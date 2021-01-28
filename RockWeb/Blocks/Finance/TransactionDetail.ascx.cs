@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // </copyright>
-//
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -64,10 +63,13 @@ namespace RockWeb.Blocks.Finance
         #region Properties
 
         private Control _focusControl = null;
+
         private List<FinancialTransactionDetail> TransactionDetailsState { get; set; }
+
         private List<int> TransactionImagesState { get; set; }
 
         private Dictionary<int, string> _accountNames = null;
+
         private Dictionary<int, string> AccountNames
         {
             get
@@ -82,6 +84,7 @@ namespace RockWeb.Blocks.Finance
                         .ForEach( a => _accountNames.Add( a.Id, a.Name ) );
                     _accountNames.Add( TotalRowAccountId, "<strong>Total</strong>" );
                 }
+
                 return _accountNames;
             }
         }
@@ -92,6 +95,7 @@ namespace RockWeb.Blocks.Finance
             {
                 return ViewState["UseSimpleAccountMode"] as bool? ?? false;
             }
+
             set
             {
                 ViewState["UseSimpleAccountMode"] = value;
@@ -127,7 +131,6 @@ namespace RockWeb.Blocks.Finance
             {
                 TransactionImagesState = new List<int>();
             }
-
         }
 
         /// <summary>
@@ -172,14 +175,6 @@ namespace RockWeb.Blocks.Finance
 
             AddDynamicColumns();
 
-            //function toggleCheckImages() {
-            //    var image1src = $('#<%=imgCheck.ClientID%>').attr("src");
-            //    var image2src = $('#<%=imgCheckOtherSideThumbnail.ClientID%>').attr("src");
-
-            //    $('#<%=imgCheck.ClientID%>').attr("src", image2src);
-            //    $('#<%=imgCheckOtherSideThumbnail.ClientID%>').attr("src", image1src);
-            //}
-
             string script = @"
     $('.transaction-image-thumbnail').on('click', function() {
         var $primaryImg = $('.transaction-image');
@@ -210,11 +205,12 @@ namespace RockWeb.Blocks.Finance
                 if ( pnlEditDetails.Visible )
                 {
                     // Add Transaction and Payment Detail attribute controls
-
                     FinancialTransaction txn;
                     var txnId = hfTransactionId.Value.AsIntegerOrNull();
                     if ( txnId == 0 )
+                    {
                         txnId = null;
+                    }
 
                     // Get the current transaction if there is one
                     if ( txnId.HasValue )
@@ -446,6 +442,7 @@ namespace RockWeb.Blocks.Finance
                     {
                         txn.RefundDetails = new FinancialTransactionRefund();
                     }
+
                     txn.RefundDetails.RefundReasonValueId = dvpRefundReasonEdit.SelectedValueAsId();
                     txn.RefundDetails.RefundReasonSummary = tbRefundSummaryEdit.Text;
                 }
@@ -506,7 +503,6 @@ namespace RockWeb.Blocks.Finance
                             txnDetail.Amount = accountAmountMinusFeeCoverageAmount + ( accountAmountFeeCoverageAmount ?? 0.00M );
                             txnDetail.FeeCoverageAmount = accountAmountFeeCoverageAmount;
                             txnDetail.FeeAmount = tbSingleAccountFeeAmount.Text.AsDecimalOrNull();
-
                         }
                         else
                         {
@@ -682,7 +678,6 @@ namespace RockWeb.Blocks.Finance
             pageParams.Add( "BatchId", PageParameter( "BatchId" ) );
             pageParams.Add( "TransactionId", "0" );
             NavigateToPage( RockPage.Guid, pageParams );
-
         }
 
         /// <summary>
@@ -767,7 +762,6 @@ namespace RockWeb.Blocks.Finance
 
             lAccountsViewAmountMinusFeeCoverageAmount.Text = amountMinusFeeCoverageAmount.FormatAsCurrency();
         }
-
 
         /// <summary>
         /// Handles the RowDataBound event of the gAccountsEdit control.
@@ -909,6 +903,7 @@ namespace RockWeb.Blocks.Finance
                     txnDetail = new FinancialTransactionDetail();
                     TransactionDetailsState.Add( txnDetail );
                 }
+
                 txnDetail.AccountId = apAccount.SelectedValue.AsInteger();
                 var feeCoverageAmount = tbAccountFeeCoverageAmount.Text.AsDecimalOrNull();
                 txnDetail.Amount = tbAccountAmountMinusFeeCoverageAmount.Text.AsDecimal() + ( feeCoverageAmount ?? 0.00M );
@@ -1001,7 +996,6 @@ namespace RockWeb.Blocks.Finance
             }
         }
 
-
         /// <summary>
         /// Handles the ImageRemoved event of the imgupImage control.
         /// </summary>
@@ -1043,6 +1037,7 @@ namespace RockWeb.Blocks.Finance
             {
                 gAccountsView.Columns.Remove( attributeColumn );
             }
+
             foreach ( var attributeColumn in gAccountsEdit.Columns.OfType<AttributeField>().ToList() )
             {
                 gAccountsEdit.Columns.Remove( attributeColumn );
@@ -1059,7 +1054,6 @@ namespace RockWeb.Blocks.Finance
             {
                 gAccountsEdit.Columns.Remove( deleteColumn );
             }
-
 
             // Add attribute columns
             int entityTypeId = new FinancialTransactionDetail().TypeId;
@@ -1198,6 +1192,7 @@ namespace RockWeb.Blocks.Finance
                 {
                     editAllowed = txn.IsAuthorized( Authorization.EDIT, CurrentPerson );
                 }
+
                 refundAllowed = txn != null && txn.IsAuthorized( "Refund", CurrentPerson );
             }
 
@@ -1224,6 +1219,7 @@ namespace RockWeb.Blocks.Finance
                     {
                         txn.NonCashAssetTypeValueId = Session["NewTxnDefault_NonCashAssetType"] as int?;
                     }
+
                     txn.FinancialPaymentDetail.CreditCardTypeValueId = Session["NewTxnDefault_CreditCardType"] as int?;
                     if ( this.GetAttributeValue( "CarryOverAccount" ).AsBoolean() )
                     {
@@ -1295,9 +1291,9 @@ namespace RockWeb.Blocks.Finance
             lbSave.Visible = !readOnly;
         }
 
-        private bool IsNonCashTransaction( int? CurrencyTypeId )
+        private bool IsNonCashTransaction( int? currencyTypeId )
         {
-            if ( CurrencyTypeId == null )
+            if ( currencyTypeId == null )
             {
                 return false;
             }
@@ -1308,7 +1304,7 @@ namespace RockWeb.Blocks.Finance
                 return false;
             }
 
-            return ( CurrencyTypeId == nonCashCurrencyType.Id );
+            return currencyTypeId == nonCashCurrencyType.Id;
         }
 
         /// <summary>
@@ -1337,9 +1333,8 @@ namespace RockWeb.Blocks.Finance
                     var qryParam = new Dictionary<string, string>();
                     qryParam.Add( "BatchId", txn.Batch.Id.ToString() );
                     string url = LinkedPageUrl( "BatchDetailPage", qryParam );
-                    detailsLeft.Add( "Batch", !string.IsNullOrWhiteSpace( url ) ?
-                        string.Format( "<a href='{0}'>{1}</a>", url, txn.Batch.Name ) :
-                        txn.Batch.Name );
+                    detailsLeft.Add( "Batch",
+                        !string.IsNullOrWhiteSpace( url ) ? string.Format( "<a href='{0}'>{1}</a>", url, txn.Batch.Name ) : txn.Batch.Name );
                 }
 
                 if ( txn.NonCashAssetTypeValue != null )
@@ -1432,6 +1427,7 @@ namespace RockWeb.Blocks.Finance
                                     registration.RegistrationInstance.Name ) );
                             }
                         }
+
                         if ( registrationLinks.Any() )
                         {
                             detailsLeft.Add( "Registration", registrationLinks.AsDelimited( "<br/>" ) );
@@ -1451,14 +1447,17 @@ namespace RockWeb.Blocks.Finance
                         string url = new PageReference( CurrentPageReference.PageId, 0, qryParam ).BuildUrl();
                         refundTxt = string.Format( "Yes (<a href='{0}'>Original Transaction</a>)", url );
                     }
+
                     detailsLeft.Add( "Refund", refundTxt );
 
                     if ( txn.RefundDetails.RefundReasonValue != null )
                     {
                         detailsLeft.Add( "Refund Reason", txn.RefundDetails.RefundReasonValue.Value );
                     }
+
                     detailsLeft.Add( "Refund Summary", txn.RefundDetails.RefundReasonSummary );
                 }
+
                 if ( !string.IsNullOrWhiteSpace( txn.Status ) )
                 {
                     string status = txn.Status;
@@ -1466,26 +1465,30 @@ namespace RockWeb.Blocks.Finance
                     {
                         status += string.Format( "<br/><small>{0}</small>", txn.StatusMessage.ConvertCrLfToHtmlBr() );
                     }
+
                     detailsLeft.Add( "Status", status );
                 }
 
                 var modified = new StringBuilder();
-                ;
+                
                 if ( txn.CreatedByPersonAlias != null && txn.CreatedByPersonAlias.Person != null && txn.CreatedDateTime.HasValue )
                 {
                     modified.AppendFormat( "Created by {0} on {1} at {2}<br/>", txn.CreatedByPersonAlias.Person.GetAnchorTag( rockUrlRoot ),
                         txn.CreatedDateTime.Value.ToShortDateString(), txn.CreatedDateTime.Value.ToShortTimeString() );
                 }
+
                 if ( txn.ProcessedByPersonAlias != null && txn.ProcessedByPersonAlias.Person != null && txn.ProcessedDateTime.HasValue )
                 {
                     modified.AppendFormat( "Processed by {0} on {1} at {2}<br/>", txn.ProcessedByPersonAlias.Person.GetAnchorTag( rockUrlRoot ),
                         txn.ProcessedDateTime.Value.ToShortDateString(), txn.ProcessedDateTime.Value.ToShortTimeString() );
                 }
+
                 if ( txn.ModifiedByPersonAlias != null && txn.ModifiedByPersonAlias.Person != null && txn.ModifiedDateTime.HasValue )
                 {
                     modified.AppendFormat( "Last Modified by {0} on {1} at {2}<br/>", txn.ModifiedByPersonAlias.Person.GetAnchorTag( rockUrlRoot ),
                         txn.ModifiedDateTime.Value.ToShortDateString(), txn.ModifiedDateTime.Value.ToShortTimeString() );
                 }
+
                 detailsLeft.Add( "Updates", modified.ToString() );
 
                 lDetailsLeft.Text = detailsLeft.Html;
@@ -1508,10 +1511,12 @@ namespace RockWeb.Blocks.Finance
                                 campusNames.Add( campus.Name );
                             }
                         }
+
                         if ( campusNames.Any() )
                         {
                             campusDescription.Add( "Campus".PluralizeIf( campusNames.Count > 1 ), campusNames.AsDelimited( "<br/>" ) );
                         }
+
                         lCampus.Text = campusDescription.Html;
                     }
 
@@ -1718,10 +1723,11 @@ namespace RockWeb.Blocks.Finance
                 tbTransactionCode.Text = txn.TransactionCode;
                 dvpCurrencyType.SetValue( txn.FinancialPaymentDetail != null ? txn.FinancialPaymentDetail.CurrencyTypeValueId : ( int? ) null );
 
-                if ( ( txn.FinancialPaymentDetail != null ) && ( IsNonCashTransaction( txn.FinancialPaymentDetail.CurrencyTypeValueId ) ) )
+                if ( ( txn.FinancialPaymentDetail != null ) && IsNonCashTransaction( txn.FinancialPaymentDetail.CurrencyTypeValueId ) )
                 {
                     dvpNonCashAssetType.SetValue( txn.NonCashAssetTypeValueId );
                 }
+
                 SetNonCashAssetTypeVisibility();
 
                 dvpCreditCardType.SetValue( txn.FinancialPaymentDetail != null ? txn.FinancialPaymentDetail.CreditCardTypeValueId : ( int? ) null );
@@ -1766,6 +1772,7 @@ namespace RockWeb.Blocks.Finance
                 {
                     UseSimpleAccountMode = false;
                 }
+
                 BindAccounts();
 
                 tbSummary.Text = txn.Summary;
@@ -1934,7 +1941,6 @@ namespace RockWeb.Blocks.Finance
             if ( txnDetail != null )
             {
                 apAccount.SetValue( txnDetail.AccountId );
-                
 
                 SetAccountAmountMinusFeeCoverageTextboxText( tbAccountAmountMinusFeeCoverageAmount, txnDetail );
 
@@ -2026,7 +2032,6 @@ namespace RockWeb.Blocks.Finance
                 }
             }
         }
-
 
         /// <summary>
         /// Shows the dialog.
@@ -2183,7 +2188,7 @@ namespace RockWeb.Blocks.Finance
         }
 
         /// <summary>
-        /// Take a fee and return empty string if null or the formated currency amount
+        /// Take a fee and return empty string if null or the formatted currency amount
         /// </summary>
         /// <param name="fee"></param>
         /// <returns></returns>
@@ -2235,7 +2240,7 @@ namespace RockWeb.Blocks.Finance
 
               However, when the FinancialTransactionDetail.Amount is used in this EditBox,
               don't include the FinancialTransactionDetail.FeeCoverageAmount.
-              So in the above example, the Textbox would say
+              So in the above example, the Textbox would say $100.00
              
              */
 
