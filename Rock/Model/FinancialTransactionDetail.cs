@@ -70,7 +70,7 @@ namespace Rock.Model
         /// A <see cref="System.Decimal"/> representing the total amount of the transaction detail.
         /// </value>
         [DataMember]
-        [BoundFieldTypeAttribute( typeof( Rock.Web.UI.Controls.CurrencyField ) )]
+        [BoundFieldType( typeof( Rock.Web.UI.Controls.CurrencyField ) )]
         public decimal Amount { get; set; }
 
         /// <summary>
@@ -119,7 +119,7 @@ namespace Rock.Model
         /// The fee coverage amount.
         /// </value>
         [DataMember]
-        [BoundFieldTypeAttribute( typeof( Rock.Web.UI.Controls.CurrencyField ) )]
+        [BoundFieldType( typeof( Rock.Web.UI.Controls.CurrencyField ) )]
         [DecimalPrecision(18, 2)]
         public decimal? FeeCoverageAmount { get; set; }
         #endregion

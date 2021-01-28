@@ -167,7 +167,6 @@ namespace RockWeb.Blocks.Finance
             gAccountsEdit.Actions.ShowAdd = true;
             gAccountsEdit.Actions.AddClick += gAccountsEdit_AddClick;
             gAccountsEdit.GridRebind += gAccountsEdit_GridRebind;
-            gAccountsEdit.RowDataBound += gAccountsEdit_RowDataBound;
 
             apAccount.DisplayActiveOnly = true;
 
@@ -404,8 +403,9 @@ namespace RockWeb.Blocks.Finance
                 txn.TransactionDateTime = dtTransactionDateTime.SelectedDateTime;
                 txn.TransactionTypeValueId = dvpTransactionType.SelectedValue.AsInteger();
                 txn.SourceTypeValueId = dvpSourceType.SelectedValueAsInt();
+
                 // DO NOT ALLOW changing a payment gateway once it's already saved.
-                //txn.FinancialGatewayId = gpPaymentGateway.SelectedValueAsInt();
+                // txn.FinancialGatewayId = gpPaymentGateway.SelectedValueAsInt();
                 txn.TransactionCode = tbTransactionCode.Text;
                 txn.FinancialPaymentDetail.CurrencyTypeValueId = dvpCurrencyType.SelectedValueAsInt();
                 if ( IsNonCashTransaction( txn.FinancialPaymentDetail.CurrencyTypeValueId ) )
@@ -420,7 +420,17 @@ namespace RockWeb.Blocks.Finance
                 txn.FinancialPaymentDetail.CreditCardTypeValueId = dvpCreditCardType.SelectedValueAsInt();
 
                 txn.Summary = tbSummary.Text;
-                decimal totalAmount = tbSingleAccountAmount.Text == string.Empty ? TransactionDetailsState.Select( d => d.Amount ).ToList().Sum() : tbSingleAccountAmount.Text.AsDecimal();
+                var singleAccountAmountMinusFeeCoverageAmount = tbSingleAccountAmountMinusFeeCoverageAmount.Text.AsDecimalOrNull();
+                var feeCoverageAmount = tbSingleAccountFeeCoverageAmount.Text.AsDecimalOrNull();
+                decimal totalAmount;
+                if ( tbSingleAccountAmountMinusFeeCoverageAmount.Text.IsNullOrWhiteSpace() )
+                {
+                    totalAmount = TransactionDetailsState.Select( d => d.Amount ).ToList().Sum();
+                }
+                else
+                {
+                    totalAmount = tbSingleAccountAmountMinusFeeCoverageAmount.Text.AsDecimal() + tbSingleAccountFeeCoverageAmount.Text.AsDecimal();
+                }
 
                 if ( cbIsRefund.Checked && totalAmount > 0 )
                 {
@@ -488,8 +498,23 @@ namespace RockWeb.Blocks.Finance
                         }
 
                         txnDetail.AccountId = editorTxnDetail.AccountId;
-                        txnDetail.Amount = UseSimpleAccountMode ? tbSingleAccountAmount.Text.AsDecimal() : editorTxnDetail.Amount;
-                        txnDetail.FeeAmount = UseSimpleAccountMode ? tbSingleAccountFeeAmount.Text.AsDecimalOrNull() : editorTxnDetail.FeeAmount;
+
+                        if ( UseSimpleAccountMode )
+                        {
+                            var accountAmountMinusFeeCoverageAmount = tbSingleAccountAmountMinusFeeCoverageAmount.Text.AsDecimal();
+                            var accountAmountFeeCoverageAmount = tbSingleAccountFeeCoverageAmount.Text.AsDecimalOrNull();
+                            txnDetail.Amount = accountAmountMinusFeeCoverageAmount + ( accountAmountFeeCoverageAmount ?? 0.00M );
+                            txnDetail.FeeCoverageAmount = accountAmountFeeCoverageAmount;
+                            txnDetail.FeeAmount = tbSingleAccountFeeAmount.Text.AsDecimalOrNull();
+
+                        }
+                        else
+                        {
+                            txnDetail.Amount = editorTxnDetail.Amount;
+                            txnDetail.FeeAmount = editorTxnDetail.FeeAmount;
+                            txnDetail.FeeCoverageAmount = editorTxnDetail.FeeCoverageAmount;
+                        }
+
                         txnDetail.Summary = editorTxnDetail.Summary;
 
                         if ( editorTxnDetail.AttributeValues != null )
@@ -693,8 +718,9 @@ namespace RockWeb.Blocks.Finance
         {
             if ( TransactionDetailsState.Count() == 1 )
             {
-                TransactionDetailsState.First().Amount = tbSingleAccountAmount.Text.AsDecimal();
-                tbSingleAccountAmount.Text = string.Empty;
+                var accountAmount = tbSingleAccountAmountMinusFeeCoverageAmount.Text.AsDecimal() + tbSingleAccountFeeCoverageAmount.Text.AsDecimal();
+                TransactionDetailsState.First().Amount = accountAmount;
+                tbSingleAccountAmountMinusFeeCoverageAmount.Text = string.Empty;
                 UseSimpleAccountMode = false;
                 BindAccounts();
             }
@@ -713,21 +739,52 @@ namespace RockWeb.Blocks.Finance
         }
 
         /// <summary>
+        /// Handles the RowDataBound event of the gAccountsView control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="GridViewRowEventArgs"/> instance containing the event data.</param>
+        protected void gAccountsView_RowDataBound( object sender, GridViewRowEventArgs e )
+        {
+            var financialTransactionDetail = ( FinancialTransactionDetail ) e.Row.DataItem;
+            if ( financialTransactionDetail == null )
+            {
+                return;
+            }
+
+            var lAccountsViewAccountName = e.Row.FindControl( "lAccountsViewAccountName" ) as Literal;
+            lAccountsViewAccountName.Text = AccountName( financialTransactionDetail.AccountId );
+
+            var lAccountsViewAmountMinusFeeCoverageAmount = e.Row.FindControl( "lAccountsViewAmountMinusFeeCoverageAmount" ) as Literal;
+            decimal amountMinusFeeCoverageAmount;
+            if ( financialTransactionDetail.FeeCoverageAmount.HasValue )
+            {
+                amountMinusFeeCoverageAmount = financialTransactionDetail.Amount - financialTransactionDetail.FeeCoverageAmount.Value;
+            }
+            else
+            {
+                amountMinusFeeCoverageAmount = financialTransactionDetail.Amount;
+            }
+
+            lAccountsViewAmountMinusFeeCoverageAmount.Text = amountMinusFeeCoverageAmount.FormatAsCurrency();
+        }
+
+
+        /// <summary>
         /// Handles the RowDataBound event of the gAccountsEdit control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="GridViewRowEventArgs"/> instance containing the event data.</param>
-        void gAccountsEdit_RowDataBound( object sender, GridViewRowEventArgs e )
+        protected void gAccountsEdit_RowDataBound( object sender, GridViewRowEventArgs e )
         {
             if ( e.Row.RowType != DataControlRowType.DataRow )
             {
                 return;
             }
 
-            var account = ( FinancialTransactionDetail ) e.Row.DataItem;
+            var financialTransactionDetail = ( FinancialTransactionDetail ) e.Row.DataItem;
 
             // If this is the total row
-            if ( account.AccountId == TotalRowAccountId )
+            if ( financialTransactionDetail.AccountId == TotalRowAccountId )
             {
                 // disable the row select on each column
                 foreach ( TableCell cell in e.Row.Cells )
@@ -736,11 +793,27 @@ namespace RockWeb.Blocks.Finance
                 }
             }
 
+            var lAccountsEditAccountName = e.Row.FindControl( "lAccountsEditAccountName" ) as Literal;
+            lAccountsEditAccountName.Text = AccountName( financialTransactionDetail.AccountId );
+
+            var lAccountsEditAmountMinusFeeCoverageAmount = e.Row.FindControl( "lAccountsEditAmountMinusFeeCoverageAmount" ) as Literal;
+            decimal amountMinusFeeCoverageAmount;
+            if ( financialTransactionDetail.FeeCoverageAmount.HasValue )
+            {
+                amountMinusFeeCoverageAmount = financialTransactionDetail.Amount - financialTransactionDetail.FeeCoverageAmount.Value;
+            }
+            else
+            {
+                amountMinusFeeCoverageAmount = financialTransactionDetail.Amount;
+            }
+
+            lAccountsEditAmountMinusFeeCoverageAmount.Text = amountMinusFeeCoverageAmount.FormatAsCurrency();
+
             // If account is associated with an entity (i.e. registration), or this is the total row do not allow it to be deleted
-            if ( account.EntityTypeId.HasValue || account.AccountId == TotalRowAccountId )
+            if ( financialTransactionDetail.EntityTypeId.HasValue || financialTransactionDetail.AccountId == TotalRowAccountId )
             {
                 // Hide the edit button if this is the total row
-                if ( account.AccountId == TotalRowAccountId )
+                if ( financialTransactionDetail.AccountId == TotalRowAccountId )
                 {
                     var editCell = GetEditCell( e.Row.Cells );
                     var editBtn = editCell.ControlsOfTypeRecursive<LinkButton>().FirstOrDefault();
@@ -837,9 +910,10 @@ namespace RockWeb.Blocks.Finance
                     TransactionDetailsState.Add( txnDetail );
                 }
                 txnDetail.AccountId = apAccount.SelectedValue.AsInteger();
-                txnDetail.Amount = tbAccountAmount.Text.AsDecimal();
+                var feeCoverageAmount = tbAccountFeeCoverageAmount.Text.AsDecimalOrNull();
+                txnDetail.Amount = tbAccountAmountMinusFeeCoverageAmount.Text.AsDecimal() + ( feeCoverageAmount ?? 0.00M );
                 txnDetail.FeeAmount = tbAccountFeeAmount.Text.AsDecimalOrNull();
-                txnDetail.FeeCoverageAmount = tbAccountFeeCoverageAmount.Text.AsDecimalOrNull();
+                txnDetail.FeeCoverageAmount = feeCoverageAmount;
                 txnDetail.Summary = tbAccountSummary.Text;
 
                 txnDetail.LoadAttributes();
@@ -1791,10 +1865,9 @@ namespace RockWeb.Blocks.Finance
             if ( UseSimpleAccountMode && TransactionDetailsState.Count() == 1 )
             {
                 var txnDetail = TransactionDetailsState.First();
-                tbSingleAccountAmount.Label = AccountName( txnDetail.AccountId );
-                tbSingleAccountAmount.Text = txnDetail.Amount.ToString( "N2" );
-                ApplyFeeValueToField( tbSingleAccountFeeAmount, txnDetail );
-                ApplyFeeCoverageValueToField( tbSingleAccountFeeCoverageAmount, txnDetail );
+                SetAccountAmountMinusFeeCoverageTextboxText( tbSingleAccountAmountMinusFeeCoverageAmount, txnDetail );
+                SetAccountFeeAmountTextboxText( tbSingleAccountFeeAmount, txnDetail );
+                SetAccountFeeCoverageAmountTextboxText( tbSingleAccountFeeCoverageAmount, txnDetail );
                 feeColumn.Visible = txnDetail.FeeAmount.HasValue;
                 feeCoverageColumn.Visible = txnDetail.FeeCoverageAmount.HasValue;
             }
@@ -1818,7 +1891,7 @@ namespace RockWeb.Blocks.Finance
                         totalFeeAmount += detail.FeeAmount.Value;
                     }
 
-                    if (detail.FeeCoverageAmount.HasValue)
+                    if ( detail.FeeCoverageAmount.HasValue )
                     {
                         hasFeeCoverageInfo = true;
                         totalFeeCoverageAmount += detail.FeeCoverageAmount.Value;
@@ -1829,7 +1902,7 @@ namespace RockWeb.Blocks.Finance
                 {
                     AccountId = TotalRowAccountId,
                     FeeAmount = hasFeeInfo ? totalFeeAmount : ( decimal? ) null,
-                    FeeCoverageAmount = hasFeeCoverageInfo ? totalFeeCoverageAmount : (decimal?) null,
+                    FeeCoverageAmount = hasFeeCoverageInfo ? totalFeeCoverageAmount : ( decimal? ) null,
                     Amount = totalAmount
                 } );
 
@@ -1861,9 +1934,12 @@ namespace RockWeb.Blocks.Finance
             if ( txnDetail != null )
             {
                 apAccount.SetValue( txnDetail.AccountId );
-                tbAccountAmount.Text = txnDetail.Amount.ToString( "N2" );
-                ApplyFeeValueToField( tbAccountFeeAmount, txnDetail );
-                ApplyFeeCoverageValueToField( tbAccountFeeCoverageAmount, txnDetail );
+                
+
+                SetAccountAmountMinusFeeCoverageTextboxText( tbAccountAmountMinusFeeCoverageAmount, txnDetail );
+
+                SetAccountFeeAmountTextboxText( tbAccountFeeAmount, txnDetail );
+                SetAccountFeeCoverageAmountTextboxText( tbAccountFeeCoverageAmount, txnDetail );
                 tbAccountSummary.Text = txnDetail.Summary;
 
                 if ( txnDetail.Attributes == null )
@@ -1874,7 +1950,7 @@ namespace RockWeb.Blocks.Finance
             else
             {
                 apAccount.SetValue( null );
-                tbAccountAmount.Text = string.Empty;
+                tbAccountAmountMinusFeeCoverageAmount.Text = string.Empty;
                 tbAccountFeeAmount.Text = string.Empty;
                 tbAccountFeeCoverageAmount.Text = string.Empty;
                 tbAccountSummary.Text = string.Empty;
@@ -1888,7 +1964,7 @@ namespace RockWeb.Blocks.Finance
 
             ShowDialog( "ACCOUNT" );
 
-            _focusControl = tbAccountAmount;
+            _focusControl = tbAccountAmountMinusFeeCoverageAmount;
         }
 
         /// <summary>
@@ -1997,7 +2073,7 @@ namespace RockWeb.Blocks.Finance
         }
 
         /// <summary>
-        /// Accounts the name.
+        /// Looks up the AccountName from a lookup, to avoid lazy-loading it from the database
         /// </summary>
         /// <param name="accountId">The account identifier.</param>
         /// <returns></returns>
@@ -2007,6 +2083,7 @@ namespace RockWeb.Blocks.Finance
             {
                 return AccountNames.ContainsKey( accountId.Value ) ? AccountNames[accountId.Value] : string.Empty;
             }
+
             return string.Empty;
         }
 
@@ -2121,27 +2198,57 @@ namespace RockWeb.Blocks.Finance
         }
 
         /// <summary>
-        /// Applies the fee value to field.
-        /// If there isn't a value, the field is hidden.
+        /// Sets the account fee amount textbox text.
         /// </summary>
-        /// <param name="tbSingleAccountFeeAmount">The tb single account fee amount.</param>
+        /// <param name="tbAccountFeeAmount">The tb account fee amount.</param>
         /// <param name="transactionDetail">The transaction detail.</param>
-        private static void ApplyFeeValueToField( CurrencyBox tbSingleAccountFeeAmount, FinancialTransactionDetail transactionDetail )
+        private static void SetAccountFeeAmountTextboxText( CurrencyBox tbAccountFeeAmount, FinancialTransactionDetail transactionDetail )
         {
-            tbSingleAccountFeeAmount.Text = GetFeeAsText( transactionDetail.FeeAmount );
-            tbSingleAccountFeeAmount.Visible = transactionDetail.FeeAmount.HasValue;
+            tbAccountFeeAmount.Text = GetFeeAsText( transactionDetail.FeeAmount );
+            tbAccountFeeAmount.Visible = transactionDetail.FeeAmount.HasValue;
         }
 
         /// <summary>
-        /// Applies the fee coverage value to field.
-        /// If there isn't a value, the field is hidden.
+        /// Sets the account fee coverage amount textbox text.
         /// </summary>
-        /// <param name="tbSingleAccountFeeAmount">The tb single account fee amount.</param>
+        /// <param name="tbAccountFeeCoverageAmount">The tb account fee coverage amount.</param>
         /// <param name="transactionDetail">The transaction detail.</param>
-        private static void ApplyFeeCoverageValueToField( CurrencyBox tbSingleAccountFeeCoverageAmount, FinancialTransactionDetail transactionDetail )
+        private static void SetAccountFeeCoverageAmountTextboxText( CurrencyBox tbAccountFeeCoverageAmount, FinancialTransactionDetail transactionDetail )
         {
-            tbSingleAccountFeeCoverageAmount.Text = GetFeeAsText( transactionDetail.FeeCoverageAmount );
-            tbSingleAccountFeeCoverageAmount.Visible = transactionDetail.FeeCoverageAmount.HasValue;
+            tbAccountFeeCoverageAmount.Text = GetFeeAsText( transactionDetail.FeeCoverageAmount );
+            tbAccountFeeCoverageAmount.Visible = transactionDetail.FeeCoverageAmount.HasValue;
+        }
+
+        /// <summary>
+        /// Sets the account amount minus fee coverage textbox text.
+        /// </summary>
+        /// <param name="tbAccountAmount">The tb account amount.</param>
+        /// <param name="transactionDetail">The transaction detail.</param>
+        private static void SetAccountAmountMinusFeeCoverageTextboxText( CurrencyBox tbAccountAmountMinusFeeCoverageAmount, FinancialTransactionDetail transactionDetail )
+        {
+            /* 2021-01-28 MDP
+
+              FinancialTransactionDetail.Amount includes the FeeCoverageAmount.
+              For example, if a person gave $100.00 but elected to pay $1.80 to cover the fee.
+              FinancialTransactionDetail.Amount would be stored as $101.80 and
+              FinancialTransactionDetail.FeeCoverageAmount would be stored as $1.80.
+
+              However, when the FinancialTransactionDetail.Amount is used in this EditBox,
+              don't include the FinancialTransactionDetail.FeeCoverageAmount.
+              So in the above example, the Textbox would say
+             
+             */
+
+            var feeCoverageAmount = transactionDetail.FeeCoverageAmount;
+            var accountAmount = transactionDetail.Amount;
+            if ( feeCoverageAmount.HasValue )
+            {
+                tbAccountAmountMinusFeeCoverageAmount.Text = ( accountAmount - feeCoverageAmount.Value ).ToString( "N2" );
+            }
+            else
+            {
+                tbAccountAmountMinusFeeCoverageAmount.Text = accountAmount.ToString( "N2" );
+            }
         }
 
         /// <summary>

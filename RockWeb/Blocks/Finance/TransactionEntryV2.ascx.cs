@@ -1161,7 +1161,7 @@ mission. We are so grateful for your commitment.</p>
                 cbGetPaymentInfoCoverTheFeeCreditCard.Visible = this.GetAttributeValue( AttributeKey.EnableCreditCard ).AsBoolean();
                 var totalAmount = caapPromptForAccountAmounts.AccountAmounts.Sum( a => a.Amount ?? 0.00M );
                 var creditCardFeeCoverageAmount = Decimal.Round( totalAmount * ( creditCardFeeCoveragePercentage.Value / 100.0M ), 2 );
-                cbGetPaymentInfoCoverTheFeeCreditCard.Text = string.Format( "Optionally add {0} to cover Credit Card processing fee.", creditCardFeeCoverageAmount.FormatAsCurrency() );
+                cbGetPaymentInfoCoverTheFeeCreditCard.Text = string.Format( "Optionally add {0} to cover processing fee.", creditCardFeeCoverageAmount.FormatAsCurrency() );
             }
 
             var achFeeCoverageAmount = feeCoverageGatewayComponent.GetACHFeeCoverageAmount( FinancialGateway );
@@ -1169,7 +1169,7 @@ mission. We are so grateful for your commitment.</p>
             {
                 pnlGetPaymentInfoCoverTheFee.Visible = true;
                 cbGetPaymentInfoCoverTheFeeACH.Visible = this.GetAttributeValue( AttributeKey.EnableACH ).AsBoolean();
-                cbGetPaymentInfoCoverTheFeeACH.Text = string.Format( "Optionally add {0} to cover ACH processing fee.", achFeeCoverageAmount.FormatAsCurrency() );
+                cbGetPaymentInfoCoverTheFeeACH.Text = string.Format( "Optionally add {0} to cover processing fee.", achFeeCoverageAmount.FormatAsCurrency() );
             }
 
             if ( achFeeCoverageAmount > 0 || creditCardFeeCoveragePercentage > 0 )
@@ -1211,7 +1211,9 @@ mission. We are so grateful for your commitment.</p>
                     return;
                 }
 
-                cbGiveNowCoverTheFee.Text = string.Format( "Optionally add {0}<span class='js-coverthefee-checkbox-fee-amount-text'></span> to cover processing fee.", GlobalAttributesCache.Value( "CurrencySymbol" ) );
+                cbGiveNowCoverTheFee.Text = string.Format(
+                    "Optionally add {0}<span class='js-coverthefee-checkbox-fee-amount-text'></span> to cover processing fee.",
+                    GlobalAttributesCache.Value( "CurrencySymbol" ) );
             }
 
             cbGiveNowCoverTheFee.Visible = true;
