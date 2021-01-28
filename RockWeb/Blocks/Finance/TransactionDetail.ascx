@@ -44,6 +44,7 @@
                                 <div class="col-sm-6">
                                     <Rock:CurrencyBox ID="tbSingleAccountAmount" label="Amount" runat="server" CssClass="input-width-lg"></Rock:CurrencyBox>
                                     <Rock:CurrencyBox ID="tbSingleAccountFeeAmount" label="Processing Fees" runat="server" CssClass="input-width-lg" Help="The fee amount associated with the processing of the transaction."></Rock:CurrencyBox>
+                                    <Rock:CurrencyBox ID="tbSingleAccountFeeCoverageAmount" runat="server" Label="Covered Fee" Required="false" ValidationGroup="Account" Help="The fee amount that the person elected to cover." />
                                 </div>
                                 <div class="col-sm-6">
                                     <div class="form-group">
@@ -62,6 +63,7 @@
                                             <ItemTemplate><%# AccountName( (int)Eval("AccountId") ) %></ItemTemplate>
                                         </Rock:RockTemplateField>
                                         <Rock:RockBoundField DataField="Summary" SortExpression="Summary" />
+                                        <Rock:CurrencyField HeaderText="Fee Coverage" DataField="FeeCoverageAmount" SortExpression="FeeCoverageAmount" ItemStyle-HorizontalAlign="Right" HeaderStyle-HorizontalAlign="Right" />
                                         <Rock:CurrencyField HeaderText="Processing Fees" DataField="FeeAmount" SortExpression="FeeAmount" ItemStyle-HorizontalAlign="Right" HeaderStyle-HorizontalAlign="Right" />
                                         <Rock:CurrencyField HeaderText="Amount" DataField="Amount" SortExpression="Amount" ItemStyle-HorizontalAlign="Right" HeaderStyle-HorizontalAlign="Right" />
                                     </Columns>
@@ -161,6 +163,7 @@
                                         <ItemTemplate><%# AccountName( (int)Eval("AccountId") ) %></ItemTemplate>
                                     </Rock:RockTemplateField>
                                     <Rock:RockBoundField DataField="Summary" SortExpression="Summary" />
+                                    <Rock:CurrencyField HeaderText="Fee Coverage" DataField="FeeCoverageAmount" SortExpression="FeeCoverageAmount" ItemStyle-HorizontalAlign="Right" HeaderStyle-HorizontalAlign="Right" />
                                     <Rock:CurrencyField HeaderText="Processing Fees" DataField="FeeAmount" SortExpression="FeeAmount" ItemStyle-HorizontalAlign="Right" HeaderStyle-HorizontalAlign="Right" />
                                     <Rock:CurrencyField HeaderText="Amount" DataField="Amount" SortExpression="Amount" ItemStyle-HorizontalAlign="Right" HeaderStyle-HorizontalAlign="Right" />
                                 </Columns>
@@ -236,6 +239,7 @@
                         <Rock:AccountPicker ID="apAccount" runat="server" Label="Account" Required="true" ValidationGroup="Account" />
                         <Rock:CurrencyBox ID="tbAccountAmount" runat="server" Label="Amount" Required="true" ValidationGroup="Account" />
                         <Rock:CurrencyBox ID="tbAccountFeeAmount" runat="server" Label="Processing Fees" Required="false" ValidationGroup="Account" Help="The fee amount associated with the processing of the transaction." />
+                        <Rock:CurrencyBox ID="tbAccountFeeCoverageAmount" runat="server" Label="Covered Fee" Required="false" ValidationGroup="Account" Help="The fee amount that the person elected to cover." />
                     </div>
                     <div class="col-md-6">
                         <Rock:RockTextBox ID="tbAccountSummary" runat="server" Label="Summary" TextMode="MultiLine" Rows="3" ValidationGroup="Account" />

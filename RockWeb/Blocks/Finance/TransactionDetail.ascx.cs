@@ -839,6 +839,7 @@ namespace RockWeb.Blocks.Finance
                 txnDetail.AccountId = apAccount.SelectedValue.AsInteger();
                 txnDetail.Amount = tbAccountAmount.Text.AsDecimal();
                 txnDetail.FeeAmount = tbAccountFeeAmount.Text.AsDecimalOrNull();
+                txnDetail.FeeCoverageAmount = tbAccountFeeCoverageAmount.Text.AsDecimalOrNull();
                 txnDetail.Summary = tbAccountSummary.Text;
 
                 txnDetail.LoadAttributes();
@@ -1462,17 +1463,24 @@ namespace RockWeb.Blocks.Finance
 
                 var accounts = txn.TransactionDetails.ToList();
                 var totalFeeAmount = txn.TotalFeeAmount;
+                var totalFeeCoverageAmount = txn.TotalFeeCoverageAmount;
+
                 var hasFeeInfo = totalFeeAmount.HasValue;
+                var hasFeeCoverageInfo = totalFeeCoverageAmount.HasValue;
 
                 accounts.Add( new FinancialTransactionDetail
                 {
                     AccountId = TotalRowAccountId,
                     FeeAmount = totalFeeAmount,
+                    FeeCoverageAmount = totalFeeCoverageAmount,
                     Amount = txn.TotalAmount
                 } );
 
                 var feeColumn = GetFeeColumn( gAccountsView );
                 feeColumn.Visible = hasFeeInfo;
+
+                var feeCoverageColumn = GetFeeCoverageColumn( gAccountsView );
+                feeCoverageColumn.Visible = hasFeeCoverageInfo;
 
                 gAccountsView.DataSource = accounts;
                 gAccountsView.DataBind();
@@ -1778,6 +1786,7 @@ namespace RockWeb.Blocks.Finance
         private void BindAccounts()
         {
             var feeColumn = GetFeeColumn( gAccountsEdit );
+            var feeCoverageColumn = GetFeeCoverageColumn( gAccountsEdit );
 
             if ( UseSimpleAccountMode && TransactionDetailsState.Count() == 1 )
             {
@@ -1785,7 +1794,9 @@ namespace RockWeb.Blocks.Finance
                 tbSingleAccountAmount.Label = AccountName( txnDetail.AccountId );
                 tbSingleAccountAmount.Text = txnDetail.Amount.ToString( "N2" );
                 ApplyFeeValueToField( tbSingleAccountFeeAmount, txnDetail );
+                ApplyFeeCoverageValueToField( tbSingleAccountFeeCoverageAmount, txnDetail );
                 feeColumn.Visible = txnDetail.FeeAmount.HasValue;
+                feeCoverageColumn.Visible = txnDetail.FeeCoverageAmount.HasValue;
             }
             else
             {
@@ -1793,7 +1804,9 @@ namespace RockWeb.Blocks.Finance
 
                 var totalAmount = 0m;
                 var totalFeeAmount = 0m;
+                var totalFeeCoverageAmount = 0m;
                 var hasFeeInfo = false;
+                var hasFeeCoverageInfo = false;
 
                 foreach ( var detail in accounts )
                 {
@@ -1804,18 +1817,26 @@ namespace RockWeb.Blocks.Finance
                         hasFeeInfo = true;
                         totalFeeAmount += detail.FeeAmount.Value;
                     }
+
+                    if (detail.FeeCoverageAmount.HasValue)
+                    {
+                        hasFeeCoverageInfo = true;
+                        totalFeeCoverageAmount += detail.FeeCoverageAmount.Value;
+                    }
                 }
 
                 accounts.Add( new FinancialTransactionDetail
                 {
                     AccountId = TotalRowAccountId,
                     FeeAmount = hasFeeInfo ? totalFeeAmount : ( decimal? ) null,
+                    FeeCoverageAmount = hasFeeCoverageInfo ? totalFeeCoverageAmount : (decimal?) null,
                     Amount = totalAmount
                 } );
 
                 gAccountsEdit.DataSource = accounts;
                 gAccountsEdit.DataBind();
                 feeColumn.Visible = hasFeeInfo;
+                feeCoverageColumn.Visible = hasFeeCoverageInfo;
             }
         }
 
@@ -1842,6 +1863,7 @@ namespace RockWeb.Blocks.Finance
                 apAccount.SetValue( txnDetail.AccountId );
                 tbAccountAmount.Text = txnDetail.Amount.ToString( "N2" );
                 ApplyFeeValueToField( tbAccountFeeAmount, txnDetail );
+                ApplyFeeCoverageValueToField( tbAccountFeeCoverageAmount, txnDetail );
                 tbAccountSummary.Text = txnDetail.Summary;
 
                 if ( txnDetail.Attributes == null )
@@ -1854,6 +1876,7 @@ namespace RockWeb.Blocks.Finance
                 apAccount.SetValue( null );
                 tbAccountAmount.Text = string.Empty;
                 tbAccountFeeAmount.Text = string.Empty;
+                tbAccountFeeCoverageAmount.Text = string.Empty;
                 tbAccountSummary.Text = string.Empty;
 
                 txnDetail = new FinancialTransactionDetail();
@@ -2099,6 +2122,7 @@ namespace RockWeb.Blocks.Finance
 
         /// <summary>
         /// Applies the fee value to field.
+        /// If there isn't a value, the field is hidden.
         /// </summary>
         /// <param name="tbSingleAccountFeeAmount">The tb single account fee amount.</param>
         /// <param name="transactionDetail">The transaction detail.</param>
@@ -2109,6 +2133,18 @@ namespace RockWeb.Blocks.Finance
         }
 
         /// <summary>
+        /// Applies the fee coverage value to field.
+        /// If there isn't a value, the field is hidden.
+        /// </summary>
+        /// <param name="tbSingleAccountFeeAmount">The tb single account fee amount.</param>
+        /// <param name="transactionDetail">The transaction detail.</param>
+        private static void ApplyFeeCoverageValueToField( CurrencyBox tbSingleAccountFeeCoverageAmount, FinancialTransactionDetail transactionDetail )
+        {
+            tbSingleAccountFeeCoverageAmount.Text = GetFeeAsText( transactionDetail.FeeCoverageAmount );
+            tbSingleAccountFeeCoverageAmount.Visible = transactionDetail.FeeCoverageAmount.HasValue;
+        }
+
+        /// <summary>
         /// Gets the fee column.
         /// </summary>
         /// <param name="grid">The grid.</param>
@@ -2116,6 +2152,11 @@ namespace RockWeb.Blocks.Finance
         private static CurrencyField GetFeeColumn( Grid grid )
         {
             return grid.ColumnsOfType<CurrencyField>().First( c => c.DataField == "FeeAmount" );
+        }
+
+        private static CurrencyField GetFeeCoverageColumn( Grid grid )
+        {
+            return grid.ColumnsOfType<CurrencyField>().First( c => c.DataField == "FeeCoverageAmount" );
         }
 
         #endregion
