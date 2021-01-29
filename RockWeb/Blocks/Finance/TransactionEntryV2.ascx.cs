@@ -790,9 +790,31 @@ mission. We are so grateful for your commitment.</p>
             public const string FrequencyOptions = "Frequency";
 
             public const string StartDate = "StartDate";
+
+            /// <summary>
+            /// Overrides how campus is determined (instead of basing on Person, etc).
+            /// If CampusId is specified in the URL, that would take precedence for how the campus is determined.
+            /// For example, when creating a new person/family, setting the Account Picker's campus, etc
+            /// </summary>
+            public const string CampusId = "CampusId";
         }
 
         #endregion
+
+        #region ViewState Keys
+
+        private static class ViewStateKey
+        {
+            // The Campus Id to use. This is usually based on the current person
+            // but could be overridden by setting CampusId in the url.
+            public const string SelectedCampusId = "SelectedCampusId";
+
+            public const string HostPaymentInfoSubmitScript = "HostPaymentInfoSubmitScript";
+            public const string TransactionCode = "TransactionCode";
+            public const string CustomerTokenEncrypted = "TransactionCode";
+        }
+
+        #endregion ViewState Keys
 
         #region enums
 
@@ -905,12 +927,12 @@ mission. We are so grateful for your commitment.</p>
         {
             get
             {
-                return ViewState["HostPaymentInfoSubmitScript"] as string;
+                return ViewState[ViewStateKey.HostPaymentInfoSubmitScript] as string;
             }
 
             set
             {
-                ViewState["HostPaymentInfoSubmitScript"] = value;
+                ViewState[ViewStateKey.HostPaymentInfoSubmitScript] = value;
             }
         }
 
@@ -919,8 +941,8 @@ mission. We are so grateful for your commitment.</p>
         /// </summary>
         protected string TransactionCode
         {
-            get { return ViewState["TransactionCode"] as string ?? string.Empty; }
-            set { ViewState["TransactionCode"] = value; }
+            get { return ViewState[ViewStateKey.TransactionCode] as string ?? string.Empty; }
+            set { ViewState[ViewStateKey.TransactionCode] = value; }
         }
 
         /// <summary>
@@ -932,8 +954,14 @@ mission. We are so grateful for your commitment.</p>
         /// </value>
         protected string CustomerTokenEncrypted
         {
-            get { return ViewState["CustomerTokenEncrypted"] as string ?? string.Empty; }
-            set { ViewState["CustomerTokenEncrypted"] = value; }
+            get { return ViewState[ViewStateKey.CustomerTokenEncrypted] as string ?? string.Empty; }
+            set { ViewState[ViewStateKey.CustomerTokenEncrypted] = value; }
+        }
+
+        protected int? SelectedCampusId
+        {
+            get { return ViewState[ViewStateKey.SelectedCampusId] as int?; }
+            set { ViewState[ViewStateKey.SelectedCampusId] = value; }
         }
 
         #endregion Properties
@@ -1167,7 +1195,7 @@ mission. We are so grateful for your commitment.</p>
             if ( creditCardFeeCoveragePercentage > 0 )
             {
                 pnlGetPaymentInfoCoverTheFeeCreditCard.Visible = this.GetAttributeValue( AttributeKey.EnableCreditCard ).AsBoolean();
-                
+
                 var creditCardFeeCoverageAmount = decimal.Round( totalAmount * ( creditCardFeeCoveragePercentage.Value / 100.0M ), 2 );
                 cbGetPaymentInfoCoverTheFeeCreditCard.Text = string.Format( "Optionally add {0} to cover processing fee.", creditCardFeeCoverageAmount.FormatAsCurrency() );
                 hfAmountWithCoveredFeeCreditCard.Value = ( totalAmount + creditCardFeeCoverageAmount ).FormatAsCurrency();
@@ -2003,7 +2031,7 @@ mission. We are so grateful for your commitment.</p>
                 hfTargetPersonId.Value = string.Empty;
             }
 
-            SetAccountPickerCampus( targetPerson );
+            SetCampus( targetPerson );
 
             pnlLoggedInNameDisplay.Visible = targetPerson != null;
             if ( targetPerson != null )
@@ -2211,7 +2239,7 @@ mission. We are so grateful for your commitment.</p>
                 newPersonOrBusiness.RecordStatusValueId = dvcRecordStatus.Id;
             }
 
-            int? campusId = caapPromptForAccountAmounts.CampusId;
+            int? campusId = this.SelectedCampusId;
 
             // Create Person and Family, and set their primary campus to the one they gave money to
             Group familyGroup = PersonService.SaveNewPerson( newPersonOrBusiness, rockContext, campusId, false );
@@ -2426,22 +2454,30 @@ mission. We are so grateful for your commitment.</p>
         }
 
         /// <summary>
-        /// Sets the account picker campus from person
+        /// Sets the selected campus, and account picker campus from person
+        /// or from a CampusId url parameter
         /// </summary>
-        private void SetAccountPickerCampus( Person person )
+        private void SetCampus( Person person )
         {
-            int? defaultCampusId = null;
+            var pageParameterCampusId = this.PageParameter( PageParameterKey.CampusId ).AsIntegerOrNull(); ;
 
-            if ( person != null )
+            if ( pageParameterCampusId.HasValue )
             {
-                var personCampus = person.GetCampus();
-                if ( personCampus != null )
+                this.SelectedCampusId = pageParameterCampusId.Value;
+            }
+            else
+            {
+                if ( person != null )
                 {
-                    defaultCampusId = personCampus.Id;
+                    var personCampus = person.GetCampus();
+                    if ( personCampus != null )
+                    {
+                        this.SelectedCampusId = personCampus.Id;
+                    }
                 }
             }
 
-            caapPromptForAccountAmounts.CampusId = defaultCampusId;
+            caapPromptForAccountAmounts.CampusId = this.SelectedCampusId;
         }
 
         /// <summary>

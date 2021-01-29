@@ -275,12 +275,15 @@
             }
 
             function updateCoverTheFeePercent(feePercent) {
+                debugger
                 var $coverTheFeeContainer = $('.js-coverthefee-container');
                 var $coverTheFeeAmountText = $('.js-coverthefee-checkbox-fee-amount-text');
 
                 var totalAmt = Number(0);
 
-                $('.js-amount-input .form-control').each(function (index) {
+                var $amountInputs = $('input.js-amount-input, .js-amount-input input');
+
+                $amountInputs.each(function (index) {
                     var itemValue = $(this).val();
                     if (itemValue && !isNaN(itemValue)) {
                         var num = Number(itemValue);
@@ -333,9 +336,11 @@
                 if (coverTheFeePercent > 0.00) {
                     updateCoverTheFeePercent(coverTheFeePercent);
 
+                    var $amountInputs = $('input.js-amount-input, .js-amount-input input');
+
                     // As amounts are entered, update the 'cover the fees' checkbox text
                     // Do it on 'keyup' instead of 'change'. Otherwise, they might not see if if they go straight to the GiveNow button
-                    $('.js-amount-input input').keyup(function () {
+                    $amountInputs.keyup(function () {
                         updateCoverTheFeePercent(coverTheFeePercent);
                     });
                 }
