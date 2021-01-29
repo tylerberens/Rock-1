@@ -83,7 +83,10 @@
                                 <asp:Literal ID="lAmountSummaryText" runat="server" />
                             </div>
                             <div class="amount-display">
-                                <asp:Literal runat="server" ID="lAmountSummaryAmount" />
+                                <Rock:HiddenFieldWithClass ID="hfAmountWithoutCoveredFee" runat="server" CssClass="js-amount-without-covered-fee" />
+
+                                <span class="js-account-summary-amount">
+                                    <asp:Literal runat="server" ID="lAmountSummaryAmount" /></span>
                             </div>
                         </asp:Panel>
 
@@ -96,9 +99,14 @@
                             <Rock:NotificationBox ID="nbPaymentTokenError" runat="server" NotificationBoxType="Validation" Visible="false" />
 
                             <%-- Cover the Fee checkbox (When a Saved Account is not selected and we know the amount already) --%>
-                            <asp:Panel ID="pnlGetPaymentInfoCoverTheFee" runat="server">
-                                <Rock:RockCheckBox ID="cbGetPaymentInfoCoverTheFeeCreditCard" runat="server" Text="##" CssClass="js-getpaymentinfo-coverthefee-creditcard" Visible="false" />
-                                <Rock:RockCheckBox ID="cbGetPaymentInfoCoverTheFeeACH" runat="server" Text="##" CssClass="js-getpaymentinfo-coverthefee-ach" Visible="false" />
+                            <asp:Panel ID="pnlGetPaymentInfoCoverTheFeeCreditCard" runat="server">
+                                <Rock:RockCheckBox ID="cbGetPaymentInfoCoverTheFeeCreditCard" runat="server" Text="##" CssClass="js-getpaymentinfo-select-coverthefee-creditcard" />
+                                <Rock:HiddenFieldWithClass ID="hfAmountWithCoveredFeeCreditCard" runat="server" CssClass="js-amount-with-covered-fee-creditcard" />
+                            </asp:Panel>
+
+                            <asp:Panel ID="pnlGetPaymentInfoCoverTheFeeACH" runat="server">
+                                <Rock:RockCheckBox ID="cbGetPaymentInfoCoverTheFeeACH" runat="server" Text="##" CssClass="js-getpaymentinfo-select-coverthefee-ach" />
+                                <Rock:HiddenFieldWithClass ID="hfAmountWithCoveredFeeACH" runat="server" CssClass="js-amount-with-covered-fee-ach" />
                             </asp:Panel>
 
                             <div class="navigation actions">
@@ -253,6 +261,19 @@
                 }
             }
 
+            function toggleCoverTheFeeSummaryAmount() {
+                var showWithFee = $('.js-getpaymentinfo-select-coverthefee-creditcard, .js-getpaymentinfo-select-coverthefee-ach').is(':checked');
+                var $amountSummaryAmount = $('.js-account-summary-amount');
+                var $amountWithFee = $('.js-amount-with-covered-fee-creditcard, .js-amount-with-covered-fee-ach');
+                var $amountWithoutFee = $('.js-amount-without-covered-fee')
+                if (showWithFee) {
+                    $amountSummaryAmount.text($amountWithFee.val());
+                }
+                else {
+                    $amountSummaryAmount.text($amountWithoutFee.val())
+                }
+            }
+
             function updateCoverTheFeePercent(feePercent) {
                 var $coverTheFeeContainer = $('.js-coverthefee-container');
                 var $coverTheFeeAmountText = $('.js-coverthefee-checkbox-fee-amount-text');
@@ -281,7 +302,7 @@
             Sys.Application.add_load(function () {
 
                 $('.js-submit-hostedpaymentinfo').off().on('click', function (e) {
-                    // prevent the btnGetPaymentInfoNext autopostback event from firing by doing stopImmediatePropagation and returning false
+                    // Prevent the btnGetPaymentInfoNext autopostback event from firing by doing stopImmediatePropagation and returning false
                     e.stopImmediatePropagation();
 
                     <%=HostPaymentInfoSubmitScript%>
@@ -296,6 +317,15 @@
                     // Hide or show a div based on selection of checkbox
                     $('.js-save-account').on('click', function () {
                         showSaveAccount();
+                    });
+                }
+
+                var $paymentInfoCoverTheFeeCheckbox = $('.js-getpaymentinfo-select-coverthefee-creditcard, .js-getpaymentinfo-select-coverthefee-ach');
+                if ($paymentInfoCoverTheFeeCheckbox.length) {
+                    toggleCoverTheFeeSummaryAmount();
+
+                    $paymentInfoCoverTheFeeCheckbox.off().on('click', function () {
+                        toggleCoverTheFeeSummaryAmount();
                     });
                 }
 

@@ -1137,7 +1137,12 @@ mission. We are so grateful for your commitment.</p>
         /// </summary>
         private void ConfigureCoverTheFees()
         {
-            pnlGetPaymentInfoCoverTheFee.Visible = false;
+            pnlGetPaymentInfoCoverTheFeeCreditCard.Visible = false;
+            pnlGetPaymentInfoCoverTheFeeACH.Visible = false;
+            var totalAmount = caapPromptForAccountAmounts.AccountAmounts.Sum( a => a.Amount ?? 0.00M );
+
+            hfAmountWithoutCoveredFee.Value = totalAmount.FormatAsCurrency();
+
             cbGiveNowCoverTheFee.Visible = false;
             var enableFeeCoverage = this.GetAttributeValue( AttributeKey.EnableFeeCoverage ).AsBoolean();
             if ( !enableFeeCoverage )
@@ -1161,19 +1166,19 @@ mission. We are so grateful for your commitment.</p>
             var creditCardFeeCoveragePercentage = feeCoverageGatewayComponent.GetCreditCardFeeCoveragePercentage( FinancialGateway );
             if ( creditCardFeeCoveragePercentage > 0 )
             {
-                pnlGetPaymentInfoCoverTheFee.Visible = true;
-                cbGetPaymentInfoCoverTheFeeCreditCard.Visible = this.GetAttributeValue( AttributeKey.EnableCreditCard ).AsBoolean();
-                var totalAmount = caapPromptForAccountAmounts.AccountAmounts.Sum( a => a.Amount ?? 0.00M );
+                pnlGetPaymentInfoCoverTheFeeCreditCard.Visible = this.GetAttributeValue( AttributeKey.EnableCreditCard ).AsBoolean();
+                
                 var creditCardFeeCoverageAmount = decimal.Round( totalAmount * ( creditCardFeeCoveragePercentage.Value / 100.0M ), 2 );
                 cbGetPaymentInfoCoverTheFeeCreditCard.Text = string.Format( "Optionally add {0} to cover processing fee.", creditCardFeeCoverageAmount.FormatAsCurrency() );
+                hfAmountWithCoveredFeeCreditCard.Value = ( totalAmount + creditCardFeeCoverageAmount ).FormatAsCurrency();
             }
 
             var achFeeCoverageAmount = feeCoverageGatewayComponent.GetACHFeeCoverageAmount( FinancialGateway );
             if ( achFeeCoverageAmount > 0 )
             {
-                pnlGetPaymentInfoCoverTheFee.Visible = true;
-                cbGetPaymentInfoCoverTheFeeACH.Visible = this.GetAttributeValue( AttributeKey.EnableACH ).AsBoolean();
+                pnlGetPaymentInfoCoverTheFeeACH.Visible = this.GetAttributeValue( AttributeKey.EnableACH ).AsBoolean();
                 cbGetPaymentInfoCoverTheFeeACH.Text = string.Format( "Optionally add {0} to cover processing fee.", achFeeCoverageAmount.FormatAsCurrency() );
+                hfAmountWithCoveredFeeACH.Value = ( totalAmount + achFeeCoverageAmount ).FormatAsCurrency();
             }
 
             if ( achFeeCoverageAmount > 0 || creditCardFeeCoveragePercentage > 0 )
@@ -1191,7 +1196,6 @@ mission. We are so grateful for your commitment.</p>
             {
                 // No saved account selected, so don't show the option until the Payment Info step
                 cbGiveNowCoverTheFee.Visible = false;
-                pnlGetPaymentInfoCoverTheFee.Visible = true;
                 return;
             }
 
@@ -1250,15 +1254,17 @@ mission. We are so grateful for your commitment.</p>
             if ( achSelected )
             {
                 var feeCoverageACHAmount = feeCoverageGatewayComponent.GetACHFeeCoverageAmount( this.FinancialGateway );
-                cbGetPaymentInfoCoverTheFeeACH.Visible = feeCoverageACHAmount > 0;
-                cbGetPaymentInfoCoverTheFeeCreditCard.Visible = false;
+                pnlGetPaymentInfoCoverTheFeeACH.Visible = feeCoverageACHAmount > 0;
+                pnlGetPaymentInfoCoverTheFeeCreditCard.Visible = false;
             }
             else
             {
                 var creditCardFeeCoveragePercentage = feeCoverageGatewayComponent.GetCreditCardFeeCoveragePercentage( this.FinancialGateway );
-                cbGetPaymentInfoCoverTheFeeACH.Visible = false;
-                cbGetPaymentInfoCoverTheFeeCreditCard.Visible = creditCardFeeCoveragePercentage > 0;
+                pnlGetPaymentInfoCoverTheFeeACH.Visible = false;
+                pnlGetPaymentInfoCoverTheFeeCreditCard.Visible = creditCardFeeCoveragePercentage > 0;
             }
+
+            UpdateAccountSummaryAmount();
         }
 
         /// <summary>
@@ -3063,8 +3069,6 @@ mission. We are so grateful for your commitment.</p>
                 return 0.00M;
             }
 
-            var selectedAccountAmounts = caapPromptForAccountAmounts.AccountAmounts.Where( a => a.Amount.HasValue && a.Amount != 0 ).ToArray();
-
             decimal? feeCoverageCreditCardPercent = null;
             decimal? feeCoverageACHAmount = null;
 
@@ -3101,6 +3105,8 @@ mission. We are so grateful for your commitment.</p>
                     feeCoverageCreditCardPercent = feeCoverageGatewayComponent.GetCreditCardFeeCoveragePercentage( this.FinancialGateway );
                 }
             }
+
+            var selectedAccountAmounts = caapPromptForAccountAmounts.AccountAmounts.Where( a => a.Amount.HasValue && a.Amount != 0 ).ToArray();
 
             decimal totalAmount = selectedAccountAmounts.Sum( a => a.Amount.Value );
             if ( feeCoverageACHAmount.HasValue && feeCoverageACHAmount > 0.00M )
@@ -3259,10 +3265,7 @@ mission. We are so grateful for your commitment.</p>
 
                 lAmountSummaryText.Text = GetAttributeValue( AttributeKey.AmountSummaryTemplate ).ResolveMergeFields( amountSummaryMergeFields );
 
-                var totalPreFeeAmount = caapPromptForAccountAmounts.AccountAmounts.Sum( a => a.Amount ?? 0.00M );
-                var coverTheFeeAmount = GetSelectedFeeCoverageAmount();
-                var totalAmount = totalPreFeeAmount + coverTheFeeAmount;
-                lAmountSummaryAmount.Text = totalAmount.FormatAsCurrency();
+                UpdateAccountSummaryAmount();
 
                 if ( UsingPersonSavedAccount() )
                 {
@@ -3279,6 +3282,17 @@ mission. We are so grateful for your commitment.</p>
                 nbPromptForAmountsWarning.Visible = true;
                 nbPromptForAmountsWarning.Text = "Please specify an amount";
             }
+        }
+
+        /// <summary>
+        /// Updates the account summary amount.
+        /// </summary>
+        private void UpdateAccountSummaryAmount()
+        {
+            var totalPreFeeAmount = caapPromptForAccountAmounts.AccountAmounts.Sum( a => a.Amount ?? 0.00M );
+            var coverTheFeeAmount = GetSelectedFeeCoverageAmount();
+            var totalAmount = totalPreFeeAmount + coverTheFeeAmount;
+            lAmountSummaryAmount.Text = totalAmount.FormatAsCurrency();
         }
 
         /// <summary>

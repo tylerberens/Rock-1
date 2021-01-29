@@ -301,6 +301,9 @@
                         self.$selectedPaymentType.val('card');
                         self.$creditCardContainer.show();
                         self.$achContainer.hide();
+                        if (self.currencyChangePostbackScript) {
+                            window.location = self.currencyChangePostbackScript;
+                        }
                     });
                 };
 
@@ -316,6 +319,9 @@
                         self.$selectedPaymentType.val('ach');
                         self.$creditCardContainer.hide();
                         self.$achContainer.show();
+                        if (self.currencyChangePostbackScript) {
+                            window.location = self.currencyChangePostbackScript;
+                        }
                     });
                 };
 
@@ -346,24 +352,18 @@
                 }
 
                 if (selectedPaymentTypeVal == 'card' && enabledPaymentTypes.includes('card')) {
-                    self.$paymentButtonACH.removeClass('active');
-                    self.$paymentButtonCreditCard.addClass('active');
+                    self.$paymentButtonACH.removeClass('active btn-primary').addClass('btn-default');
+                    self.$paymentButtonCreditCard.removeClass('btn-default').addClass('btn-primary active');
                     self.$selectedPaymentType.val('card');
                     self.$creditCardContainer.show();
                     self.$achContainer.hide();
-                    if (currencyChangePostbackScript) {
-                        window.location = self.currencyChangePostbackScript;
-                    }
                 }
                 else {
-                    self.$paymentButtonCreditCard.removeClass('active');
-                    self.$paymentButtonACH.addClass('active');
+                    self.$paymentButtonCreditCard.removeClass('active btn-primary').addClass('btn-default');
+                    self.$paymentButtonACH.removeClass('btn-default').addClass('btn-primary active')
                     self.$selectedPaymentType.val('ach');
                     self.$creditCardContainer.hide();
                     self.$achContainer.show();
-                    if (currencyChangePostbackScript) {
-                        window.location = self.currencyChangePostbackScript;
-                    }
                 }
             },
 
