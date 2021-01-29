@@ -87,7 +87,7 @@ namespace RockWeb.Blocks.Finance
         {
             this.NavigateToCurrentPageReference();
         }
-        
+
         /// <summary>
         /// Handles the Click event of the bbtnApply control.
         /// </summary>
@@ -102,9 +102,67 @@ namespace RockWeb.Blocks.Finance
 
         #region Methods
 
+        /// <summary>
+        /// Shows the report output.
+        /// </summary>
         public void ShowReportOutput()
         {
-            // TODO
+            var rockContext = new RockContext();
+            var financialTransactionDetailService = new FinancialTransactionDetailService( rockContext );
+
+            var qry = financialTransactionDetailService.Queryable();
+
+            var startDateTime = srpFilterDates.SelectedDateRange.Start;
+            var endDateTime = srpFilterDates.SelectedDateRange.End;
+
+            qry = qry.Where( a => a.Transaction.TransactionDateTime >= startDateTime && a.Transaction.TransactionDateTime < endDateTime );
+
+            var selectedAccountIds = apAccounts.SelectedIds;
+            if ( selectedAccountIds.Any() )
+            {
+                if ( selectedAccountIds.Count() == 1 )
+                {
+                    var accountId = selectedAccountIds[0];
+                    qry = qry.Where( a => a.AccountId == accountId );
+                }
+                else
+                {
+                    qry = qry.Where( a => selectedAccountIds.Contains( a.AccountId ) );
+                }
+            }
+
+            var totals = qry.Select( a => new { a.FeeCoverageAmount, a.TransactionId, a.Transaction.FinancialPaymentDetail.CurrencyTypeValueId } );
+            var transactionFeeCoverageList = totals.ToList();
+
+            var totalsByTransactionId = transactionFeeCoverageList
+                .GroupBy( a => a.TransactionId )
+                .Select( a => new
+                {
+                    TransactionId = a.Key,
+                    // There is only only one currency per transaction, so FirstOrDefault works here
+                    CurrencyTypeValueId = a.FirstOrDefault().CurrencyTypeValueId,
+                    FeeCoverageAmount = a.Sum( x => x.FeeCoverageAmount ?? 0.00M ),
+                } );
+
+            var currencyTypeIdCreditCard = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD.AsGuid() );
+            var currencyTypeIdACH = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH.AsGuid() );
+
+            var creditCardTransactions = totalsByTransactionId.Where( a => a.CurrencyTypeValueId == currencyTypeIdCreditCard ).ToList();
+            var achTransactions = totalsByTransactionId.Where( a => a.CurrencyTypeValueId == currencyTypeIdACH ).ToList();
+
+            var achCount = achTransactions.Count();
+            var achFeeCoverageTotal = achTransactions.Sum( a => a.FeeCoverageAmount );
+            lACHFeeCoverageAmount.Text = achFeeCoverageTotal.FormatAsCurrency();
+            lACHFeeCoverageCount.Text = string.Format( "{0:N0} Transactions", achCount );
+
+            var creditCardCount = creditCardTransactions.Count();
+            var creditCardFeeCoverageTotal = creditCardTransactions.Sum( a => a.FeeCoverageAmount );
+            lCreditCardFeeCoverageAmount.Text = creditCardFeeCoverageTotal.FormatAsCurrency();
+            lCreditCardFeeCoverageCount.Text = string.Format( "{0:N0} Transactions", creditCardCount );
+
+
+            lTotalFeeCoverageAmount.Text = ( achFeeCoverageTotal + creditCardFeeCoverageTotal ).FormatAsCurrency();
+            lTotalFeeCoverageCount.Text = string.Format( "{0:N0} Transactions", achCount + creditCardCount );
         }
 
         #endregion

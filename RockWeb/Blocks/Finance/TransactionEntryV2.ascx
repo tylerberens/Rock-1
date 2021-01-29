@@ -336,6 +336,7 @@
                 if (coverTheFeePercent > 0.00) {
                     updateCoverTheFeePercent(coverTheFeePercent);
 
+                    // selector for input elements which could be either a single input or multiple account mode
                     var $amountInputs = $('input.js-amount-input, .js-amount-input input');
 
                     // As amounts are entered, update the 'cover the fees' checkbox text

@@ -22,7 +22,7 @@
 
                     </div>
                     <div class="col-md-4">
-                        <Rock:BootstrapButton ID="bbtnApply" CssClass="btn btn-primary margin-t-lg" runat="server" Text="Apply" OnClick="bbtnApply_Click" />
+                        <Rock:BootstrapButton ID="bbtnApply" CssClass="btn btn-primary margin-t-lg" CausesValidation="true" runat="server" Text="Apply" OnClick="bbtnApply_Click" />
                     </div>
                 </div>
 
@@ -39,10 +39,10 @@
                             <h1>
                                 <asp:Literal ID="lTotalFeeCoverageAmount" runat="server" Text="$100.00" /></h1>
                             <div class="fee-coverage-label">
-                                <asp:Literal ID="lTotalFeesCoverageLabel" runat="server" Text="Total Fees" />
+                                <asp:Literal ID="lTotalFeeCoverageLabel" runat="server" Text="Total Fees" />
                             </div>
                             <div class="fee-coverage-count">
-                                <asp:Literal ID="lTotalFeesCoverageCount" runat="server" Text="12345 Transactions" />
+                                <asp:Literal ID="lTotalFeeCoverageCount" runat="server" Text="12345 Transactions" />
                             </div>
                         </div>
                     </div>
@@ -57,10 +57,10 @@
                             <h1>
                                 <asp:Literal ID="lCreditCardFeeCoverageAmount" runat="server" Text="$100.00" /></h1>
                             <div class="fee-coverage-label">
-                                <asp:Literal ID="lCreditCardFeesCoverageLabel" runat="server" Text="Credit Card Fees" />
+                                <asp:Literal ID="lCreditCardFeeCoverageLabel" runat="server" Text="Credit Card Fees" />
                             </div>
                             <div class="fee-coverage-count">
-                                <asp:Literal ID="lCreditCardFeesCoverageCount" runat="server" Text="12345 Transactions" />
+                                <asp:Literal ID="lCreditCardFeeCoverageCount" runat="server" Text="12345 Transactions" />
                             </div>
                         </div>
                     </div>
@@ -75,10 +75,10 @@
                             <h1>
                                 <asp:Literal ID="lACHFeeCoverageAmount" runat="server" Text="$100.00" /></h1>
                             <div class="fee-coverage-label">
-                                <asp:Literal ID="lACHFeesCoverageLabel" runat="server" Text="ACH Fees" />
+                                <asp:Literal ID="lACHFeeCoverageLabel" runat="server" Text="ACH Fees" />
                             </div>
                             <div class="fee-coverage-count">
-                                <asp:Literal ID="lACHFeesCoverageCount" runat="server" Text="12345 Transactions" />
+                                <asp:Literal ID="lACHFeeCoverageCount" runat="server" Text="12345 Transactions" />
                             </div>
                         </div>
                     </div>
