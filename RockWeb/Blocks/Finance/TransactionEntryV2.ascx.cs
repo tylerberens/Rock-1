@@ -504,8 +504,12 @@ mission. We are so grateful for your commitment.</p>
 <dl class='dl-horizontal'>
     {% for transactionDetail in transactionDetails %}
         <dt>{{ transactionDetail.Account.PublicName }}</dt>
-        <dd>{{ transactionDetail.Amount | FormatAsCurrency }}</dd>
+        <dd>{{ transactionDetail.Amount | Minus: transactionDetail.FeeCoverageAmount | FormatAsCurrency }}</dd>
     {% endfor %}
+    {% if Transaction.TotalFeeCoverageAmount %}
+        <dt>Fee Coverage</dt>
+        <dd>{{ Transaction.TotalFeeCoverageAmount | FormatAsCurrency }}</dd>
+    {% endif %}
     <dd></dd>
 
     <dt>Payment Method</dt>

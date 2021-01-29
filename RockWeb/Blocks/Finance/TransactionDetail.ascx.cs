@@ -1961,6 +1961,9 @@ namespace RockWeb.Blocks.Finance
                 tbAccountFeeCoverageAmount.Text = string.Empty;
                 tbAccountSummary.Text = string.Empty;
 
+                tbAccountFeeAmount.Visible = TransactionDetailsState.Any( a => a.FeeAmount.HasValue );
+                tbAccountFeeCoverageAmount.Visible = TransactionDetailsState.Any( a => a.FeeCoverageAmount.HasValue );
+
                 txnDetail = new FinancialTransactionDetail();
                 txnDetail.LoadAttributes();
             }
