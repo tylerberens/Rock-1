@@ -13,17 +13,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // </copyright>
-//
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Text;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 
 using Rock;
-using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
@@ -39,6 +35,16 @@ namespace RockWeb.Blocks.Finance
 
     public partial class TransactionFeeReport : RockBlock
     {
+        #region UserPreferenceKeys
+
+        private static class UserPreferenceKey
+        {
+            public const string AccountIds = "AccountIds";
+            public const string SlidingDateRangeDelimitedValues = "SlidingDateRangeDelimitedValues";
+        }
+
+        #endregion UserPreferenceKeys
+
         #region Base Control Methods
 
         /// <summary>
@@ -63,15 +69,31 @@ namespace RockWeb.Blocks.Finance
 
             if ( !Page.IsPostBack )
             {
-                // set default date range
-                srpFilterDates.SlidingDateRangeMode = Rock.Web.UI.Controls.SlidingDateRangePicker.SlidingDateRangeType.Last;
-                srpFilterDates.TimeUnit = Rock.Web.UI.Controls.SlidingDateRangePicker.TimeUnitType.Month;
-                srpFilterDates.NumberOfTimeUnits = 3;
-                var delimitedValues = srpFilterDates.DelimitedValues;
-
+                BindFilter();
 
                 ShowReportOutput();
             }
+        }
+
+        /// <summary>
+        /// Binds the filter.
+        /// </summary>
+        private void BindFilter()
+        {
+            var slidingDateRangeDelimitedValues = this.GetBlockUserPreference( UserPreferenceKey.SlidingDateRangeDelimitedValues );
+            if ( slidingDateRangeDelimitedValues.IsNotNullOrWhiteSpace() )
+            {
+                srpFilterDates.DelimitedValues = slidingDateRangeDelimitedValues;
+            }
+            else
+            {
+                srpFilterDates.SlidingDateRangeMode = Rock.Web.UI.Controls.SlidingDateRangePicker.SlidingDateRangeType.Last;
+                srpFilterDates.TimeUnit = Rock.Web.UI.Controls.SlidingDateRangePicker.TimeUnitType.Month;
+                srpFilterDates.NumberOfTimeUnits = 3;
+            }
+
+            var accountIds = this.GetBlockUserPreference( UserPreferenceKey.AccountIds ).SplitDelimitedValues().AsIntegerList();
+            apAccounts.SetValues( accountIds );
         }
 
         #endregion
@@ -115,6 +137,9 @@ namespace RockWeb.Blocks.Finance
             var startDateTime = srpFilterDates.SelectedDateRange.Start;
             var endDateTime = srpFilterDates.SelectedDateRange.End;
 
+            this.SetBlockUserPreference( UserPreferenceKey.SlidingDateRangeDelimitedValues, srpFilterDates.DelimitedValues );
+            this.SetBlockUserPreference( UserPreferenceKey.AccountIds, apAccounts.SelectedIds.ToList().AsDelimited( "," ) );
+
             qry = qry.Where( a => a.Transaction.TransactionDateTime >= startDateTime && a.Transaction.TransactionDateTime < endDateTime );
 
             var selectedAccountIds = apAccounts.SelectedIds;
@@ -139,6 +164,7 @@ namespace RockWeb.Blocks.Finance
                 .Select( a => new
                 {
                     TransactionId = a.Key,
+
                     // There is only only one currency per transaction, so FirstOrDefault works here
                     CurrencyTypeValueId = a.FirstOrDefault().CurrencyTypeValueId,
                     FeeCoverageAmount = a.Sum( x => x.FeeCoverageAmount ?? 0.00M ),
@@ -159,7 +185,6 @@ namespace RockWeb.Blocks.Finance
             var creditCardFeeCoverageTotal = creditCardTransactions.Sum( a => a.FeeCoverageAmount );
             lCreditCardFeeCoverageAmount.Text = creditCardFeeCoverageTotal.FormatAsCurrency();
             lCreditCardFeeCoverageCount.Text = string.Format( "{0:N0} Transactions", creditCardCount );
-
 
             lTotalFeeCoverageAmount.Text = ( achFeeCoverageTotal + creditCardFeeCoverageTotal ).FormatAsCurrency();
             lTotalFeeCoverageCount.Text = string.Format( "{0:N0} Transactions", achCount + creditCardCount );
