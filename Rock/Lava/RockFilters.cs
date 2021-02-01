@@ -1280,30 +1280,18 @@ namespace Rock.Lava
             
             if ( !useEndDateTime && calendarEvent.DtStart != null )
             {
-                var dates = GetDates( calendar, returnCount );
+                List<Occurrence> dates = calendar.GetOccurrences( RockDateTime.Now, RockDateTime.Now.AddYears( 1 ) ).Take( returnCount ).ToList();
                 return dates.Select( d => d.Period.StartTime.Value ).ToList();
             }
             else if ( useEndDateTime && calendarEvent.DtEnd != null )
             {
-                var dates = GetDates( calendar, returnCount );
+                List<Occurrence> dates = calendar.GetOccurrences( RockDateTime.Now, RockDateTime.Now.AddYears( 1 ) ).Take( returnCount ).ToList();
                 return dates.Select( d => d.Period.EndTime.Value ).ToList();
             }
             else
             {
                 return new List<DateTime>();
             }
-        }
-
-        private static List<Occurrence> GetDates( Calendar calendar, int returnCount )
-        {
-            var dates = calendar.GetOccurrences( RockDateTime.Now, RockDateTime.Now.AddYears( 1 ) ).ToList();
-            if ( dates.Count > 0 && dates.Count < returnCount )
-            {
-                var startDateTime = dates.Last().Period.EndTime;
-                dates.AddRange( calendar.GetOccurrences( startDateTime, startDateTime.AddYears( 1 ) ) );
-            }
-            dates = dates.Take( returnCount ).ToList();
-            return dates;
         }
 
         /// <summary>
