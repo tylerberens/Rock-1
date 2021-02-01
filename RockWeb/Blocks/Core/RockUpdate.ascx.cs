@@ -38,6 +38,7 @@ using Rock.Model;
 using Rock.Services.NuGet;
 using Rock.VersionInfo;
 using Rock.Web.Cache;
+using Rock.Web.Utilities;
 
 namespace RockWeb.Blocks.Core
 {
@@ -152,12 +153,12 @@ namespace RockWeb.Blocks.Core
                             pnlEarlyAccessEnabled.Visible = true;
                         }
 
-                        VersionCheckResult result = CheckFrameworkVersion();
-                        if ( result == VersionCheckResult.Pass )
+                        DotNetVersionCheckResult result = CheckFrameworkVersion();
+                        if ( result == DotNetVersionCheckResult.Pass )
                         {
                             _isOkToProceed = true;
                         }
-                        else if ( result == VersionCheckResult.Fail )
+                        else if ( result == DotNetVersionCheckResult.Fail )
                         {
                             _isOkToProceed = false;
                             nbVersionIssue.Visible = true;
@@ -398,55 +399,22 @@ namespace RockWeb.Blocks.Core
         /// used to determine if it's safe to proceed.
         /// </summary>
         /// <returns>One of the values of the VersionCheckResult enum.</returns>
-        private VersionCheckResult CheckFrameworkVersion()
+        private DotNetVersionCheckResult CheckFrameworkVersion()
         {
-            VersionCheckResult result = VersionCheckResult.Fail;
+            DotNetVersionCheckResult result = DotNetVersionCheckResult.Fail;
             try
             {
-                if ( System.Environment.Version.Major > 4 )
-                {
-                    result = VersionCheckResult.Pass;
-                }
-                else if ( System.Environment.Version.Major == 4 && System.Environment.Version.Build > 30319 )
-                {
-                    result = VersionCheckResult.Pass;
-                }
-                else if ( System.Environment.Version.Major == 4 && System.Environment.Version.Build == 30319 )
-                {
-                    // Once we get to 4.5 Microsoft recommends we test via the Registry...
-                    result = Check45PlusFromRegistry();
-                }
+                // Once we get to 4.5 Microsoft recommends we test via the Registry...
+                result = RockUpdateHelper.CheckDotNetVersionFromRegistry();
             }
             catch
             {
                 // This would be pretty bad, but regardless we'll return
                 // the Unknown result and let the caller proceed with caution.
-                result = VersionCheckResult.Unknown;
+                result = DotNetVersionCheckResult.Unknown;
             }
 
             return result;
-        }
-
-        /// <summary>
-        /// Suggested approach to check which version of the .Net framework is installed when using version 4.5 or later
-        /// as per https://msdn.microsoft.com/en-us/library/hh925568(v=vs.110).aspx.
-        /// </summary>
-        /// <returns>a string containing the human readable version of the .Net framework</returns>
-        private static VersionCheckResult Check45PlusFromRegistry()
-        {
-            const string subkey = @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full\";
-            using ( RegistryKey ndpKey = RegistryKey.OpenBaseKey( RegistryHive.LocalMachine, RegistryView.Registry32 ).OpenSubKey( subkey ) )
-            {
-                // Check if Release is >= 379893 (4.5.2)
-                if ( ndpKey != null && ndpKey.GetValue( "Release" ) != null && ( int ) ndpKey.GetValue( "Release" ) >= 379893 )
-                {
-                    return VersionCheckResult.Pass;
-                }
-                else
-                {
-                    return VersionCheckResult.Fail;
-                }
-            }
         }
 
         /// <summary>
@@ -1010,27 +978,6 @@ namespace RockWeb.Blocks.Core
             PostalCode = location.PostalCode;
             Country = location.Country;
         }
-    }
-
-    /// <summary>
-    /// Represents the possible results of a version check.
-    /// </summary>
-    public enum VersionCheckResult
-    {
-        /// <summary>
-        /// The version check definitely fails
-        /// </summary>
-        Fail = 0,
-
-        /// <summary>
-        /// This version check definitely passes
-        /// </summary>
-        Pass = 1,
-
-        /// <summary>
-        /// The version check could not determine pass or fail so proceed at own risk.
-        /// </summary>
-        Unknown = 2
     }
 
     /// <summary>

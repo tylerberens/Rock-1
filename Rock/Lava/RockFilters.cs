@@ -1277,21 +1277,33 @@ namespace Rock.Lava
         {
             var calendar = Calendar.LoadFromStream( new StringReader( iCalString ) ).First() as Calendar;
             var calendarEvent = calendar.Events[0] as Event;
-
+            
             if ( !useEndDateTime && calendarEvent.DtStart != null )
             {
-                List<Occurrence> dates = calendar.GetOccurrences( RockDateTime.Now, RockDateTime.Now.AddYears( 1 ) ).Take( returnCount ).ToList();
+                var dates = GetDates( calendar, returnCount );
                 return dates.Select( d => d.Period.StartTime.Value ).ToList();
             }
             else if ( useEndDateTime && calendarEvent.DtEnd != null )
             {
-                List<Occurrence> dates = calendar.GetOccurrences( RockDateTime.Now, RockDateTime.Now.AddYears( 1 ) ).Take( returnCount ).ToList();
+                var dates = GetDates( calendar, returnCount );
                 return dates.Select( d => d.Period.EndTime.Value ).ToList();
             }
             else
             {
                 return new List<DateTime>();
             }
+        }
+
+        private static List<Occurrence> GetDates( Calendar calendar, int returnCount )
+        {
+            var dates = calendar.GetOccurrences( RockDateTime.Now, RockDateTime.Now.AddYears( 1 ) ).ToList();
+            if ( dates.Count > 0 && dates.Count < returnCount )
+            {
+                var startDateTime = dates.Last().Period.EndTime;
+                dates.AddRange( calendar.GetOccurrences( startDateTime, startDateTime.AddYears( 1 ) ) );
+            }
+            dates = dates.Take( returnCount ).ToList();
+            return dates;
         }
 
         /// <summary>
@@ -5072,6 +5084,10 @@ namespace Rock.Lava
             else if ( valueName == "systemdatetime" )
             {
                 return Rock.Utility.Settings.RockInstanceConfig.SystemDateTime;
+            }
+            else if ( valueName == "aspnetversion" )
+            {
+                return Rock.Utility.Settings.RockInstanceConfig.AspNetVersion;
             }
 
             return $"Configuration setting \"{ input }\" is not available.";
