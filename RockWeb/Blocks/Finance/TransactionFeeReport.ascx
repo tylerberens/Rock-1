@@ -6,7 +6,7 @@
         <asp:Panel ID="pnlView" runat="server" CssClass="panel panel-block">
 
             <div class="panel-heading">
-                <h1 class="panel-title"><i class="fa fa-rocket"></i>
+                <h1 class="panel-title"><i class="fa fa-file-invoice-dollar"></i>
                     Transaction Fee Report
                 </h1>
             </div>
@@ -15,7 +15,7 @@
                 <%-- Filter --%>
                 <div class="row">
                     <div class="col-md-4">
-                        <Rock:AccountPicker ID="apAccounts" AllowMultiSelect="true" CssClass="input-width-lg" Label="Account" runat="server" />
+                        <Rock:AccountPicker ID="apAccounts" AllowMultiSelect="true" Label="Account" runat="server" />
                     </div>
                     <div class="col-md-4">
                         <Rock:SlidingDateRangePicker ID="srpFilterDates" Label="Date Range" runat="server" />
@@ -33,7 +33,7 @@
                     <div class="col-md-4">
 
                         <div class="fees-icon">
-                            <i class="fa fa-rocket fa-2x"></i>
+                            <i class="fa fa-list fa-2x"></i>
                         </div>
                         <div class="fee-details">
                             <h1>
@@ -51,7 +51,7 @@
                     <div class="col-md-4">
 
                         <div class="fees-icon">
-                            <i class="fa fa-rocket fa-2x"></i>
+                            <i class="fa fa-credit-card fa-2x"></i>
                         </div>
                         <div class="fee-details">
                             <h1>
@@ -69,7 +69,7 @@
 
                         <%-- Fee Coverage - ACH --%>
                         <div class="fees-icon">
-                            <i class="fa fa-rocket fa-2x"></i>
+                            <i class="fa fa-money-check-alt fa-2x"></i>
                         </div>
                         <div class="fee-details">
                             <h1>

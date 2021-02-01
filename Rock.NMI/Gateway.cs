@@ -1979,7 +1979,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
 
             if ( tokenResponse?.IsSuccessStatus() != true )
             {
-                if ( tokenResponse.HasValidationError() )
+                if ( tokenResponse?.HasValidationError() == true)
                 {
                     errorMessage = tokenResponse.ValidationMessage;
                 }

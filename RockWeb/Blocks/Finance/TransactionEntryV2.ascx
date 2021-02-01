@@ -65,11 +65,11 @@
 
                             <Rock:NotificationBox ID="nbPromptForAmountsWarning" runat="server" NotificationBoxType="Validation" Visible="false" />
 
-                            <Rock:HiddenFieldWithClass ID="hfCoverTheFeeCreditCardPercent" runat="server" CssClass="js-coverthefee-percent" Value="3.14" />
+                            <Rock:HiddenFieldWithClass ID="hfCoverTheFeeCreditCardPercent" runat="server" CssClass="js-coverthefee-percent" Value="" />
 
                             <%-- Cover the Fee checkbox (When a Saved Account is selected and we know the currency type already) --%>
-                            <asp:Panel ID="pnlGiveNowCoverTheFee" runat="server" CssClass="js-coverthefee-container">
-                                <Rock:RockCheckBox ID="cbGiveNowCoverTheFee" runat="server" Text="Hello $<span class='js-coverthefee-checkbox-fee-amount-text'></span> World" CssClass="js-givenow-coverthefee" Visible="true" />
+                            <asp:Panel ID="pnlGiveNowCoverTheFee" runat="server" CssClass="js-coverthefee-container" Visible="false">
+                                <Rock:RockCheckBox ID="cbGiveNowCoverTheFee" runat="server" Text="Hello $<span class='js-coverthefee-checkbox-fee-amount-text'></span> World" CssClass="js-givenow-coverthefee" />
                             </asp:Panel>
 
                             <Rock:BootstrapButton ID="btnGiveNow" runat="server" CssClass="btn btn-primary btn-give-now" Text="Give Now" OnClick="btnGiveNow_Click" />
@@ -275,7 +275,6 @@
             }
 
             function updateCoverTheFeePercent(feePercent) {
-                debugger
                 var $coverTheFeeContainer = $('.js-coverthefee-container');
                 var $coverTheFeeAmountText = $('.js-coverthefee-checkbox-fee-amount-text');
 
