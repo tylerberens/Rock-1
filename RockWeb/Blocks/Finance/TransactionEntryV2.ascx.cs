@@ -813,7 +813,7 @@ mission. We are so grateful for your commitment.</p>
 
             public const string HostPaymentInfoSubmitScript = "HostPaymentInfoSubmitScript";
             public const string TransactionCode = "TransactionCode";
-            public const string CustomerTokenEncrypted = "TransactionCode";
+            public const string CustomerTokenEncrypted = "CustomerTokenEncrypted";
         }
 
         #endregion ViewState Keys
