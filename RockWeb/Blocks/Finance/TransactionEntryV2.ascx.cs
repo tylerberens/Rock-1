@@ -142,8 +142,6 @@ namespace RockWeb.Blocks.Finance
         Category = AttributeCategory.None,
         Order = 19 )]
 
-
-
     [BooleanField(
         "Enable Anonymous Giving",
         Key = AttributeKey.EnableAnonymousGiving,
@@ -2463,7 +2461,6 @@ mission. We are so grateful for your commitment.</p>
         private void SetCampus( Person person )
         {
             var pageParameterCampusId = this.PageParameter( PageParameterKey.CampusId ).AsIntegerOrNull();
-            ;
 
             if ( pageParameterCampusId.HasValue )
             {
@@ -3356,6 +3353,7 @@ mission. We are so grateful for your commitment.</p>
             //// When _hostedPaymentInfoControl gets a token response, the _hostedPaymentInfoControl_TokenReceived event will be triggered
             //// If _hostedPaymentInfoControl_TokenReceived gets a valid token, it will call btnGetPaymentInfoNext_Click
 
+            UpdateAccountSummaryAmount();
             nbProcessTransactionError.Visible = false;
             NavigateToStep( EntryStep.GetPersonalInformation );
         }

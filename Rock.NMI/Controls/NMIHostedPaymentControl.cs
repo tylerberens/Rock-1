@@ -106,6 +106,18 @@ namespace Rock.NMI.Controls
             {
                 EnsureChildControls();
                 var currencyTypeValue = _hfSelectedPaymentType.Value.ConvertToEnumOrNull<NMIPaymentType>();
+                if ( currencyTypeValue == null )
+                {
+                    if ( EnabledPaymentTypes.Contains( NMIPaymentType.card ) )
+                    {
+                        currencyTypeValue = NMIPaymentType.card;
+                    }
+                    else
+                    {
+                        currencyTypeValue = NMIPaymentType.ach;
+                    }
+                }
+
                 if ( currencyTypeValue == NMIPaymentType.ach )
                 {
                     return DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH );

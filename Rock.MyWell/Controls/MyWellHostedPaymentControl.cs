@@ -87,6 +87,18 @@ namespace Rock.MyWell.Controls
             {
                 EnsureChildControls();
                 var currencyTypeValue = _hfSelectedPaymentType.Value.ConvertToEnumOrNull<MyWellPaymentType>();
+                if ( currencyTypeValue == null )
+                {
+                    if ( EnabledPaymentTypes.Contains( MyWellPaymentType.card ) )
+                    {
+                        currencyTypeValue = MyWellPaymentType.card;
+                    }
+                    else
+                    {
+                        currencyTypeValue = MyWellPaymentType.ach;
+                    }
+                }
+
                 if ( currencyTypeValue == MyWellPaymentType.ach )
                 {
                     return DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH );

@@ -37,9 +37,6 @@ namespace Rock.Migrations
 
             // Add Block Transaction Fee Report to Page: Transaction Fee Report, Site: Rock RMS
             RockMigrationHelper.AddBlock( true, "A3E321E9-2FBB-4BB9-8AEE-E810B7CC5914".AsGuid(), null, "C2D29296-6A87-47A9-A753-EE4E9159C4C4".AsGuid(), "D75AF7AE-94B8-4604-B768-A124A2F55449".AsGuid(), "Transaction Fee Report", "Main", @"", @"", 0, "BD815511-61F4-4A4B-AE91-9DA49D3D6CB8" );
-
-            // Attribute for BlockType: Select Check-In Area:Check-in Areas
-            RockMigrationHelper.AddOrUpdateBlockTypeAttribute( "17E8F764-562A-4E94-980D-FF1B15640670", "7522975C-C224-489A-985D-B44580DFC5BD", "Check-in Areas", "CheckinConfigurationTypes", "Check-in Areas", @"Select the Check Areas to display, or select none to show all.", 3, @"", "A51DA715-CC2D-4748-852A-4B06AB653B78" );
         }
 
         /// <summary>
@@ -47,9 +44,6 @@ namespace Rock.Migrations
         /// </summary>
         public override void Down()
         {
-            // Check-in Areas Attribute for BlockType: Select Check-In Area
-            RockMigrationHelper.DeleteAttribute( "A51DA715-CC2D-4748-852A-4B06AB653B78" );
-
             // Remove Block: Transaction Fee Report, from Page: Transaction Fee Report, Site: Rock RMS
             RockMigrationHelper.DeleteBlock( "BD815511-61F4-4A4B-AE91-9DA49D3D6CB8" );
 
