@@ -153,7 +153,7 @@ namespace RockWeb.Blocks.Core
                             pnlEarlyAccessEnabled.Visible = true;
                         }
 
-                        DotNetVersionCheckResult result = CheckFrameworkVersion();
+                        var result = CheckFrameworkVersion();
                         if ( result == DotNetVersionCheckResult.Pass )
                         {
                             _isOkToProceed = true;
@@ -401,7 +401,7 @@ namespace RockWeb.Blocks.Core
         /// <returns>One of the values of the VersionCheckResult enum.</returns>
         private DotNetVersionCheckResult CheckFrameworkVersion()
         {
-            DotNetVersionCheckResult result = DotNetVersionCheckResult.Fail;
+            var result = DotNetVersionCheckResult.Fail;
             try
             {
                 // Once we get to 4.5 Microsoft recommends we test via the Registry...
