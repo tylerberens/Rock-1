@@ -67,6 +67,13 @@ namespace RockWeb.Blocks.CheckIn.Manager
         IsRequired = false,
         Order = 4 )]
 
+    [BooleanField(
+        "Show Only Parent Group",
+        "When enabled, only the actual parent group for each check-in group-location will be shown and groups under the same parent group in the same location will be combined into one row.",
+        Key = AttributeKey.ShowOnlyParentGroup,
+        DefaultBooleanValue = false,
+        Order = 5)]
+
     #endregion Block Attributes
     public partial class RoomList : RockBlock
     {
@@ -88,9 +95,19 @@ namespace RockWeb.Blocks.CheckIn.Manager
             public const string CheckInAreaGuid = CheckinManagerHelper.BlockAttributeKey.CheckInAreaGuid;
 
             public const string RosterPage = "RosterPage";
+
+            /// <summary>
+            /// When enabled, only the actual parent group for the check-in group-location will be shown
+            /// in the Room Name grid column and groups under the same parent group in the same
+            /// location will be combined into one row.
+            /// Otherwise, the actual group will be shown along with the parent group/area hierarchy under
+            /// it (as per typical Rock check-in notation).
+            /// </summary>
+            public const string ShowOnlyParentGroup = "ShowOnlyParentGroup";
         }
 
         #endregion Attribute Keys
+
         #region Page Parameter Keys
 
         private class PageParameterKey
@@ -100,6 +117,20 @@ namespace RockWeb.Blocks.CheckIn.Manager
             /// For example "Weekly Service Check-in".
             /// </summary>
             public const string Area = CheckinManagerHelper.PageParameterKey.Area;
+
+            /// <summary>
+            /// If this is specified in the URL, show the direct (first level) child locations of the specified ParentLocationId.
+            /// Also, set the PanelTitle in the format of "{{ParentLocation.Name}} Child Locations"
+            /// This will take precedence over the selected campus+locations.
+            /// </summary>
+            public const string ParentLocationId = "ParentLocationId";
+
+            /// <summary>
+            /// If LocationId is specified in the URL, list only items for the specified location.
+            /// Also, hide the Location Grid Column and set the PanelTitle as the location's name
+            /// This will take precedence over the selected campus+locations and/or <seealso cref="ParentLocationId"/>
+            /// </summary>
+            public const string LocationId = "LocationId";
         }
 
         #endregion Page Parameter Keys
@@ -253,10 +284,53 @@ namespace RockWeb.Blocks.CheckIn.Manager
             var groupLocationService = new GroupLocationService( rockContext );
             var groupLocationsQuery = groupLocationService.Queryable().Where( gl => selectedGroupTypeIds.Contains( gl.Group.GroupTypeId ) );
 
-            // Limit locations (rooms) to locations within the selected campus.
-            var campusLocationIds = new LocationService( rockContext ).GetAllDescendentIds( campus.LocationId.Value ).ToList();
-            campusLocationIds.Add( campus.LocationId.Value, true );
-            groupLocationsQuery = groupLocationsQuery.Where( a => campusLocationIds.Contains( a.LocationId ) );
+            var parentLocationIdParameter = PageParameter( PageParameterKey.ParentLocationId ).AsIntegerOrNull();
+            var locationIdParameter = PageParameter( PageParameterKey.LocationId ).AsIntegerOrNull();
+            var locationGridField = gRoomList.ColumnsOfType<RockLiteralField>().FirstOrDefault( a => a.ID == "lRoomName" );
+            if ( locationGridField != null && !locationGridField.Visible )
+            {
+                locationGridField.Visible = true;
+            }
+
+            List<int> locationIds;
+            if ( locationIdParameter.HasValue )
+            {
+                // If LocationId is specified in the URL, list only items for the specified location.
+                // Also, hide the Location Grid Column and set the PanelTitle as the location's name
+                // This will take precedence over the selected campus+locations and/or <seealso cref="ParentLocationId"/>
+                var locationService = new LocationService( rockContext );
+                lPanelTitle.Text = locationService.GetSelect( locationIdParameter.Value, s => s.Name );
+
+                locationIds = new List<int>();
+                locationIds.Add( locationIdParameter.Value );
+
+                if ( locationGridField != null )
+                {
+                    // since a LocationId parameter was specified, the LocationGrid field doesn't need to be shown
+                    locationGridField.Visible = false;
+                }
+            }
+            else if ( parentLocationIdParameter.HasValue )
+            {
+                // If parentLocationId is specified, show the direct (first level) child locations of the specified ParentLocationId.
+                // This will take precedence over the selected campus+locations.
+                var locationService = new LocationService( rockContext );
+                locationIds = locationService.Queryable()
+                    .Where( a => a.ParentLocationId.HasValue && a.ParentLocationId.Value == parentLocationIdParameter.Value )
+                    .Select( a => a.Id ).ToList();
+
+                lPanelTitle.Text = string.Format( "{0} Child Locations", locationService.GetSelect( parentLocationIdParameter.Value, s => s.Name ) );
+            }
+            else
+            {
+                // Limit locations (rooms) to locations within the selected campus.
+                locationIds = new LocationService( rockContext ).GetAllDescendentIds( campus.LocationId.Value ).ToList();
+                locationIds.Add( campus.LocationId.Value, true );
+
+                lPanelTitle.Text = "Room List";
+            }
+
+            groupLocationsQuery = groupLocationsQuery.Where( a => locationIds.Contains( a.LocationId ) );
 
             if ( selectedScheduleIds.Any() )
             {
@@ -271,6 +345,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             {
                 LocationId = a.LocationId,
                 LocationName = a.Location.Name,
+                ParentLocationName = a.Location.ParentLocation.Name,
                 GroupId = a.Group.Id,
                 GroupName = a.Group.Name,
                 GroupTypeId = a.Group.GroupTypeId
@@ -297,8 +372,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 && a.Occurrence.LocationId.HasValue
                 && a.Occurrence.ScheduleId.HasValue );
 
-            // Limit attendances (rooms) to locations within the selected campus.
-            attendanceQuery = attendanceQuery.Where( a => campusLocationIds.Contains( a.Occurrence.LocationId.Value ) );
+            // Limit attendances (rooms) to locations with locationIds that were determined above by either the ParentLocationid or selectedCampus setting
+            attendanceQuery = attendanceQuery.Where( a => locationIds.Contains( a.Occurrence.LocationId.Value ) );
 
             attendanceQuery = attendanceQuery.Where( a => selectedGroupTypeIds.Contains( a.Occurrence.Group.GroupTypeId ) );
 
@@ -370,6 +445,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             var checkinAreaPathsLookupByGroupTypeId = checkinAreaPaths.ToDictionary( k => k.GroupTypeId, v => v );
 
+            bool showOnlyParentGroup = this.GetAttributeValue( AttributeKey.ShowOnlyParentGroup ).AsBoolean();
+
             var roomList = groupLocationList
                 .Select( a =>
                 {
@@ -382,7 +459,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
                     RoomCounts roomCounts = null;
 
-                    if ( attendancesForLocationAndGroup != null)
+                    if ( attendancesForLocationAndGroup != null )
                     {
                         roomCounts = new RoomCounts
                         {
@@ -394,6 +471,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
                     var groupAndRoomInfo = new GroupAndRoomInfo
                     {
+                        ShowOnlyParentGroup = showOnlyParentGroup,
+
                         LocationId = a.LocationId,
                         GroupId = a.GroupId,
                         GroupName = a.GroupName,
@@ -432,7 +511,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             {
                 //* https://app.asana.com/0/0/1199637795718017/f */
                 // 'Enable Presence' is disabled, so a person automatically gets marked present.
-                // So, no records wil be in the 'Checked-In (but no present)' state.
+                // So, no records will be in the 'Checked-In (but no present)' state.
                 // Also, a user thinks of 'Present' as 'Checked-In' if they don't use the 'Enable Presence' feature
                 checkedInCountField.Visible = false;
                 presentCountField.HeaderText = "Checked-In";
@@ -583,6 +662,17 @@ namespace RockWeb.Blocks.CheckIn.Manager
         /// </summary>
         private class GroupAndRoomInfo
         {
+            /// see <seealso cref="AttributeKey.ShowOnlyParentGroup"/> for what this means
+            public bool ShowOnlyParentGroup { get; internal set; }
+
+            /// <summary>
+            /// Use this instead of <see cref="GroupPath"/> if <see cref="ShowOnlyParentGroup"/> is enabled
+            /// </summary>
+            /// <value>
+            /// The name of the parent group.
+            /// </value>
+            public string ParentGroupName { get; internal set; }
+
             public int LocationId { get; internal set; }
 
             public int GroupId { get; internal set; }
@@ -591,7 +681,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             public RoomGroupPathInfo GroupPath { get; internal set; }
 
-            public RoomCounts RoomCounts { get; set; }
+            public RoomCounts RoomCounts { get; internal set; }
 
             public string GroupsPathHTML
             {
