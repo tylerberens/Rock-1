@@ -580,6 +580,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 .Include( a => a.PersonAlias.Person )
                 .Include( a => a.Occurrence.Schedule )
                 .Include( a => a.Occurrence.Group )
+                .Include( a => a.Occurrence.Location )
                 .AsNoTracking()
                 .ToList();
 
