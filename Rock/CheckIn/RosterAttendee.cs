@@ -633,6 +633,11 @@ namespace Rock.CheckIn
         }
 
         #endregion Static methods
+
+        public override string ToString()
+        {
+            return $"{this.FullName} {this.StatusString} {this.CheckInTime}";
+        }
     }
 
     /// <summary>
