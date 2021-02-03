@@ -243,6 +243,7 @@ namespace Rock.Web.UI.Controls
 
         private HiddenFieldWithClass _hfItemId;
         private HiddenFieldWithClass _hfInitialItemParentIds;
+        private HiddenFieldWithClass _hfExpandedCategoryIds;
         private HiddenFieldWithClass _hfItemName;
         private HiddenFieldWithClass _hfItemRestUrlExtraParams;
         private HtmlAnchor _btnSelect;
@@ -420,6 +421,32 @@ namespace Rock.Web.UI.Controls
         }
 
         /// <summary>
+        /// Gets or sets the expanded category ids.
+        /// </summary>
+        /// <value>
+        /// The expanded category ids.
+        /// </value>
+        public virtual string ExpandedCategoryIds
+        {
+            get
+            {
+                EnsureChildControls();
+                if ( string.IsNullOrWhiteSpace( _hfExpandedCategoryIds.Value ) )
+                {
+                    _hfExpandedCategoryIds.Value = Constants.None.IdValue;
+                }
+
+                return _hfExpandedCategoryIds.Value;
+            }
+
+            set
+            {
+                EnsureChildControls();
+                _hfExpandedCategoryIds.Value = value;
+            }
+        }
+
+        /// <summary>
         /// Gets the selected value.
         /// </summary>
         /// <value>
@@ -585,7 +612,7 @@ namespace Rock.Web.UI.Controls
         /// <summary>
         /// The category prefix used when <see cref="UseCategorySelection"/> is true.
         /// </summary>
-        private const string CategoryPrefix = "C";
+        public const string CategoryPrefix = "C";
 
         #endregion
 
@@ -647,6 +674,7 @@ $@"Rock.controls.itemPicker.initialize({{
     defaultText: '{this.DefaultText}',
     restParams: $('#{_hfItemRestUrlExtraParams.ClientID}').val(),
     expandedIds: [{this.InitialItemParentIds}],
+    expandedCategoryIds: [{this.ExpandedCategoryIds}],
     showSelectChildren: {this.ShowSelectChildren.ToString().ToLower()}
 }});
 ";
@@ -670,6 +698,10 @@ $@"Rock.controls.itemPicker.initialize({{
             _hfInitialItemParentIds = new HiddenFieldWithClass();
             _hfInitialItemParentIds.ID = this.ID + "_hfInitialItemParentIds";
             _hfInitialItemParentIds.CssClass = "js-initial-item-parent-ids-value";
+
+            _hfExpandedCategoryIds = new HiddenFieldWithClass();
+            _hfExpandedCategoryIds.ID = this.ID + "_hfExpandedCategoryIds";
+            _hfExpandedCategoryIds.CssClass = "js-expanded-category-ids";
 
             _hfItemName = new HiddenFieldWithClass();
             _hfItemName.ID = this.ID + "_hfItemName";
@@ -711,6 +743,7 @@ $@"Rock.controls.itemPicker.initialize({{
 
             Controls.Add( _hfItemId );
             Controls.Add( _hfInitialItemParentIds );
+            Controls.Add( _hfExpandedCategoryIds );
             Controls.Add( _hfItemName );
             Controls.Add( _hfItemRestUrlExtraParams );
             Controls.Add( _btnSelect );
@@ -755,6 +788,7 @@ $@"Rock.controls.itemPicker.initialize({{
 
                 _hfItemId.RenderControl( writer );
                 _hfInitialItemParentIds.RenderControl( writer );
+                _hfExpandedCategoryIds.RenderControl( writer );
                 _hfItemName.RenderControl( writer );
                 _hfItemRestUrlExtraParams.RenderControl( writer );
 

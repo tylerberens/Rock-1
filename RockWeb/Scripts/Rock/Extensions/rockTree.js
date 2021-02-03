@@ -136,8 +136,14 @@
                 // how the caller will be notified of completion.
                 dfd = $.Deferred(),
 
-                // Create a queue of Ids to expand the corresponding nodes
-                toExpand = [],
+                // Create a queue of Ids to expand the corresponding parent item nodes
+                toExpandParentItems = [],
+
+                // Create a queue of Ids to expand the corresponding parent category nodes (which have id values prefixed by categoryPrefix)
+                toExpandCategories = [],
+
+                // Variable for category prefix.
+                categoryPrefix = '',
 
                 // Create a "queue" or hash of AJAX calls that are currently in progress
                 inProgress = {},
@@ -150,7 +156,7 @@
                     // and there are no requests in queue currentling being fetched,
                     // and we have not already resolved the deferred, return
                     // control to the caller.
-                    if (toExpand.length === 0 && numberInQueue === 0 && dfd.state() !== 'resolved') {
+                    if (toExpandParentItems.length === 0 && toExpandCategories.length === 0 && numberInQueue === 0 && dfd.state() !== 'resolved') {
                         dfd.resolve();
                     }
                 },
@@ -193,8 +199,11 @@
                 };
 
           if (this.options.restUrl) {
-                if (this.options.expandedIds && typeof this.options.expandedIds.length === 'number') {
-                    toExpand = this.options.expandedIds;
+                if ((this.options.expandedIds && typeof this.options.expandedIds.length === 'number') ||
+                    (this.options.expandedCategoryIds && typeof this.options.expandedCategoryIds.length === 'number')) {
+                    toExpandParentItems = this.options.expandedIds;
+                    toExpandCategories = this.options.expandedCategoryIds;
+                    categoryPrefix = this.options.categoryPrefix;
 
                     // Listen for progress on the Deferred and pass it the handler to
                     // check if we're "done"
@@ -203,39 +212,66 @@
                     // Listen to internal databound event
                     this.events.on('nodes:dataBound', function () {
                         // Pop the top item off the "stack" to de-queue it...
-                        var currentId = toExpand.shift(),
-                            currentNode;
+                        var currentId = toExpandParentItems.shift();
 
-                        if (!currentId) {
-                            return;
+                        if (currentId) {
+
+                            // remove surrounding single quotes from id if they exist
+                            // Quotes should never get to this point. ItemPicker.cs: _hfInitialItemParentIds should be updated to not have quotes. Other places may also add quotes and should be updated
+                            currentId = currentId.toString().replace(/(^')|('$)/g, '');
+
+                            var currentNode = _findNodeById(currentId, self.nodes);
+                            while (currentNode == null && toExpandParentItems.length > 0) {
+                                // if we can't find it, try the next one until we find one or run out of expanded ids
+                                currentId = toExpandParentItems.shift();
+                                currentNode = _findNodeById(currentId, self.nodes);
+                            }
+
+                            if (currentNode) {
+                                // If we find the node, make sure it's expanded, and fetch its children
+                                currentNode.isOpen = true;
+
+                                // Queue up current node
+                                inProgress[currentId] = currentId;
+                                getNodes(currentId, currentNode).done(function () {
+                                    // Dequeue on completion
+                                    delete inProgress[currentId];
+                                    // And notify the Deferred of progress
+                                    dfd.notify();
+                                });
+                            }
                         }
 
-                        // remove surrounding single quotes from id if they exist
-                        // Quotes should never get to this point. ItemPicker.cs: _hfInitialItemParentIds should be updated to not have quotes. Other places may also add quotes and should be updated
-                        currentId = currentId.toString().replace(/(^')|('$)/g, '');
+                        var currentCategoryId = toExpandCategories.shift();
 
-                        currentNode = _findNodeById(currentId, self.nodes);
-                        while (currentNode == null && toExpand.length > 0) {
-                            // if we can't find it, try the next one until we find one or run out of expanded ids
-                            currentId = toExpand.shift();
-                            currentNode = _findNodeById(currentId, self.nodes);
+                        if (currentCategoryId) {
+                            currentCategoryId = categoryPrefix + currentCategoryId;
+
+                            // remove surrounding single quotes from id if they exist
+                            // Quotes should never get to this point. ItemPicker.cs: _hfInitialItemParentIds should be updated to not have quotes. Other places may also add quotes and should be updated
+                            currentCategoryId = currentCategoryId.toString().replace(/(^')|('$)/g, '');
+
+                            var currentCategoryNode = _findNodeById(currentCategoryId, self.nodes);
+                            while (currentCategoryNode == null && toExpandCategories.length > 0) {
+                                // if we can't find it, try the next one until we find one or run out of expanded ids
+                                currentCategoryId = categoryPrefix + toExpandCategories.shift();
+                                currentCategoryNode = _findNodeById(currentCategoryId, self.nodes);
+                            }
+
+                            if (currentCategoryNode) {
+                                // If we find the node, make sure it's expanded, and fetch its children
+                                currentCategoryNode.isOpen = true;
+
+                                // Queue up current node
+                                inProgress[currentCategoryId] = currentCategoryId;
+                                getNodes(currentCategoryId, currentCategoryNode).done(function () {
+                                    // Dequeue on completion
+                                    delete inProgress[currentCategoryId];
+                                    // And notify the Deferred of progress
+                                    dfd.notify();
+                                });
+                            }
                         }
-
-                        if (!currentNode) {
-                            return;
-                        }
-
-                        // If we find the node, make sure it's expanded, and fetch its children
-                        currentNode.isOpen = true;
-
-                        // Queue up current node
-                        inProgress[currentId] = currentId;
-                        getNodes(currentId, currentNode).done(function () {
-                            // Dequeue on completion
-                            delete inProgress[currentId];
-                            // And notify the Deferred of progress
-                            dfd.notify();
-                        });
                     });
                 }
 
@@ -736,6 +772,7 @@
         id: 0,
         selectedIds: null,
         expandedIds: null,
+        expandedCategoryIds: null,
         restUrl: null,
         restParams: null,
         local: null,
