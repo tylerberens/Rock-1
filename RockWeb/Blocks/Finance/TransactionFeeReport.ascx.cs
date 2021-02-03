@@ -156,6 +156,8 @@ namespace RockWeb.Blocks.Finance
                 }
             }
 
+            qry = qry.Where( a => a.Transaction.TransactionDetails.Any( x => x.FeeCoverageAmount.HasValue ) );
+
             var totals = qry.Select( a => new { a.FeeCoverageAmount, a.TransactionId, a.Transaction.FinancialPaymentDetail.CurrencyTypeValueId } );
             var transactionFeeCoverageList = totals.ToList();
 
@@ -165,7 +167,7 @@ namespace RockWeb.Blocks.Finance
                 {
                     TransactionId = a.Key,
 
-                    // There is only only one currency per transaction, so FirstOrDefault works here
+                    // There is only one currency per transaction, so FirstOrDefault works here
                     CurrencyTypeValueId = a.FirstOrDefault().CurrencyTypeValueId,
                     FeeCoverageAmount = a.Sum( x => x.FeeCoverageAmount ?? 0.00M ),
                 } );
@@ -178,16 +180,31 @@ namespace RockWeb.Blocks.Finance
 
             var achCount = achTransactions.Count();
             var achFeeCoverageTotal = achTransactions.Sum( a => a.FeeCoverageAmount );
-            lACHFeeCoverageAmount.Text = achFeeCoverageTotal.FormatAsCurrency();
-            lACHFeeCoverageCount.Text = string.Format( "{0:N0} Transactions", achCount );
-
             var creditCardCount = creditCardTransactions.Count();
             var creditCardFeeCoverageTotal = creditCardTransactions.Sum( a => a.FeeCoverageAmount );
-            lCreditCardFeeCoverageAmount.Text = creditCardFeeCoverageTotal.FormatAsCurrency();
-            lCreditCardFeeCoverageCount.Text = string.Format( "{0:N0} Transactions", creditCardCount );
 
-            lTotalFeeCoverageAmount.Text = ( achFeeCoverageTotal + creditCardFeeCoverageTotal ).FormatAsCurrency();
-            lTotalFeeCoverageCount.Text = string.Format( "{0:N0} Transactions", achCount + creditCardCount );
+            var kpiLava = @"
+{[kpis]}
+  [[ kpi icon:'fa-list' value:'{{TotalFeeCoverageAmount | FormatAsCurrency }}' label:'{{TotalFeeCoverageLabel}}' color:'blue-500']][[ endkpi ]]
+  [[ kpi icon:'fa-credit-card' value:'{{CreditCardFeeCoverageAmount | FormatAsCurrency }}' label:'{{CreditFeeCoverageLabel}}' color:'green-500']][[ endkpi ]]
+  [[ kpi icon:'fa fa-money-check-alt' value:'{{ACHFeeCoverageAmount | FormatAsCurrency }}' label:'{{ACHFeeCoverageLabel}}' color:'indigo-500' ]][[ endkpi ]]
+{[endkpis]}";
+
+            var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( this.RockPage );
+            mergeFields.Add( "TotalFeeCoverageAmount", achFeeCoverageTotal + creditCardFeeCoverageTotal );
+            mergeFields.Add( "CreditCardFeeCoverageAmount", creditCardFeeCoverageTotal );
+            mergeFields.Add( "ACHFeeCoverageAmount", achFeeCoverageTotal );
+
+            var totalFeeCoverageLabel = string.Format( "Total Fees<br/>{0:N0} Transactions with Fees", achCount + creditCardCount );
+            var creditCardFeeCoverageLabel = string.Format( "Credit Card Fees<br/>{0:N0} Transactions with Fees", creditCardCount );
+            var achFeeCoverageLabel = string.Format( "ACH Fees<br/>{0:N0} Transactions with Fees", achCount );
+
+            mergeFields.Add( "TotalFeeCoverageLabel", totalFeeCoverageLabel );
+            mergeFields.Add( "CreditFeeCoverageLabel", creditCardFeeCoverageLabel );
+            mergeFields.Add( "ACHFeeCoverageLabel", achFeeCoverageLabel );
+
+            var kpiHtml = kpiLava.ResolveMergeFields( mergeFields );
+            lKPIHtml.Text = kpiHtml;
         }
 
         #endregion
