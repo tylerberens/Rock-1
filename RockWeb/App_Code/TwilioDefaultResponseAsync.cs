@@ -13,30 +13,68 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // </copyright>
-//
+
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Web;
+
 using Rock;
 using Rock.Data;
+using Rock.Logging;
 using Rock.Model;
-using Rock.Web.Cache;
-using RockWeb;
 using Rock.SystemKey;
-using System.Collections.Generic;
+using Rock.Web.Cache;
 
 public abstract class TwilioDefaultResponseAsync : IAsyncResult
 {
     private bool _completed;
-    private readonly Object _state;
+    private readonly object _state;
     private readonly AsyncCallback _callback;
     private readonly HttpContext _context;
 
-    bool IAsyncResult.IsCompleted { get { return _completed; } }
-    WaitHandle IAsyncResult.AsyncWaitHandle { get { return null; } }
-    Object IAsyncResult.AsyncState { get { return _state; } }
-    bool IAsyncResult.CompletedSynchronously { get { return false; } }
+    /// <summary>
+    /// Gets a value that indicates whether the asynchronous operation has completed.
+    /// </summary>
+    bool IAsyncResult.IsCompleted
+    {
+        get
+        {
+            return _completed;
+        }
+    }
+
+    /// <summary>
+    /// Gets a <see cref="T:System.Threading.WaitHandle" /> that is used to wait for an asynchronous operation to complete.
+    /// </summary>
+    WaitHandle IAsyncResult.AsyncWaitHandle {
+        get {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Gets a user-defined object that qualifies or contains information about an asynchronous operation.
+    /// </summary>
+    object IAsyncResult.AsyncState
+    {
+        get
+        {
+            return _state;
+        }
+    }
+
+    /// <summary>
+    /// Gets a value that indicates whether the asynchronous operation completed synchronously.
+    /// </summary>
+    bool IAsyncResult.CompletedSynchronously
+    {
+        get
+        {
+            return false;
+        }
+    }
 
     /// <summary>
     /// Gets a <see cref="T:System.Threading.WaitHandle" /> that is used to wait for an asynchronous operation to complete.
@@ -53,14 +91,15 @@ public abstract class TwilioDefaultResponseAsync : IAsyncResult
     /// <summary>
     /// The enable logging
     /// </summary>
+    [Obsolete("The RockLogger checks if logging is enabled for Twilio when logging a message. If the logging status needs to be checked before creating a message use Rock.Logging.RockLogger.Log.ShouldLogEntry instead.")]
+    [RockObsolete("1.13")]
     public bool EnableLogging
     {
         get
         {
-            return Rock.Logging.RockLogger.Log.ShouldLogEntry( Rock.Logging.RockLogLevel.Debug, Rock.Logging.RockLogDomains.Communications );
+            return RockLogger.Log.ShouldLogEntry( RockLogLevel.Debug, RockLogDomains.Communications );
         }
     }
-
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TwilioDefaultResponseAsync"/> class.
@@ -68,7 +107,7 @@ public abstract class TwilioDefaultResponseAsync : IAsyncResult
     /// <param name="callback">The callback.</param>
     /// <param name="context">The context.</param>
     /// <param name="state">The state.</param>
-    public TwilioDefaultResponseAsync( AsyncCallback callback, HttpContext context, Object state )
+    public TwilioDefaultResponseAsync( AsyncCallback callback, HttpContext context, object state )
     {
         _callback = callback;
         _context = context;
@@ -81,27 +120,29 @@ public abstract class TwilioDefaultResponseAsync : IAsyncResult
     /// </summary>
     public void StartAsyncWork()
     {
-        ThreadPool.QueueUserWorkItem( ( workItemState ) =>
-        {
-            try
+        ThreadPool.QueueUserWorkItem(
+            ( workItemState ) =>
             {
-                StartAsyncTask( workItemState );
-            }
-            catch ( Exception ex )
-            {
-                Rock.Model.ExceptionLogService.LogException( ex );
-                _context.Response.StatusCode = 500;
-                _completed = true;
-                _callback( this );
-            }
-        }, null );
+                try
+                {
+                    StartAsyncTask( workItemState );
+                }
+                catch ( Exception ex )
+                {
+                    Rock.Model.ExceptionLogService.LogException( ex );
+                    _context.Response.StatusCode = 500;
+                    _completed = true;
+                    _callback( this );
+                }
+            },
+            null );
     }
 
     /// <summary>
     /// Starts the asynchronous task.
     /// </summary>
     /// <param name="workItemState">State of the work item.</param>
-    private void StartAsyncTask( Object workItemState )
+    private void StartAsyncTask( object workItemState )
     {
         var request = _context.Request;
         var response = _context.Response;
@@ -223,10 +264,7 @@ public abstract class TwilioDefaultResponseAsync : IAsyncResult
     {
         if ( request.HttpMethod != "POST" )
         {
-            if ( EnableLogging )
-            {
-                Rock.Logging.RockLogger.Log.Debug( Rock.Logging.RockLogDomains.Communications, "Request was not a post." );
-            }
+            RockLogger.Log.Debug( RockLogDomains.Communications, "Request was not a post." );
             return false;
         }
 
@@ -247,11 +285,7 @@ public abstract class TwilioDefaultResponseAsync : IAsyncResult
         var signature = request.Headers["X-Twilio-Signature"];
         if ( signature.IsNullOrWhiteSpace() )
         {
-            if ( EnableLogging )
-            {
-                Rock.Logging.RockLogger.Log.Debug( Rock.Logging.RockLogDomains.Communications, "X-Twilio-Signature not found." );
-            }
-
+            RockLogger.Log.Debug( RockLogDomains.Communications, "X-Twilio-Signature not found." );
             return false;
         }
 
@@ -263,10 +297,7 @@ public abstract class TwilioDefaultResponseAsync : IAsyncResult
 
         if ( authToken.IsNullOrWhiteSpace() )
         {
-            if ( EnableLogging )
-            {
-                Rock.Logging.RockLogger.Log.Debug( Rock.Logging.RockLogDomains.Communications, "No auth token found." );
-            }
+            RockLogger.Log.Debug( RockLogDomains.Communications, "No auth token found." );
             return false;
         }
 
@@ -285,10 +316,9 @@ public abstract class TwilioDefaultResponseAsync : IAsyncResult
 
         isValid = requestValidator.Validate( requestUrl, request.Form, signature );
 
-        if ( !isValid && EnableLogging )
+        if ( !isValid )
         {
-            string authMessage = "Authentication Failed: request.Url.AbsoluteUri: " + request.Url.AbsoluteUri + " requestUrl: " + requestUrl + " authToken: " + authToken;
-            Rock.Logging.RockLogger.Log.Debug( Rock.Logging.RockLogDomains.Communications, authMessage );
+            RockLogger.Log.Debug( RockLogDomains.Communications, "Authentication Failed: request.Url.AbsoluteUri: {0},  requestUrl: {1}  authToken: {2}", request.Url.AbsoluteUri, requestUrl, authToken );
         }
 
         return isValid;
@@ -296,20 +326,20 @@ public abstract class TwilioDefaultResponseAsync : IAsyncResult
 
     private void LogRequest()
     {
-        if ( !EnableLogging )
+        if ( !RockLogger.Log.ShouldLogEntry( RockLogLevel.Debug, RockLogDomains.Communications ) )
         {
             return;
         }
 
         var formValues = new List<string>();
-        formValues.Add( string.Format( "{0}: '{1}'", "End Point URL", _context.Request.Url ) );
+        formValues.Add( string.Format( "End Point URL: '{0}'", _context.Request.Url ) );
 
         foreach ( string name in _context.Request.Form.AllKeys )
         {
             formValues.Add( string.Format( "{0}: '{1}'", name, _context.Request.Form[name] ) );
         }
 
-        Rock.Logging.RockLogger.Log.Debug( Rock.Logging.RockLogDomains.Communications, formValues.AsDelimited( ", " ) );
+        RockLogger.Log.Debug( RockLogDomains.Communications, formValues.AsDelimited( ", " ) );
     }
 
     /// <summary>
