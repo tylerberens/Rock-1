@@ -566,9 +566,12 @@ namespace Rock.Blocks.Types.Mobile.Cms
             var activity = action.Activity;
             var form = action.ActionTypeCache.WorkflowForm;
 
-            var mobileForm = new WorkflowForm
+            var mobileForm = new WorkflowForm2
             {
-                WorkflowGuid = workflow.Id != 0 ? ( Guid? ) workflow.Guid : null
+                WorkflowGuid = workflow.Id != 0 ? ( Guid? ) workflow.Guid : null,
+                HeaderHtml = form.Header,
+                FooterHtml = form.Footer,
+                PersonEntry = GetPersonEntryDetails( form )
             };
 
             //
@@ -671,5 +674,176 @@ namespace Rock.Blocks.Types.Mobile.Cms
         }
 
         #endregion
+
+        private WorkflowFormPersonEntry GetPersonEntryDetails( WorkflowActionFormCache form )
+        {
+            if ( !form.AllowPersonEntry )
+            {
+                return null;
+            }
+
+            if ( form.PersonEntryHideIfCurrentPersonKnown && RequestContext.CurrentPerson != null )
+            {
+                return null;
+            }
+
+            return new WorkflowFormPersonEntry
+            {
+                PreHtml = form.PersonEntryPreHtml,
+                PostHtml = form.PersonEntryPostHtml,
+                CampusIsVisible = form.PersonEntryCampusIsVisible,
+                AutofillCurrentPerson = form.PersonEntryAutofillCurrentPerson,
+                SpouseEntryOption = GetVisibility( form.PersonEntrySpouseEntryOption ),
+                GenderEntryOption = GetVisibility( form.PersonEntryGenderEntryOption ),
+                EmailEntryOption = GetVisibility( form.PersonEntryEmailEntryOption ),
+                MobilePhoneEntryOption = GetVisibility( form.PersonEntryMobilePhoneEntryOption ),
+                BirthdateEntryOption = GetVisibility( form.PersonEntryBirthdateEntryOption ),
+                AddressEntryOption = form.PersonEntryGroupLocationTypeValueId.HasValue ? GetVisibility( form.PersonEntryAddressEntryOption ) : VisibilityTriState.Hidden,
+                MaritalStatusEntryOption = GetVisibility( form.PersonEntryMaritalStatusEntryOption ),
+                SpouseLabel = form.PersonEntrySpouseLabel
+            };
+        }
+
+        private static VisibilityTriState GetVisibility( WorkflowActionFormPersonEntryOption option )
+        {
+            switch (option)
+            {
+                case WorkflowActionFormPersonEntryOption.Optional:
+                    return VisibilityTriState.Optional;
+
+                case WorkflowActionFormPersonEntryOption.Required:
+                    return VisibilityTriState.Required;
+
+                case WorkflowActionFormPersonEntryOption.Hidden:
+                default:
+                    return VisibilityTriState.Hidden;
+            }
+        }
+
+        private class WorkflowForm2 : WorkflowForm
+        {
+            public string HeaderHtml { get; set; }
+
+            public string FooterHtml { get; set; }
+
+            public WorkflowFormPersonEntry PersonEntry { get; set; }
+        }
+
+        private class WorkflowFormPersonEntry
+        {
+            /// <summary>
+            /// Gets the person entry preHTML.
+            /// </summary>
+            /// <value>
+            /// The person entry preHTML.
+            /// </value>
+            public string PreHtml { get; set; }
+
+            /// <summary>
+            /// Gets the person entry post HTML.
+            /// </summary>
+            /// <value>
+            /// The person entry post HTML.
+            /// </value>
+            public string PostHtml { get; set; }
+
+            /// <summary>
+            /// Gets a value indicating whether [person entry show campus].
+            /// </summary>
+            /// <value>
+            ///   <c>true</c> if [person entry show campus]; otherwise, <c>false</c>.
+            /// </value>
+            public bool CampusIsVisible { get; set; }
+
+            /// <summary>
+            /// Gets a value indicating whether Person Entry should auto-fill with the CurrentPerson
+            /// </summary>
+            /// <value>
+            ///   <c>true</c> if [person entry auto-fill current person]; otherwise, <c>false</c>.
+            /// </value>
+            public bool AutofillCurrentPerson { get; set; }
+
+            /// <summary>
+            /// Gets the person entry spouse entry option.
+            /// </summary>
+            /// <value>
+            /// The person entry spouse entry option.
+            /// </value>
+            public VisibilityTriState SpouseEntryOption { get; set; }
+
+            /// <summary>
+            /// Gets the person entry gender entry option.
+            /// </summary>
+            /// <value>
+            /// The person entry gender entry option.
+            /// </value>
+            public VisibilityTriState GenderEntryOption { get; set; }
+
+            /// <summary>
+            /// Gets the person entry email entry option.
+            /// </summary>
+            /// <value>
+            /// The person entry email entry option.
+            /// </value>
+            public VisibilityTriState EmailEntryOption { get; set; }
+
+            /// <summary>
+            /// Gets the person entry mobile phone entry option.
+            /// </summary>
+            /// <value>
+            /// The person entry mobile phone entry option.
+            /// </value>
+            public VisibilityTriState MobilePhoneEntryOption { get; set; }
+
+            /// <summary>
+            /// Gets the person entry birthdate entry option.
+            /// </summary>
+            /// <value>
+            /// The person entry birthdate entry option.
+            /// </value>
+            public VisibilityTriState BirthdateEntryOption { get; set; }
+
+            /// <summary>
+            /// Gets the person entry address entry option.
+            /// </summary>
+            /// <value>
+            /// The person entry address entry option.
+            /// </value>
+            public VisibilityTriState AddressEntryOption { get; set; }
+
+            /// <summary>
+            /// Gets the person entry marital status entry option.
+            /// </summary>
+            /// <value>
+            /// The person entry marital entry option.
+            /// </value>
+            public VisibilityTriState MaritalStatusEntryOption { get; set; }
+
+            /// <summary>
+            /// Gets the person entry spouse label.
+            /// </summary>
+            /// <value>
+            /// The person entry spouse label.
+            /// </value>
+            public string SpouseLabel { get; set; }
+        }
+
+        private enum VisibilityTriState
+        {
+            /// <summary>
+            /// The element should not be visible.
+            /// </summary>
+            Hidden = 0,
+
+            /// <summary>
+            /// The element should be visible but not required.
+            /// </summary>
+            Optional = 1,
+
+            /// <summary>
+            /// The element should be visible and required.
+            /// </summary>
+            Required = 2
+        }
     }
 }
