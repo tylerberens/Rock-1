@@ -175,17 +175,18 @@ namespace Rock.Utility
             var attendanceService = new Rock.Model.AttendanceService( rockContext );
 
             // Get the selected attendance records
-            var attendanceRecords = attendanceService.GetByIds( selectedAttendanceIds );
+            var labelDataList = attendanceService
+                .GetByIds( selectedAttendanceIds )
+                .Select( a => a.AttendanceData.LabelData );
 
             var printFromClient = new List<CheckInLabel>();
             var printFromServer = new List<CheckInLabel>();
 
             // Now grab only the selected label types (matching fileGuids) from those record's AttendanceData
             // for the selected  person
-            foreach ( var attendance in attendanceRecords )
+            foreach ( var labelData in labelDataList )
             {
-                var attendanceData = attendance.AttendanceData;
-                var json = attendanceData.LabelData.Trim();
+                var json = labelData.Trim();
 
                 // skip if the return type is not an array
                 if ( json.Substring( 0, 1 ) != "[" )
@@ -222,6 +223,18 @@ namespace Rock.Utility
             if ( printFromClient.Any() )
             {
                 var urlRoot = string.Format( "{0}://{1}", request.Url.Scheme, request.Url.Authority );
+
+/*
+                // This is extremely useful when debugging with ngrok and an iPad on the local network.
+                // X-Original-Host will contain the name of your ngrok hostname, therefore the labels will
+                // get a LabelFile url that will actually work with that iPad.
+                if ( request.Headers["X-Original-Host"] != null )
+                {
+                    var scheme = request.Headers["X-Forwarded-Proto"] ?? "http";
+                    urlRoot = string.Format( "{0}://{1}", scheme, request.Headers.GetValues( "X-Original-Host" ).First() );
+                }
+*/
+
                 printFromClient
                     .OrderBy( l => l.PersonId )
                     .ThenBy( l => l.Order )

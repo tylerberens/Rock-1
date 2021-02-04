@@ -28,6 +28,7 @@ namespace Rock.CheckIn
     /// <summary>
     /// Attendance Information about a person when listed in an attendance roster
     /// </summary>
+    [System.Diagnostics.DebuggerDisplay( "{FullName} {StatusString} {CheckInTime}" )]
     public class RosterAttendee
     {
         private Person _person;
@@ -633,11 +634,6 @@ namespace Rock.CheckIn
         }
 
         #endregion Static methods
-
-        public override string ToString()
-        {
-            return $"{this.FullName} {this.StatusString} {this.CheckInTime}";
-        }
     }
 
     /// <summary>
