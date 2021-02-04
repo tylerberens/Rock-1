@@ -30,6 +30,8 @@ namespace Rock.Web.Utilities
     /// </summary>
     public static class RockUpdateHelper
     {
+        private const int dotNet472ReleaseNumber = 461808;
+
         /// <summary>
         /// Returns the environment data as json.
         /// </summary>
@@ -82,7 +84,7 @@ namespace Rock.Web.Utilities
         public static DotNetVersionCheckResult CheckDotNetVersionFromRegistry()
         {
             // Check if Release is >= 461808 (4.7.2)
-            if ( GetDotNetReleaseNumber() >= 461808 )
+            if ( GetDotNetReleaseNumber() >= dotNet472ReleaseNumber )
             {
                 return DotNetVersionCheckResult.Pass;
             }

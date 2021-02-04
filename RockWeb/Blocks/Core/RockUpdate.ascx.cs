@@ -25,14 +25,11 @@ using System.Text.RegularExpressions;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
-
-using Microsoft.Win32;
 using Newtonsoft.Json;
 using NuGet;
 using RestSharp;
 
 using Rock;
-using Rock.Constants;
 using Rock.Data;
 using Rock.Model;
 using Rock.Services.NuGet;
@@ -154,23 +151,21 @@ namespace RockWeb.Blocks.Core
                         }
 
                         var result = CheckFrameworkVersion();
-                        if ( result == DotNetVersionCheckResult.Pass )
+
+                        _isOkToProceed = true;
+
+                        if ( result == DotNetVersionCheckResult.Fail )
                         {
-                            _isOkToProceed = true;
-                        }
-                        else if ( result == DotNetVersionCheckResult.Fail )
-                        {
-                            _isOkToProceed = false;
+
                             nbVersionIssue.Visible = true;
-                            nbVersionIssue.Text += "<p>You will need to upgrade your hosting server in order to proceed with the next update.</p>";
+                            nbVersionIssue.Text += "<p>You will need to upgrade your hosting server in order to proceed with the v13 update.</p>";
                             nbBackupMessage.Visible = false;
                         }
                         else
                         {
-                            _isOkToProceed = true;
                             nbVersionIssue.Visible = true;
-                            nbVersionIssue.Text += "<p>You may need to upgrade your hosting server in order to proceed with the next update. We were <b>unable to determine which Framework version</b> your server is using.</p>";
-                            nbVersionIssue.Details += "<div class='alert alert-warning'>We were unable to check your server to verify that the .Net 4.5.2 Framework is installed! <b>You MUST verify this manually before you proceed with the update</b> otherwise your Rock application will be broken until you update the server.</div>";
+                            nbVersionIssue.Text += "<p>You may need to upgrade your hosting server in order to proceed with the v13 update. We were <b>unable to determine which Framework version</b> your server is using.</p>";
+                            nbVersionIssue.Details += "<div class='alert alert-warning'>We were unable to check your server to verify that the .Net 4.7.2 Framework is installed! <b>You MUST verify this manually before you proceed with the update</b> otherwise your Rock application will be broken until you update the server.</div>";
                             nbBackupMessage.Visible = false;
                         }
 
@@ -261,12 +256,24 @@ namespace RockWeb.Blocks.Core
         private bool CanInstallVersion( SemanticVersion targetVersion )
         {
             var requiresSqlServer14OrHigher = targetVersion.Version.Major > 1 || targetVersion.Version.Minor > 10;
-            if( !requiresSqlServer14OrHigher )
+            var requiresNet457 = targetVersion.Version.Major > 1 || targetVersion.Version.Minor > 12;
+
+            if ( !requiresSqlServer14OrHigher )
             {
                 return true;
             }
 
-            return CheckSqlServerVersionGreaterThenSqlServer2012();
+            var hasSqlServer2012OrGreater = CheckSqlServerVersionGreaterThenSqlServer2012();
+            if ( requiresNet457 )
+            {
+                var result = CheckFrameworkVersion();
+                if ( result == DotNetVersionCheckResult.Fail )
+                {
+                    return false;
+                }
+            }
+
+            return hasSqlServer2012OrGreater;
         }
 
         /// <summary>
@@ -310,7 +317,7 @@ namespace RockWeb.Blocks.Core
                         divPanel.AddCssClass( "panel-block" );
                     }
 
-                    if ( !_isOkToProceed || !CanInstallVersion(package.Version) )
+                    if ( !_isOkToProceed || !CanInstallVersion( package.Version ) )
                     {
                         lbInstall.Enabled = false;
                         lbInstall.AddCssClass( "btn-danger" );
