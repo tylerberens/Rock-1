@@ -157,6 +157,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
         {
             base.OnInit( e );
 
+            RockPage.AddScriptLink( "~/Scripts/CheckinClient/ZebraPrint.js" );
             RockPage.AddCSSLink( "~/Styles/fluidbox.css" );
             RockPage.AddScriptLink( "~/Scripts/jquery.fluidbox.min.js" );
 
@@ -361,11 +362,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 .OrderBy( d => d.Name )
                 .ToList();
 
-            if ( printers == null || printers.Count == 0 )
-            {
-                maNoLabelsFound.Show( "Due to browser limitations, only server based printers are supported and none are defined on this server.", ModalAlertType.Information );
-                return;
-            }
+            printers.Insert( 0, new Device { Name = "local printer (if available)", IPAddress = string.Empty } );
 
             ddlPrinter.Items.Clear();
             ddlPrinter.DataSource = printers;
