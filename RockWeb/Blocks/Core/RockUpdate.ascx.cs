@@ -161,7 +161,7 @@ namespace RockWeb.Blocks.Core
                             nbVersionIssue.Text += "<p>You will need to upgrade your hosting server in order to proceed with the v13 update.</p>";
                             nbBackupMessage.Visible = false;
                         }
-                        else
+                        else if ( result == DotNetVersionCheckResult.Unknown )
                         {
                             nbVersionIssue.Visible = true;
                             nbVersionIssue.Text += "<p>You may need to upgrade your hosting server in order to proceed with the v13 update. We were <b>unable to determine which Framework version</b> your server is using.</p>";
