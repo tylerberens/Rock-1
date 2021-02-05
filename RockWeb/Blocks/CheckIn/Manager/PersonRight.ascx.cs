@@ -363,12 +363,12 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             ddlPrinter.Items.Clear();
             ddlPrinter.Items.Add( new ListItem() );
+            ddlPrinter.Items.Add( new ListItem( "local printer (if available)", Guid.Empty.ToString() ) );
+
             foreach ( var printer in printerList )
             {
                 ddlPrinter.Items.Add( new ListItem( printer.Name, printer.Guid.ToString() ) );
             }
-
-            ddlPrinter.Items.Add( new ListItem( "local printer (if available)", Guid.Empty.ToString() ) );
 
             var labelPrinterGuid = CheckinManagerHelper.GetCheckinManagerConfigurationFromCookie().LabelPrinterGuid;
             ddlPrinter.SetValue( labelPrinterGuid );
