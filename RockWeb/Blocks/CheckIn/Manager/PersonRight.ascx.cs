@@ -24,6 +24,7 @@ using System.Web.UI.WebControls;
 
 using Rock;
 using Rock.Attribute;
+using Rock.CheckIn;
 using Rock.Constants;
 using Rock.Data;
 using Rock.Model;
@@ -84,9 +85,6 @@ namespace RockWeb.Blocks.CheckIn.Manager
             + Rock.SystemGuid.Badge.BAPTISM + ","
             + Rock.SystemGuid.Badge.IN_SERVING_TEAM,
         Order = 7 )]
-
-    
-
     public partial class PersonRight : Rock.Web.UI.RockBlock
     {
         #region Attribute Keys
@@ -356,18 +354,24 @@ namespace RockWeb.Blocks.CheckIn.Manager
             cblLabels.DataSource = ZebraPrint.GetLabelTypesForPerson( personId, attendanceIds ).OrderBy( l => l.Name );
             cblLabels.DataBind();
 
-            // Bind the printers list.
-            var printers = new DeviceService( rockContext )
+            // Get the printers list.
+            var printerList = new DeviceService( rockContext )
                 .GetByDeviceTypeGuid( new Guid( Rock.SystemGuid.DefinedValue.DEVICE_TYPE_PRINTER ) )
                 .OrderBy( d => d.Name )
+                .Select( a => new { a.Name, a.Guid } )
                 .ToList();
 
-            printers.Insert( 0, new Device { Name = "local printer (if available)", IPAddress = string.Empty } );
-
             ddlPrinter.Items.Clear();
-            ddlPrinter.DataSource = printers;
-            ddlPrinter.DataBind();
-            ddlPrinter.Items.Insert( 0, new ListItem( None.Text, None.IdValue ) );
+            ddlPrinter.Items.Add( new ListItem() );
+            foreach ( var printer in printerList )
+            {
+                ddlPrinter.Items.Add( new ListItem( printer.Name, printer.Guid.ToString() ) );
+            }
+
+            ddlPrinter.Items.Add( new ListItem( "local printer (if available)", Guid.Empty.ToString() ) );
+
+            var labelPrinterGuid = CheckinManagerHelper.GetCheckinManagerConfigurationFromCookie().LabelPrinterGuid;
+            ddlPrinter.SetValue( labelPrinterGuid );
 
             nbReprintLabelMessages.Text = string.Empty;
             mdReprintLabels.Show();
@@ -393,20 +397,33 @@ namespace RockWeb.Blocks.CheckIn.Manager
                 return;
             }
 
-            if ( ddlPrinter.SelectedValue == null || ddlPrinter.SelectedValue == None.IdValue )
+            var selectedPrinterGuid = ddlPrinter.SelectedValue.AsGuidOrNull();
+
+            if ( !selectedPrinterGuid.HasValue )
             {
                 nbReprintLabelMessages.Visible = true;
                 nbReprintLabelMessages.Text = "Please select a printer.";
                 return;
             }
-
-            // Get the person Id from the Guid.
+            
             var selectedAttendanceIds = hfCurrentAttendanceIds.Value.SplitDelimitedValues().AsIntegerList();
 
             var fileGuids = cblLabels.SelectedValues.AsGuidList();
 
+            string selectedPrinterIPAddress;
+            if ( selectedPrinterGuid == Guid.Empty )
+            {
+                selectedPrinterIPAddress = string.Empty;
+            }
+            else
+            {
+                selectedPrinterIPAddress = new DeviceService( new RockContext() ).GetSelect( selectedPrinterGuid.Value, s => s.IPAddress );
+            }
+
+            CheckinManagerHelper.SaveSelectedLabelPrinterToCookie( selectedPrinterGuid );
+
             // Now, finally, re-print the labels.
-            List<string> messages = ZebraPrint.ReprintZebraLabels( fileGuids, personId, selectedAttendanceIds, nbReprintMessage, this.Request, ddlPrinter.SelectedValue );
+            List<string> messages = ZebraPrint.ReprintZebraLabels( fileGuids, personId, selectedAttendanceIds, nbReprintMessage, this.Request, selectedPrinterIPAddress );
             nbReprintMessage.Visible = true;
             nbReprintMessage.Text = messages.JoinStrings( "<br>" );
 

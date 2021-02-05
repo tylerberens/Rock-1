@@ -41,7 +41,7 @@
                         <Content>
                             <Rock:NotificationBox ID="nbReprintLabelMessages" runat="server" NotificationBoxType="Validation"></Rock:NotificationBox>
                             <Rock:RockCheckBoxList ID="cblLabels" runat="server" Label="Labels" DataTextField="Name" DataValueField="FileGuid"></Rock:RockCheckBoxList>
-                            <Rock:RockDropDownList ID="ddlPrinter" runat="server" Label="Printer" DataTextField="Name" DataValueField="IPAddress"></Rock:RockDropDownList>
+                            <Rock:RockDropDownList ID="ddlPrinter" runat="server" Label="Printer" />
                         </Content>
                     </Rock:ModalDialog>
                 </div>
