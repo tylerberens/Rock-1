@@ -363,7 +363,11 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             ddlPrinter.Items.Clear();
             ddlPrinter.Items.Add( new ListItem() );
-            ddlPrinter.Items.Add( new ListItem( "local printer (if available)", Guid.Empty.ToString() ) );
+
+            if ( hfHasClientPrinter.Value.AsBoolean() )
+            {
+                ddlPrinter.Items.Add( new ListItem( "local printer", Guid.Empty.ToString() ) );
+            }
 
             foreach ( var printer in printerList )
             {
@@ -410,20 +414,31 @@ namespace RockWeb.Blocks.CheckIn.Manager
 
             var fileGuids = cblLabels.SelectedValues.AsGuidList();
 
+            ReprintLabelOptions reprintLabelOptions;
+
             string selectedPrinterIPAddress;
             if ( selectedPrinterGuid == Guid.Empty )
             {
-                selectedPrinterIPAddress = string.Empty;
+                reprintLabelOptions = new ReprintLabelOptions
+                {
+                    PrintFrom = PrintFrom.Client
+                };
             }
             else
             {
                 selectedPrinterIPAddress = new DeviceService( new RockContext() ).GetSelect( selectedPrinterGuid.Value, s => s.IPAddress );
+
+                reprintLabelOptions = new ReprintLabelOptions
+                {
+                    PrintFrom = PrintFrom.Server,
+                    ServerPrinterIPAddress = selectedPrinterIPAddress
+                };
             }
 
             CheckinManagerHelper.SaveSelectedLabelPrinterToCookie( selectedPrinterGuid );
 
             // Now, finally, re-print the labels.
-            List<string> messages = ZebraPrint.ReprintZebraLabels( fileGuids, personId, selectedAttendanceIds, nbReprintMessage, this.Request, selectedPrinterIPAddress );
+            List<string> messages = ZebraPrint.ReprintZebraLabels( fileGuids, personId, selectedAttendanceIds, nbReprintMessage, this.Request, reprintLabelOptions );
             nbReprintMessage.Visible = true;
             nbReprintMessage.Text = messages.JoinStrings( "<br>" );
 
