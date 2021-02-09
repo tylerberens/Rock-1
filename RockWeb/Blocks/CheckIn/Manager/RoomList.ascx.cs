@@ -376,7 +376,7 @@ namespace RockWeb.Blocks.CheckIn.Manager
             // Limit attendances (rooms) to the groupLocations' LocationId and GroupIds that we'll be showing
             var groupLocationLocationIds = groupLocationList.Select( a => a.LocationId ).Distinct().ToList();
             var groupLocationGroupsIds = groupLocationList.Select( a => a.GroupId ).Distinct().ToList();
-            
+
             attendanceQuery = attendanceQuery.Where( a =>
                 groupLocationLocationIds.Contains( a.Occurrence.LocationId.Value )
                 && groupLocationGroupsIds.Contains( a.Occurrence.GroupId.Value ) );
@@ -519,9 +519,8 @@ namespace RockWeb.Blocks.CheckIn.Manager
         private void AddToRoomList( List<RoomInfo> roomList, GroupLocationInfo groupLocation )
         {
             Dictionary<int, List<AttendanceCheckinTimeInfo>> attendancesForLocationByGroupId = _attendancesByLocationIdAndGroupId.GetValueOrNull( groupLocation.LocationId );
-
-            RoomCounts roomCounts;
-            List<AttendanceCheckinTimeInfo> attendancesForLocationAndGroup = null;
+            
+            List<AttendanceCheckinTimeInfo> attendancesForLocationAndGroup;
             if ( attendancesForLocationByGroupId != null )
             {
                 attendancesForLocationAndGroup = attendancesForLocationByGroupId.GetValueOrNull( groupLocation.GroupId );
@@ -533,26 +532,30 @@ namespace RockWeb.Blocks.CheckIn.Manager
                         .GroupBy( a => a.PersonId )
                         .Select( s => s.OrderByDescending( x => x.StartDateTime ).FirstOrDefault() ).ToList();
                 }
-            }
-
-            if ( attendancesForLocationAndGroup != null )
-            {
-                roomCounts = new RoomCounts
+                else
                 {
-                    CheckedInCount = attendancesForLocationAndGroup.Where( x => RosterAttendee.GetRosterAttendeeStatus( x.EndDateTime, x.PresentDateTime ) == RosterAttendeeStatus.CheckedIn ).Count(),
-                    PresentCount = attendancesForLocationAndGroup.Where( x => RosterAttendee.GetRosterAttendeeStatus( x.EndDateTime, x.PresentDateTime ) == RosterAttendeeStatus.Present ).Count(),
-                    CheckedOutCount = attendancesForLocationAndGroup.Where( x => RosterAttendee.GetRosterAttendeeStatus( x.EndDateTime, x.PresentDateTime ) == RosterAttendeeStatus.CheckedOut ).Count(),
-                };
+                    // no attendances for this Location (Room) and Group
+                    attendancesForLocationAndGroup = new List<AttendanceCheckinTimeInfo>();
+                }
             }
             else
             {
-                roomCounts = new RoomCounts();
+                // no attendances for this Location (Room)
+                attendancesForLocationByGroupId = new Dictionary<int, List<AttendanceCheckinTimeInfo>>();
+                attendancesForLocationAndGroup = new List<AttendanceCheckinTimeInfo>(); 
             }
+
+            var roomCounts = new RoomCounts
+            {
+                CheckedInCount = attendancesForLocationAndGroup.Where( x => RosterAttendee.GetRosterAttendeeStatus( x.EndDateTime, x.PresentDateTime ) == RosterAttendeeStatus.CheckedIn ).Count(),
+                PresentCount = attendancesForLocationAndGroup.Where( x => RosterAttendee.GetRosterAttendeeStatus( x.EndDateTime, x.PresentDateTime ) == RosterAttendeeStatus.Present ).Count(),
+                CheckedOutCount = attendancesForLocationAndGroup.Where( x => RosterAttendee.GetRosterAttendeeStatus( x.EndDateTime, x.PresentDateTime ) == RosterAttendeeStatus.CheckedOut ).Count(),
+            };
 
             if ( _showOnlyParentGroup )
             {
                 // if the same person is attending this location and group multiple times, just take the most recent one
-                var attendancesForLocation = attendancesForLocationByGroupId.SelectMany( s => s.Value)
+                var attendancesForLocation = attendancesForLocationByGroupId.SelectMany( s => s.Value )
                     .GroupBy( a => a.PersonId )
                     .Select( s => s.OrderByDescending( x => x.StartDateTime ).FirstOrDefault() ).ToList();
 
