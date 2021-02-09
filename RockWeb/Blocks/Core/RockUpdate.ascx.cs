@@ -256,7 +256,7 @@ namespace RockWeb.Blocks.Core
         private bool CanInstallVersion( SemanticVersion targetVersion )
         {
             var requiresSqlServer14OrHigher = targetVersion.Version.Major > 1 || targetVersion.Version.Minor > 10;
-            var requiresNet457 = targetVersion.Version.Major > 1 || targetVersion.Version.Minor > 12;
+            var requiresNet472 = targetVersion.Version.Major > 1 || targetVersion.Version.Minor > 12;
 
             if ( !requiresSqlServer14OrHigher )
             {
@@ -264,7 +264,7 @@ namespace RockWeb.Blocks.Core
             }
 
             var hasSqlServer2012OrGreater = CheckSqlServerVersionGreaterThenSqlServer2012();
-            if ( requiresNet457 )
+            if ( requiresNet472 )
             {
                 var result = CheckFrameworkVersion();
                 if ( result == DotNetVersionCheckResult.Fail )
