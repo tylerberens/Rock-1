@@ -99,8 +99,9 @@ namespace Rock.Lava.DotLiquid
             Template.RegisterSafeType( typeof( Enum ), o => o.ToString() );
             Template.RegisterSafeType( typeof( DBNull ), o => null );
 
-            // Register all Types that implement ILavaDataDictionary as safe to render.
+            // Register all Types that implement LavaDataDictionary interfaces as safe to render.
             RegisterSafeType( typeof( Rock.Lava.ILavaDataDictionary ) );
+            RegisterSafeType( typeof( Rock.Lava.ILavaDataDictionarySource ) );
         }
 
         /// <summary>

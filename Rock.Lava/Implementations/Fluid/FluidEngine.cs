@@ -89,8 +89,9 @@ namespace Rock.Lava.Fluid
             // the ability to resolve properties of nested anonymous Types using Reflection.
             TemplateContext.GlobalMemberAccessStrategy = new LavaObjectMemberAccessStrategy();
 
-            // Register all Types that implement ILavaDataDictionary as safe to render.
+            // Register all Types that implement LavaDataDictionary interfaces as safe to render.
             RegisterSafeType( typeof( Rock.Lava.ILavaDataDictionary ) );
+            RegisterSafeType( typeof( Rock.Lava.ILavaDataDictionarySource ) );
 
             // Set the file provider to resolve included file references.
             if ( options.FileSystem == null )
