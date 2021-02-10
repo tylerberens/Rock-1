@@ -166,7 +166,7 @@ namespace Rock.Lava.DotLiquid
             {
                 scopeIndex = _context.Scopes.Count - 1;
             }
-            else if ( scope == LavaContextRelativeScopeSpecifier.Parent )
+            else if ( scope == LavaContextRelativeScopeSpecifier.Parent && _context.Scopes.Count > 1 )
             {
                 scopeIndex = 1;
             }

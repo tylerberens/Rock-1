@@ -423,13 +423,14 @@ namespace Rock.Lava.Blocks
 
                             var resultList = queryResult.ToList();
 
-                            // if there is only one item to return set an alternative non-array based variable
+                            // Add the result to the current context.
+                            context.SetMergeField( parms["iterator"], resultList, LavaContextRelativeScopeSpecifier.Current );
+
                             if ( resultList.Count == 1 )
                             {
-                                context.SetMergeField( EntityName, resultList.FirstOrDefault(), LavaContextRelativeScopeSpecifier.Root );
+                                // If there is only one item, set a singleton variable in addition to the result list.
+                                context.SetMergeField( EntityName, resultList.FirstOrDefault(), LavaContextRelativeScopeSpecifier.Current );
                             }
-
-                            context.SetMergeField( parms["iterator"], resultList, LavaContextRelativeScopeSpecifier.Root );
                         }
                     }
                 }

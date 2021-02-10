@@ -159,6 +159,38 @@ Color 4: blue
         }
 
         [TestMethod]
+        public void EntityBlock_WithNestedEntityBlock_ProducesExpectedOutput()
+        {
+
+            var input = @"
+{% note expression:'NoteType.Name == ""Personal Note""' sort:'Id' limit:'3' %}
+    {% for note in noteItems %}
+        {% case note.NoteType.EntityType.FriendlyName %}
+            {% when 'Person' %}
+                {% person id:'{{ note.EntityId }}' %}
+                    [{{person.FullName}}]: {{note.Text}}<br>
+                {% endperson %}
+        {% endcase %}
+    {% endfor %}
+{% endnote %}
+";
+
+            var expectedOutput = @"
+[Ted Decker]: Talked to Ted today about starting a new Young Adults ministry<br>
+[Ted Decker]: Called Ted and heard that his mother is in the hospital and could use prayer.<br>
+[Daniel Peak]: Called Daniel to see if he would be interested in joining our team as the Communications Director.<br>
+";
+
+            var context = TestHelper.LavaEngine.NewContext();
+
+            context.SetEnabledCommands( "RockEntity" );
+
+            var output = TestHelper.GetTemplateOutput( input, context );
+
+            TestHelper.AssertTemplateOutput( expectedOutput, input, context, ignoreWhiteSpace:true );
+        }
+
+        [TestMethod]
         public void EntityBlock_PersonWhereLastNameIsDecker_ReturnsDeckers()
         {
             var input = @"

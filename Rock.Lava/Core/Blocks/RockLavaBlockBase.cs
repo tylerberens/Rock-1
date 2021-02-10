@@ -159,16 +159,26 @@ namespace Rock.Lava
         /// <param name="proxy"></param>
         void ILiquidFrameworkElementRenderer.Render( ILiquidFrameworkElementRenderer baseRenderer, ILavaContext context, TextWriter result, TextEncoder encoder )
         {
-            // If this block was previously called with a different base renderer, exit to prevent a circular reference.
+            // If the derived block is calling back into this method, render the block using the base implementation.
             if ( _baseRenderer != null )
             {
                 baseRenderer.Render( null, context, result, encoder );
+
                 return;
             }
 
-            _baseRenderer = baseRenderer;
+            // Call the derived block to render the content.
+            // Store a reference to the calling block to handle the case where there is a callback to use the default rendering process.
+            try
+            {
+                _baseRenderer = baseRenderer;
 
-            OnRender( context, result );
+                OnRender( context, result );
+            }
+            finally
+            {
+                _baseRenderer = null;
+            }
         }
 
         #endregion
