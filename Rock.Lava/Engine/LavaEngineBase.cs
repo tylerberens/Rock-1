@@ -518,7 +518,7 @@ namespace Rock.Lava
         {
             if ( this.ExceptionHandlingStrategy == ExceptionHandlingStrategySpecifier.RenderToOutput )
             {
-                message = ex.Message;
+                message = $"Lava Error: {ex.Message}";
             }
             else if ( this.ExceptionHandlingStrategy == ExceptionHandlingStrategySpecifier.Ignore )
             {
