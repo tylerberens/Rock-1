@@ -4,8 +4,13 @@
 <#@ output extension=".cs" #>
 <#
      int major = 1; 
+<<<<<<< HEAD
      int minor = 13; 
      int build = 0; 
+=======
+     int minor = 12; 
+     int build = 1; 
+>>>>>>> hotfix-1.12.2
      int revision = 0; 
   
      try

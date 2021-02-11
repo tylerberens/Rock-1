@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿//1
+=======
+﻿//3
+>>>>>>> hotfix-1.12.2
 // ^^^ This number above is the build number used by the T4 template responsible for generating this file. 
 // Do Not Remove!
 //
@@ -42,6 +46,7 @@ using System.Reflection;
 // The AssemblyVersion number should change only when we are
 // making a breaking change and need the runtime binding to fail if it does not
 // match the correct version exactly.
+<<<<<<< HEAD
 [assembly: AssemblyVersion( "1.13.0.1" )]
 
 [assembly: AssemblyFileVersion( "1.13.0.1" )]
@@ -49,6 +54,15 @@ using System.Reflection;
 // This is the "official" product name that will be shown to people. 
 // It's shown in the SystemInfo details and perhaps the RockUpdate page.
 [assembly: AssemblyInformationalVersion( "Rock McKinley 13.0" )]
+=======
+[assembly: AssemblyVersion( "1.12.1.3" )]
+
+[assembly: AssemblyFileVersion( "1.12.1.3" )]
+
+// This is the "official" product name that will be shown to people. 
+// It's shown in the SystemInfo details and perhaps the RockUpdate page.
+[assembly: AssemblyInformationalVersion( "Rock McKinley 12.1" )]
+>>>>>>> hotfix-1.12.2
 
   
 
