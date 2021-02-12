@@ -329,7 +329,7 @@ namespace Rock.Model
 
             if ( endDate.HasValue )
             {
-                endDate = endDate.Value.Date.AddDays(1);
+                endDate = endDate.Value.Date.AddDays( 1 );
                 qryAttendance = qryAttendance.Where( a => a.Occurrence.SundayDate < endDate.Value );
             }
 
@@ -848,15 +848,25 @@ namespace Rock.Model
                 .GroupBy( a => new
                 {
                     a.PersonAlias.Person,
+                    Scheduler = a.ScheduledByPersonAlias?.Person,
                     a.Occurrence.Group.Members.Where( gm => gm.PersonId == a.PersonAlias.PersonId ).FirstOrDefault().CommunicationPreference,
                     a.Occurrence.Group.GroupType.ScheduleConfirmationSystemCommunicationId
                 } )
-                .Select( s => new SendSystemCommunicationIndividual
+                .Select( s =>
                 {
-                    SystemCommunicationId = s.Key.ScheduleConfirmationSystemCommunicationId.Value,
-                    Individual = s.Key.Person,
-                    GroupCommunicationPreference = s.Key.CommunicationPreference,
-                    Attendances = s.ToList()
+                    var sendSystemCommunicationIndividual = new SendSystemCommunicationIndividual
+                    {
+                        SystemCommunicationId = s.Key.ScheduleConfirmationSystemCommunicationId.Value,
+                        Individual = s.Key.Person,
+                        GroupCommunicationPreference = s.Key.CommunicationPreference,
+                        FromPerson = s.Key.Scheduler,
+                        Attendances = s.ToList()
+                    };
+
+                    sendSystemCommunicationIndividual.AdditionalMergeFields = new Dictionary<string, object>();
+                    sendSystemCommunicationIndividual.AdditionalMergeFields.Add( "Scheduler", s.Key.Scheduler );
+
+                    return sendSystemCommunicationIndividual;
                 } );
 
             var sendMessageResults = SendSystemCommunications( sendConfirmationIndividuals, ( attendance ) => attendance.ScheduleConfirmationSent = true );
@@ -940,6 +950,13 @@ namespace Rock.Model
                 var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( null );
                 mergeFields.Add( "Attendance", attendances.FirstOrDefault() );
                 mergeFields.Add( "Attendances", attendances );
+                if ( individualNotification.AdditionalMergeFields != null )
+                {
+                    foreach ( var additionMergeField in individualNotification.AdditionalMergeFields )
+                    {
+                        mergeFields.Add( additionMergeField.Key, additionMergeField.Value );
+                    }
+                }
 
                 var forceCommunicationType = CommunicationType.RecipientPreference;
                 var validSmsTemplateExists = communicationMessage.SMSMessage.IsNotNullOrWhiteSpace() && communicationMessage.SMSFromDefinedValueId != null;
@@ -1013,12 +1030,28 @@ namespace Rock.Model
             public int SystemCommunicationId { get; set; }
 
             /// <summary>
+            /// Gets or sets the additional merge fields.
+            /// </summary>
+            /// <value>
+            /// The additional merge fields.
+            /// </value>
+            public Dictionary<string, object> AdditionalMergeFields { get; set; }
+
+            /// <summary>
             /// Gets or sets the attendances.
             /// </summary>
             /// <value>
             /// The attendances.
             /// </value>
             public List<Attendance> Attendances { get; set; }
+
+            /// <summary>
+            /// Gets or sets person that this communication is From 
+            /// </summary>
+            /// <value>
+            /// From person.
+            /// </value>
+            public Person FromPerson { get; internal set; }
         }
 
         #region GroupScheduling Related
@@ -1971,12 +2004,13 @@ namespace Rock.Model
 
             var endOfOccurrenceDay = attendanceOccurrence.OccurrenceDate.AddHours( 23 ).AddMinutes( 59 ).AddSeconds( 59 );
             var groupMemberAssignmentsList = groupMemberAssignmentsQuery
-                .Select( a => new {
+                .Select( a => new
+                {
                     GroupMemberId = a.GroupMember.Id,
                     a.GroupMember.PersonId,
                     a.LocationId,
                     a.ScheduleId
-                })
+                } )
                 .GroupJoin( rockContext.Attendances, gma => gma.PersonId, a => a.PersonAlias.PersonId,
                     ( gma, a ) => new GroupMemberAssignmentInfo
                     {
