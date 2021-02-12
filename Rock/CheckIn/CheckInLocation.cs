@@ -19,7 +19,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 
-using Rock.Lava;
 using Rock.Model;
 
 namespace Rock.CheckIn
@@ -28,7 +27,7 @@ namespace Rock.CheckIn
     /// A location option for the current check-in
     /// </summary>
     [DataContract]
-    public class CheckInLocation : ILavaDataDictionary
+    public class CheckInLocation : Lava.ILiquidizable
     {
         /// <summary>
         /// Gets or sets the location.
@@ -237,7 +236,7 @@ namespace Rock.CheckIn
         /// <value>
         /// The available keys.
         /// </value>
-        [LavaHidden]
+        [Rock.Data.LavaIgnore]
         public List<string> AvailableKeys
         {
             get
@@ -259,20 +258,7 @@ namespace Rock.CheckIn
         /// </value>
         /// <param name="key">The key.</param>
         /// <returns></returns>
-        public object GetValue( string key )
-        {
-            return this[key];
-        }
-
-        /// <summary>
-        /// Gets the <see cref="System.Object"/> with the specified key.
-        /// </summary>
-        /// <value>
-        /// The <see cref="System.Object"/>.
-        /// </value>
-        /// <param name="key">The key.</param>
-        /// <returns></returns>
-        [LavaHidden]
+        [Rock.Data.LavaIgnore]
         public object this[object key]
         {
             get
@@ -291,7 +277,7 @@ namespace Rock.CheckIn
         /// </summary>
         /// <param name="key">The key.</param>
         /// <returns></returns>
-        public bool ContainsKey( string key )
+        public bool ContainsKey( object key )
         {
             var additionalKeys = new List<string> { "LastCheckIn", "Schedules" };
             if ( additionalKeys.Contains( key.ToStringSafe() ) )

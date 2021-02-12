@@ -14,18 +14,17 @@
 // limitations under the License.
 // </copyright>
 //
-using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
-using Rock.Lava;
 
 namespace Rock.CheckIn
 {
     /// <summary>
     /// 
     /// </summary>
+    /// <seealso cref="Rock.Lava.ILiquidizable" />
     [DataContract]
-    public class CheckInMessage : ILavaDataDictionary
+    public class CheckInMessage : Lava.ILiquidizable
     {
         /// <summary>
         /// Gets or sets the message text.
@@ -51,20 +50,7 @@ namespace Rock.CheckIn
         /// </value>
         /// <param name="key">The key.</param>
         /// <returns></returns>
-        public object GetValue( string key )
-        {
-            return this[key];
-        }
-
-        /// <summary>
-        /// Gets the <see cref="System.Object"/> with the specified key.
-        /// </summary>
-        /// <value>
-        /// The <see cref="System.Object"/>.
-        /// </value>
-        /// <param name="key">The key.</param>
-        /// <returns></returns>
-        [LavaHidden]
+        [Rock.Data.LavaIgnore]
         public object this[object key]
         {
             get
@@ -84,7 +70,7 @@ namespace Rock.CheckIn
         /// <value>
         /// The available keys.
         /// </value>
-        [LavaHidden]
+        [Rock.Data.LavaIgnore]
         public List<string> AvailableKeys
         {
             get
@@ -99,7 +85,7 @@ namespace Rock.CheckIn
         /// </summary>
         /// <param name="key">The key.</param>
         /// <returns></returns>
-        public bool ContainsKey( string key )
+        public bool ContainsKey( object key )
         {
             var additionalKeys = new List<string> { "MessageText", "MessageType" };
             if (additionalKeys.Contains( key.ToStringSafe() ))
@@ -114,7 +100,6 @@ namespace Rock.CheckIn
         /// </summary>
         /// <returns></returns>
         /// <exception cref="System.NotImplementedException"></exception>
-        [Obsolete]
         public object ToLiquid()
         {
             return this;

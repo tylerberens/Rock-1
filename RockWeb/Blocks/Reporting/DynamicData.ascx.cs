@@ -18,7 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
-using System.Dynamic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Web.UI;
@@ -27,9 +26,7 @@ using System.Web.UI.WebControls;
 using Rock;
 using Rock.Attribute;
 using Rock.Data;
-using Rock.Lava;
 using Rock.Model;
-using Rock.Utility;
 using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
@@ -972,7 +969,7 @@ namespace RockWeb.Blocks.Reporting
         /// <summary>
         ///
         /// </summary>
-        private class DataRowDrop : LavaDataObject
+        private class DataRowDrop : DotLiquid.Drop
         {
             private readonly DataRow _dataRow;
 
@@ -981,16 +978,14 @@ namespace RockWeb.Blocks.Reporting
                 _dataRow = dataRow;
             }
 
-            protected override bool OnTryGetValue( string key, out object result )
+            public override object BeforeMethod( string method )
             {
-                if ( _dataRow.Table.Columns.Contains( key ) )
+                if ( _dataRow.Table.Columns.Contains( method ) )
                 {
-                    result = _dataRow[key];
-                    return true;
+                    return _dataRow[method];
                 }
 
-                result = null;
-                return false;
+                return null;
             }
         }
     }

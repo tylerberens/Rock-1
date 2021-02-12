@@ -23,7 +23,6 @@ using System.Reflection;
 using System.Runtime.Serialization;
 
 using Newtonsoft.Json;
-using Rock.Lava;
 using Rock.Model;
 using Rock.Tasks;
 using Rock.Web.Cache;
@@ -35,7 +34,7 @@ namespace Rock.Data
     /// </summary>
     /// <typeparam name="T">The Type entity that is being referenced <example>Entity&lt;Person&gt;</example></typeparam>
     [DataContract]
-    public abstract class Entity<T> : IEntity, ILavaDataDictionary
+    public abstract class Entity<T> : IEntity, Lava.ILiquidizable
         where T : Entity<T>, new()
     {
         #region Entity Properties
@@ -119,7 +118,7 @@ namespace Rock.Data
         /// <value>
         /// An <see cref="System.Int32"/> that represents the identifier for the current Entity object type. 
         /// </value>
-        [LavaVisible]
+        [LavaInclude]
         public virtual int TypeId
         {
             get
@@ -136,7 +135,7 @@ namespace Rock.Data
         /// The name of the entity type.
         /// </value>
         [NotMapped]
-        [LavaVisible]
+        [LavaInclude]
         public virtual string TypeName
         {
             get
@@ -227,7 +226,7 @@ namespace Rock.Data
         /// A <see cref="System.String"/> that represents a URL friendly version of the entity's unique key.
         /// </value>
         [NotMapped]
-        [LavaVisible]
+        [LavaInclude]
         public virtual string UrlEncodedKey
         {
             get
@@ -245,7 +244,7 @@ namespace Rock.Data
         /// The entity string value.
         /// </value>
         [NotMapped]
-        [LavaVisible]
+        [LavaInclude]
         public virtual string EntityStringValue
         {
             get
@@ -359,7 +358,7 @@ namespace Rock.Data
         /// <value>
         /// The available keys.
         /// </value>
-        [LavaHidden]
+        [LavaIgnore]
         public virtual List<string> AvailableKeys
         {
             get
@@ -397,20 +396,7 @@ namespace Rock.Data
         /// </value>
         /// <param name="key">The key.</param>
         /// <returns></returns>
-        public object GetValue( string key )
-        {
-            return this[key];
-        }
-
-        /// <summary>
-        /// Gets the <see cref="System.Object"/> with the specified key.
-        /// </summary>
-        /// <value>
-        /// The <see cref="System.Object"/>.
-        /// </value>
-        /// <param name="key">The key.</param>
-        /// <returns></returns>
-        [LavaHidden]
+        [LavaIgnore]
         public virtual object this[object key]
         {
             get
@@ -455,7 +441,7 @@ namespace Rock.Data
         /// The additional Lava fields.
         /// </value>
         //[LavaIgnore]
-        [LavaHidden]
+        [LavaIgnore]
         public virtual Dictionary<string, object> AdditionalLavaFields { get; set; }
 
         /// <summary>
@@ -463,7 +449,7 @@ namespace Rock.Data
         /// </summary>
         /// <param name="key">The key.</param>
         /// <returns></returns>
-        public virtual bool ContainsKey( string key )
+        public virtual bool ContainsKey( object key )
         {
             string propertyKey = key.ToStringSafe();
             var propInfo = GetBaseType().GetProperty( propertyKey );

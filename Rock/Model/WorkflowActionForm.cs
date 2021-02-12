@@ -26,7 +26,6 @@ using System.Linq;
 using System.Runtime.Serialization;
 
 using Rock.Data;
-using Rock.Lava;
 using Rock.Web.Cache;
 
 namespace Rock.Model
@@ -329,7 +328,7 @@ namespace Rock.Model
         /// <value>
         /// The notification system email.
         /// </value>
-        [LavaVisible]
+        [LavaInclude]
         [Obsolete( "Use NotificationSystemCommunication instead." )]
         [RockObsolete( "1.10" )]
         public virtual SystemEmail NotificationSystemEmail { get; set; }
@@ -340,7 +339,7 @@ namespace Rock.Model
         /// <value>
         /// The notification system communication.
         /// </value>
-        [LavaVisible]
+        [LavaInclude]
         public virtual SystemCommunication NotificationSystemCommunication { get; set; }
 
         /// <summary>
@@ -381,7 +380,7 @@ namespace Rock.Model
         /// The buttons.
         /// </value>
         [NotMapped]
-        [LavaVisible]
+        [LavaInclude]
         public virtual List<LiquidButton> Buttons
         {
             get
@@ -432,7 +431,7 @@ namespace Rock.Model
         /// <summary>
         /// Special class for adding a button field to liquid properties
         /// </summary>
-        [LavaType( "Name", "Html", "EmailHtml" )]
+        [DotLiquid.LiquidType( "Name", "Html", "EmailHtml" )]
         public class LiquidButton
         {
             /// <summary>
