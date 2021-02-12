@@ -34,6 +34,11 @@ namespace Rock.Model
             return this.RelatedEntities.GetRelatedToSourceEntity<Group>( registrationInstance.Id, RelatedEntityPurposeKey.RegistrationInstanceGroupPlacement );
         }
 
+        public IQueryable<Group> GetRegistrationInstancePlacementGroupsByPlacement( RegistrationInstance registrationInstance, int registrationTemplatePlacementId )
+        {
+            return this.RelatedEntities.GetRelatedToSourceEntityQualifier<Group>( registrationInstance.Id, RelatedEntityPurposeKey.RegistrationInstanceGroupPlacement, registrationTemplatePlacementId.ToString() );
+        }
+
         /// <summary>
         /// Sets the registration instance placement groups.
         /// </summary>
@@ -59,6 +64,24 @@ namespace Rock.Model
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Adds the registration instance placement group. Returns false if the group is already a placement group for this instance.
+        /// </summary>
+        /// <param name="registrationInstance">The registration instance.</param>
+        /// <param name="group">The group.</param>
+        /// <param name="registrationTemplatePlacementId">The registration template placement identifier.</param>
+        /// <returns></returns>
+        public bool AddRegistrationInstancePlacementGroup( RegistrationInstance registrationInstance, Group group, int registrationTemplatePlacementId )
+        {
+            if ( this.RelatedEntities.RelatedToSourceEntityAlreadyExists( registrationInstance.Id, group, RelatedEntityPurposeKey.RegistrationInstanceGroupPlacement, registrationTemplatePlacementId.ToString() ) )
+            {
+                return false;
+            }
+
+            this.RelatedEntities.AddRelatedToSourceEntity( registrationInstance.Id, group, RelatedEntityPurposeKey.RegistrationInstanceGroupPlacement, registrationTemplatePlacementId.ToString() );
+            return true;
         }
 
         /// <summary>

@@ -68,6 +68,33 @@ namespace Rock.Model
             return null;
         }
 
+        public IQueryable<IEntity> GetRelatedToSource( int sourceEntityId, int sourceEntityTypeId, int relatedEntityTypeId, string purposeKey, string qualifierValue )
+        {
+            EntityTypeCache relatedEntityTypeCache = EntityTypeCache.Get( relatedEntityTypeId );
+            if ( relatedEntityTypeCache.AssemblyName != null )
+            {
+                IQueryable<RelatedEntity> query = GetRelatedEntityRecordsToSource( sourceEntityId, sourceEntityTypeId, relatedEntityTypeId, purposeKey, qualifierValue );
+
+                var rockContext = this.Context as RockContext;
+                Type relatedEntityType = relatedEntityTypeCache.GetEntityType();
+                if ( relatedEntityType != null )
+                {
+                    Rock.Data.IService serviceInstance = Reflection.GetServiceForEntityType( relatedEntityType, rockContext );
+                    MethodInfo qryMethod = serviceInstance.GetType().GetMethod( "Queryable", new Type[] { } );
+                    var entityQry = qryMethod.Invoke( serviceInstance, new object[] { } ) as IQueryable<IEntity>;
+
+                    entityQry = query.Join(
+                        entityQry,
+                        f => f.TargetEntityId,
+                        e => e.Id,
+                        ( f, e ) => e );
+
+                    return entityQry;
+                }
+            }
+
+            return null;
+        }
         /// <summary>
         /// Returns a queryable collection of <see cref="Rock.Data.IEntity" /> target entities (related to the given source entity) for the given entity type and (optionally) also have a matching purpose key.
         /// </summary>
@@ -82,6 +109,26 @@ namespace Rock.Model
                                     .Where( a => a.SourceEntityTypeId == sourceEntityTypeId
                                         && a.SourceEntityId == sourceEntityId
                                         && a.TargetEntityTypeId == relatedEntityTypeId );
+
+            if ( purposeKey.IsNullOrWhiteSpace() )
+            {
+                query = query.Where( a => string.IsNullOrEmpty( a.PurposeKey ) );
+            }
+            else
+            {
+                query = query.Where( a => a.PurposeKey == purposeKey );
+            }
+
+            return query;
+        }
+
+        public IQueryable<RelatedEntity> GetRelatedEntityRecordsToSource( int sourceEntityId, int sourceEntityTypeId, int relatedEntityTypeId, string purposeKey, string qualifierValue )
+        {
+            var query = Queryable()
+            .Where( a => a.SourceEntityTypeId == sourceEntityTypeId
+                && a.SourceEntityId == sourceEntityId
+                && a.TargetEntityTypeId == relatedEntityTypeId
+                && a.QualifierValue == qualifierValue );
 
             if ( purposeKey.IsNullOrWhiteSpace() )
             {

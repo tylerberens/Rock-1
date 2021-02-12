@@ -72,6 +72,18 @@ namespace Rock.Model
             return false;
         }
 
+        public bool AddRegistrationInstancePlacementPlacementGroup( int registrationInstanceId, Group group, int registrationTemplatePlacementId )
+        {
+            if ( this.RelatedEntities.RelatedToSourceEntityAlreadyExists( registrationInstanceId, group, RelatedEntityPurposeKey.RegistrationTemplateGroupPlacementTemplate, registrationTemplatePlacementId.ToString() ) )
+            {
+                return false;
+            }
+
+            this.RelatedEntities.AddRelatedToSourceEntity( registrationInstanceId, group, RelatedEntityPurposeKey.RegistrationTemplateGroupPlacementTemplate, registrationTemplatePlacementId.ToString() );
+            return true;
+        }
+
+
         /// <summary>
         /// Deletes the registration template placement placement group.
         /// </summary>
