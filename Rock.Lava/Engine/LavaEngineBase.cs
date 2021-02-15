@@ -217,7 +217,7 @@ namespace Rock.Lava
         {
             string output;
 
-            TryRender( inputTemplate, out output, mergeValues: null );
+            TryRenderTemplate( inputTemplate, out output, mergeValues: null );
 
             return output;
         }
@@ -235,7 +235,7 @@ namespace Rock.Lava
         {
             string output;
 
-            TryRender( inputTemplate, out output, context );
+            TryRenderTemplate( inputTemplate, out output, context );
 
             return output;
         }
@@ -246,9 +246,9 @@ namespace Rock.Lava
         /// <param name="inputTemplate"></param>
         /// <param name="output"></param>
         /// <returns></returns>
-        public bool TryRender( string inputTemplate, out string output )
+        public bool TryRenderTemplate( string inputTemplate, out string output )
         {
-            return TryRender( inputTemplate, out output, mergeValues: null );
+            return TryRenderTemplate( inputTemplate, out output, mergeValues: null );
         }
 
         /// <summary>
@@ -258,7 +258,7 @@ namespace Rock.Lava
         /// <param name="output"></param>
         /// <param name="mergeValues"></param>
         /// <returns></returns>
-        public bool TryRender( string inputTemplate, out string output, LavaDataDictionary mergeValues )
+        public bool TryRenderTemplate( string inputTemplate, out string output, LavaDataDictionary mergeValues )
         {
             ILavaContext context;
 
@@ -273,7 +273,7 @@ namespace Rock.Lava
                 context = null;
             }
 
-            return TryRender( inputTemplate, out output, context );
+            return TryRenderTemplate( inputTemplate, out output, context );
         }
 
         /// <summary>
@@ -283,7 +283,7 @@ namespace Rock.Lava
         /// <param name="output"></param>
         /// <param name="context"></param>
         /// <returns></returns>
-        public bool TryRender( string inputTemplate, out string output, ILavaContext context )
+        public bool TryRenderTemplate( string inputTemplate, out string output, ILavaContext context )
         {
             ILavaTemplate template;
 
@@ -334,7 +334,7 @@ namespace Rock.Lava
         /// <param name="parameters"></param>
         /// <param name="output"></param>
         /// <returns></returns>
-        public bool TryRender( ILavaTemplate inputTemplate, LavaRenderParameters parameters, out string output )
+        public bool TryRenderTemplate( ILavaTemplate inputTemplate, LavaRenderParameters parameters, out string output )
         {
             return OnTryRender( inputTemplate, parameters, out output );
         }

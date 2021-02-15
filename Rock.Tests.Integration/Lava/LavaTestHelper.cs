@@ -230,7 +230,7 @@ namespace Rock.Tests.Integration.Lava
 
             inputTemplate = inputTemplate ?? string.Empty;
 
-            global::Rock.Lava.LavaEngine.CurrentEngine.TryRender( inputTemplate.Trim(), out outputString, mergeValues );
+            global::Rock.Lava.LavaEngine.CurrentEngine.TryRenderTemplate( inputTemplate.Trim(), out outputString, mergeValues );
 
             return outputString;
         }
@@ -246,7 +246,7 @@ namespace Rock.Tests.Integration.Lava
 
             inputTemplate = inputTemplate ?? string.Empty;
 
-            var isValidTemplate = global::Rock.Lava.LavaEngine.CurrentEngine.TryRender( inputTemplate.Trim(), out outputString, context );
+            var isValidTemplate = global::Rock.Lava.LavaEngine.CurrentEngine.TryRenderTemplate( inputTemplate.Trim(), out outputString, context );
 
             //Assert.That.True( isValidTemplate, "Lava Template is invalid." );
 
@@ -303,7 +303,7 @@ namespace Rock.Tests.Integration.Lava
 
             inputTemplate = inputTemplate ?? string.Empty;
 
-            var isValid = global::Rock.Lava.LavaEngine.CurrentEngine.TryRender( inputTemplate.Trim(), out outputString, mergeValues );
+            var isValid = global::Rock.Lava.LavaEngine.CurrentEngine.TryRenderTemplate( inputTemplate.Trim(), out outputString, mergeValues );
 
             Assert.That.IsFalse(isValid, "Invalid template expected." );
         }

@@ -220,7 +220,7 @@ namespace Rock.Lava
             // The block content will then be merged into the shortcode template to produce the final output.
             string blockMarkup;
 
-            LavaEngine.CurrentEngine.TryRender( _blockMarkup.ToString(), out blockMarkup, internalMergeFields );
+            LavaEngine.CurrentEngine.TryRenderTemplate( _blockMarkup.ToString(), out blockMarkup, internalMergeFields );
 
             // Extract any child elements from the block content.
             Dictionary<string, object> childParameters;
@@ -254,7 +254,7 @@ namespace Rock.Lava
             // than the source block, template, action, etc. permits.
             string securityCheck;
 
-            LavaEngine.CurrentEngine.TryRender( blockMarkup, out securityCheck, context );
+            LavaEngine.CurrentEngine.TryRenderTemplate( blockMarkup, out securityCheck, context );
 
             Regex securityPattern = new Regex( string.Format( Constants.Messages.NotAuthorizedMessage, ".*" ) );
             Match securityMatch = securityPattern.Match( securityCheck );
@@ -284,7 +284,7 @@ namespace Rock.Lava
 
                 string results;
 
-                LavaEngine.CurrentEngine.TryRender( lavaTemplate, out results, shortcodeContext );
+                LavaEngine.CurrentEngine.TryRenderTemplate( lavaTemplate, out results, shortcodeContext );
 
                 result.Write( results.Trim() );
             }
@@ -412,7 +412,7 @@ namespace Rock.Lava
             // Resolve any Lava merge fields in the element attributes markup.
             string resolvedMarkup;
 
-            LavaEngine.CurrentEngine.TryRender( elementAttributesMarkup, out resolvedMarkup, context );
+            LavaEngine.CurrentEngine.TryRenderTemplate( elementAttributesMarkup, out resolvedMarkup, context );
 
             var markupItems = Regex.Matches( resolvedMarkup, @"(\S*?:'[^']+')" )
                 .Cast<Match>()

@@ -224,7 +224,7 @@ namespace Rock.Lava.Blocks
             newContext.SetInternalFields( context.GetInternalFields() );
 
             // Resolve the inner template.
-            LavaEngine.CurrentEngine.TryRender( lavaTemplate, out output, newContext );
+            LavaEngine.CurrentEngine.TryRenderTemplate( lavaTemplate, out output, newContext );
 
             return output;
         }

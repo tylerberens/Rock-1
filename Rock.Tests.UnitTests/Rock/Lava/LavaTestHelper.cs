@@ -69,7 +69,7 @@ namespace Rock.Tests.UnitTests.Lava
 
             inputTemplate = inputTemplate ?? string.Empty;
 
-            bool isValidTemplate = global::Rock.Lava.LavaEngine.CurrentEngine.TryRender( inputTemplate.Trim(), out outputString, mergeValues );
+            bool isValidTemplate = global::Rock.Lava.LavaEngine.CurrentEngine.TryRenderTemplate( inputTemplate.Trim(), out outputString, mergeValues );
 
             Assert.That.True( isValidTemplate, "Lava Template is invalid." );
 

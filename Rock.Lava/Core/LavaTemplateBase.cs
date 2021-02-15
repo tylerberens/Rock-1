@@ -140,7 +140,7 @@ namespace Rock.Lava
         {
             errors = new List<Exception>();
 
-            var success = LavaEngine.CurrentEngine.TryRender( this, parameters, out output );
+            var success = LavaEngine.CurrentEngine.TryRenderTemplate( this, parameters, out output );
 
             return success;
         }
