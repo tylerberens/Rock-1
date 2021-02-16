@@ -2484,8 +2484,8 @@ namespace Rock.Lava
         /// <summary>
         /// Sets the person preference.
         /// </summary>
-        /// <param name="context">The context.</param>
-        /// <param name="input">The input.</param>
+        /// <param name="context">The Lava context.</param>
+        /// <param name="input">The filter input.</param>
         /// <param name="settingKey">The setting key.</param>
         /// <param name="settingValue">The setting value.</param>
         public static void SetUserPreference( ILavaContext context, object input, string settingKey, string settingValue )
@@ -2494,10 +2494,12 @@ namespace Rock.Lava
 
             if ( input is int )
             {
+                // If the input is an integer, assume it's a PersonId and retrieve the associated Person.
                 person = new PersonService( new RockContext() ).Get( ( int ) input );
             }
             else if ( input is Person )
             {
+                // If the input is a Person object, reference it directly.
                 person = ( Person ) input;
             }
 
@@ -2508,18 +2510,19 @@ namespace Rock.Lava
         }
 
         /// <summary>
-        /// Gets the person preference.
+        /// Gets a user preference for the specified person.
         /// </summary>
-        /// <param name="context">The context.</param>
-        /// <param name="input">The input.</param>
-        /// <param name="settingKey">The setting key.</param>
-        /// <returns></returns>
+        /// <param name="context">The Lava context.</param>
+        /// <param name="input">The filter input, either a PersonId or a Person object.</param>
+        /// <param name="settingKey">The setting key name.</param>
+        /// <returns>The value of the user preference.</returns>
         public static string GetUserPreference( ILavaContext context, object input, string settingKey )
         {
             Person person = null;
 
             if ( input is int )
             {
+                // If the input is an integer, assume it's a PersonId and retrieve the associated Person.
                 person = new PersonService( new RockContext() ).Get( ( int ) input );
             }
             else if ( input is Person )

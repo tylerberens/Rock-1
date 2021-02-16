@@ -215,10 +215,12 @@ namespace Rock.Lava
             {
                 return false;
             }
+#pragma warning disable CS0618 // Type or member is obsolete
             if ( propInfo.GetCustomAttributes( typeof( LavaIgnoreAttribute ) ).Count() > 0 )
             {
                 return false;
             }
+#pragma warning restore CS0618 // Type or member is obsolete
 
             // If property has a [DataMember] attribute return true
             if ( propInfo.GetCustomAttributes( typeof( System.Runtime.Serialization.DataMemberAttribute ) ).Count() > 0 )
@@ -231,10 +233,12 @@ namespace Rock.Lava
             {
                 return true;
             }
+#pragma warning disable CS0618 // Type or member is obsolete
             if ( propInfo.GetCustomAttributes( typeof( LavaIncludeAttribute ) ).Count() > 0 )
             {
                 return true;
             }
+#pragma warning restore CS0618 // Type or member is obsolete
 
             // otherwise return false
             return false;

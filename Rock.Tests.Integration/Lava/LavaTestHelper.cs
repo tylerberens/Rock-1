@@ -155,7 +155,7 @@ namespace Rock.Tests.Integration.Lava
                 foreach ( var shortcodeType in shortcodeTypes )
                 {
                     engine.RegisterStaticShortcode( shortcodeType.Name, ( shortcodeName ) =>
-                    { 
+                    {
                         var shortcode = Activator.CreateInstance( shortcodeType ) as IRockShortcode;
 
                         return shortcode;
@@ -228,9 +228,6 @@ namespace Rock.Tests.Integration.Lava
         {
             inputTemplate = inputTemplate ?? string.Empty;
 
-            List<Exception> errors;
-
-            
             var outputString = global::Rock.Lava.LavaEngine.CurrentEngine.RenderTemplate( inputTemplate.Trim(), mergeFields );
 
             return outputString;
@@ -266,7 +263,7 @@ namespace Rock.Tests.Integration.Lava
                 outputString = Regex.Replace( outputString, @"\s*", string.Empty );
                 expectedOutput = Regex.Replace( expectedOutput, @"\s*", string.Empty );
             }
-            
+
             Assert.That.Equal( expectedOutput, outputString );
         }
 
@@ -303,7 +300,7 @@ namespace Rock.Tests.Integration.Lava
 
             var isValid = global::Rock.Lava.LavaEngine.CurrentEngine.TryRenderTemplate( inputTemplate.Trim(), mergeFields, out outputString, out errors );
 
-            Assert.That.IsFalse(isValid, "Invalid template expected." );
+            Assert.That.IsFalse( isValid, "Invalid template expected." );
         }
 
         /// <summary>
@@ -327,7 +324,7 @@ namespace Rock.Tests.Integration.Lava
         {
             var outputString = GetTemplateOutput( inputTemplate, mergeValues );
 
-            var regex = new Regex(expectedOutputRegex);
+            var regex = new Regex( expectedOutputRegex );
 
             WriteTemplateRenderToDebug( inputTemplate, outputString );
             StringAssert.Matches( outputString, regex );
@@ -376,7 +373,7 @@ namespace Rock.Tests.Integration.Lava
             {
                 expectedOutputRegex = Regex.Replace( expectedOutputRegex, @"\s+", @"\s*" );
             }
-            
+
             var regex = new Regex( expectedOutputRegex );
 
             WriteTemplateRenderToDebug( inputTemplate, outputString );

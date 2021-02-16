@@ -72,7 +72,6 @@ namespace Rock.Lava.Blocks
                 AddLavaMergeFieldsToContext( context, events );
 
                 base.OnRender( context, result );
-                //RenderAll( this.NodeList, context, result );
             }
             catch ( Exception ex )
             {
