@@ -210,8 +210,12 @@ namespace Rock.Lava
         /// </returns>
         public static bool IsLavaProperty( PropertyInfo propInfo )
         {
-            // If property has a [LavaIgnore] attribute return false
+            // If property has a [LavaHidden] attribute return false
             if ( propInfo.GetCustomAttributes( typeof( LavaHiddenAttribute ) ).Count() > 0 )
+            {
+                return false;
+            }
+            if ( propInfo.GetCustomAttributes( typeof( LavaIgnoreAttribute ) ).Count() > 0 )
             {
                 return false;
             }
@@ -222,8 +226,12 @@ namespace Rock.Lava
                 return true;
             }
 
-            // If property has a [LavaInclude] attribute return true
+            // If property has a [LavaVisible] attribute return true
             if ( propInfo.GetCustomAttributes( typeof( LavaVisibleAttribute ) ).Count() > 0 )
+            {
+                return true;
+            }
+            if ( propInfo.GetCustomAttributes( typeof( LavaIncludeAttribute ) ).Count() > 0 )
             {
                 return true;
             }
