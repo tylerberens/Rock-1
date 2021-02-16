@@ -215,8 +215,6 @@ namespace Rock.Lava.Blocks
         /// <returns></returns>
         private string MergeLava( string lavaTemplate, ILavaContext context )
         {
-            string output = null;
-
             // Resolve the Lava template contained in this block in a new context.
             var newContext = LavaEngine.CurrentEngine.NewContext();
 
@@ -224,9 +222,7 @@ namespace Rock.Lava.Blocks
             newContext.SetInternalFields( context.GetInternalFields() );
 
             // Resolve the inner template.
-            LavaEngine.CurrentEngine.TryRenderTemplate( lavaTemplate, out output, newContext );
-
-            return output;
+            return LavaEngine.CurrentEngine.RenderTemplate( lavaTemplate, newContext );
         }
 
         /// <summary>

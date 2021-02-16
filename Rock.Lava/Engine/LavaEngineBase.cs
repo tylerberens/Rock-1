@@ -216,8 +216,9 @@ namespace Rock.Lava
         public string RenderTemplate( string inputTemplate )
         {
             string output;
+            List<Exception> errors;
 
-            TryRenderTemplate( inputTemplate, out output, mergeValues: null );
+            TryRenderTemplate( inputTemplate, mergeFields: null, output: out output, errors: out errors );
 
             return output;
         }
@@ -234,56 +235,75 @@ namespace Rock.Lava
         public string RenderTemplate( string inputTemplate, ILavaContext context )
         {
             string output;
+            List<Exception> errors;
 
-            TryRenderTemplate( inputTemplate, out output, context );
+            TryRenderTemplate( inputTemplate, context, out output, out errors );
 
             return output;
         }
 
+        /// <summary>
+        /// Render the provided template in the specified context.
+        /// </summary>
+        /// <param name="inputTemplate"></param>
+        /// <param name="context"></param>
+        /// <returns>
+        /// The rendered output of the template.
+        /// If the template is invalid, returns an error message or an empty string according to the current ExceptionHandlingStrategy setting.
+        /// </returns>
+        public string RenderTemplate( string inputTemplate, LavaDataDictionary mergeFields )
+        {
+            string output;
+            List<Exception> errors;
+
+            TryRenderTemplate( inputTemplate, mergeFields, out output, out errors );
+
+            return output;
+        }
         /// <summary>
         /// Try to render the provided template.
         /// </summary>
         /// <param name="inputTemplate"></param>
         /// <param name="output"></param>
         /// <returns></returns>
-        public bool TryRenderTemplate( string inputTemplate, out string output )
+        public bool TryRenderTemplate( string inputTemplate, out string output, out List<Exception> errors )
         {
-            return TryRenderTemplate( inputTemplate, out output, mergeValues: null );
+            return TryRenderTemplate( inputTemplate, mergeFields: null, out output, out errors );
         }
 
         /// <summary>
         /// Try to render the provided template with the specified merge fields.
         /// </summary>
         /// <param name="inputTemplate"></param>
+        /// <param name="mergeFields"></param>
         /// <param name="output"></param>
-        /// <param name="mergeValues"></param>
         /// <returns></returns>
-        public bool TryRenderTemplate( string inputTemplate, out string output, LavaDataDictionary mergeValues )
+        public bool TryRenderTemplate( string inputTemplate, LavaDataDictionary mergeFields, out string output, out List<Exception> errors )
         {
             ILavaContext context;
 
-            if ( mergeValues != null )
+            if ( mergeFields != null )
             {
                 context = NewContext();
 
-                context.SetMergeFields( mergeValues );
+                context.SetMergeFields( mergeFields );
             }
             else
             {
                 context = null;
             }
 
-            return TryRenderTemplate( inputTemplate, out output, context );
+            return TryRenderTemplate( inputTemplate, context, out output, out errors );
         }
 
         /// <summary>
         /// Try to render the provided template in the specified context.
         /// </summary>
         /// <param name="inputTemplate"></param>
-        /// <param name="output"></param>
         /// <param name="context"></param>
+        /// <param name="output"></param>
         /// <returns></returns>
-        public bool TryRenderTemplate( string inputTemplate, out string output, ILavaContext context )
+        public bool TryRenderTemplate( string inputTemplate, ILavaContext context, out string output, out List<Exception> errors )
         {
             ILavaTemplate template;
 
@@ -315,12 +335,13 @@ namespace Rock.Lava
 
                 var parameters = new LavaRenderParameters { LavaContext = context };
 
-                return OnTryRender( template, parameters, out output );
+                return OnTryRender( template, parameters, out output, out errors );
             }
             catch ( Exception ex )
             {
                 ProcessException( ex );
 
+                errors = new List<Exception> { ex };
                 output = null;
                 return false;
             }
@@ -333,20 +354,22 @@ namespace Rock.Lava
         /// <param name="inputTemplate"></param>
         /// <param name="parameters"></param>
         /// <param name="output"></param>
+        /// <param name="errors"></param>
         /// <returns></returns>
-        public bool TryRenderTemplate( ILavaTemplate inputTemplate, LavaRenderParameters parameters, out string output )
+        public bool TryRenderTemplate( ILavaTemplate inputTemplate, LavaRenderParameters parameters, out string output, out List<Exception> errors )
         {
-            return OnTryRender( inputTemplate, parameters, out output );
+            return OnTryRender( inputTemplate, parameters, out output, out errors );
         }
 
         /// <summary>
         /// Override this method to render the Lava template using the underlying rendering engine.
         /// </summary>
         /// <param name="inputTemplate"></param>
+        /// <param name="parameters"></param>
         /// <param name="output"></param>
-        /// <param name="context"></param>
+        /// <param name="errors"></param>
         /// <returns></returns>
-        protected abstract bool OnTryRender( ILavaTemplate inputTemplate, LavaRenderParameters parameters, out string output );
+        protected abstract bool OnTryRender( ILavaTemplate inputTemplate, LavaRenderParameters parameters, out string output, out List<Exception> errors );
 
         /// <summary>
         /// Compare two objects for equivalence according to the applicable Lava equality rules for the input object types.

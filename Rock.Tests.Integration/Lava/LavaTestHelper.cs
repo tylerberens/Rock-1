@@ -224,13 +224,14 @@ namespace Rock.Tests.Integration.Lava
         /// </summary>
         /// <param name="inputTemplate"></param>
         /// <returns></returns>
-        public string GetTemplateOutput( string inputTemplate, LavaDataDictionary mergeValues = null )
+        public string GetTemplateOutput( string inputTemplate, LavaDataDictionary mergeFields = null )
         {
-            string outputString;
-
             inputTemplate = inputTemplate ?? string.Empty;
 
-            global::Rock.Lava.LavaEngine.CurrentEngine.TryRenderTemplate( inputTemplate.Trim(), out outputString, mergeValues );
+            List<Exception> errors;
+
+            
+            var outputString = global::Rock.Lava.LavaEngine.CurrentEngine.RenderTemplate( inputTemplate.Trim(), mergeFields );
 
             return outputString;
         }
@@ -242,13 +243,9 @@ namespace Rock.Tests.Integration.Lava
         /// <returns></returns>
         public string GetTemplateOutput( string inputTemplate, ILavaContext context )
         {
-            string outputString;
-
             inputTemplate = inputTemplate ?? string.Empty;
 
-            var isValidTemplate = global::Rock.Lava.LavaEngine.CurrentEngine.TryRenderTemplate( inputTemplate.Trim(), out outputString, context );
-
-            //Assert.That.True( isValidTemplate, "Lava Template is invalid." );
+            var outputString = global::Rock.Lava.LavaEngine.CurrentEngine.RenderTemplate( inputTemplate.Trim(), context );
 
             return outputString;
         }
@@ -297,13 +294,14 @@ namespace Rock.Tests.Integration.Lava
         /// </summary>
         /// <param name="inputTemplate"></param>
         /// <returns></returns>
-        public void AssertTemplateIsInvalid( string inputTemplate, LavaDataDictionary mergeValues = null )
+        public void AssertTemplateIsInvalid( string inputTemplate, LavaDataDictionary mergeFields = null )
         {
             string outputString;
+            List<Exception> errors;
 
             inputTemplate = inputTemplate ?? string.Empty;
 
-            var isValid = global::Rock.Lava.LavaEngine.CurrentEngine.TryRenderTemplate( inputTemplate.Trim(), out outputString, mergeValues );
+            var isValid = global::Rock.Lava.LavaEngine.CurrentEngine.TryRenderTemplate( inputTemplate.Trim(), mergeFields, out outputString, out errors );
 
             Assert.That.IsFalse(isValid, "Invalid template expected." );
         }

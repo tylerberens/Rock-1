@@ -217,7 +217,7 @@ namespace RockWeb.Blocks.Cms
 
                 lavaContext.SetEnabledCommands( enabledCommands.SplitDelimitedValues() );
 
-                IList<Exception> errors;
+                List<Exception> errors;
 
                 lavaTemplate.TryRender( lavaContext, out content, out errors );
 

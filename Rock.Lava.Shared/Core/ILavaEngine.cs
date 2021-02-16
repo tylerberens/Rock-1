@@ -129,30 +129,41 @@ namespace Rock.Lava
         string RenderTemplate( string inputTemplate, ILavaContext context );
 
         /// <summary>
+        /// Render the provided template in a new context with the specified merge fields.
+        /// </summary>
+        /// <param name="inputTemplate"></param>
+        /// <param name="mergeFields">The collection of merge fields to be added to the context used to render the template.</param>
+        /// <returns>
+        /// The rendered output of the template.
+        /// If the template is invalid, returns an error message or an empty string according to the current ExceptionHandlingStrategy setting.
+        /// </returns>
+        string RenderTemplate( string inputTemplate, LavaDataDictionary mergeFields );
+
+        /// <summary>
         /// Try to render the provided template.
         /// </summary>
         /// <param name="inputTemplate"></param>
         /// <param name="output"></param>
         /// <returns></returns>
-        bool TryRenderTemplate( string inputTemplate, out string output );
+        bool TryRenderTemplate( string inputTemplate, out string output, out List<Exception> errors );
 
         /// <summary>
         /// Try to render the provided template with the specified merge fields.
         /// </summary>
         /// <param name="inputTemplate"></param>
+        /// <param name="mergeFields"></param>
         /// <param name="output"></param>
-        /// <param name="mergeValues"></param>
         /// <returns></returns>
-        bool TryRenderTemplate( string inputTemplate, out string output, LavaDataDictionary mergeValues );
+        bool TryRenderTemplate( string inputTemplate, LavaDataDictionary mergeFields, out string output, out List<Exception> errors );
 
         /// <summary>
         /// Try to render the provided template in the specified context.
         /// </summary>
         /// <param name="inputTemplate"></param>
-        /// <param name="output"></param>
         /// <param name="context"></param>
+        /// <param name="output"></param>
         /// <returns></returns>
-        bool TryRenderTemplate( string inputTemplate, out string output, ILavaContext context );
+        bool TryRenderTemplate( string inputTemplate, ILavaContext context, out string output, out List<Exception> errors );
 
         /// <summary>
         /// Try to render a compiled Lava template using the specified parameters.
@@ -161,7 +172,7 @@ namespace Rock.Lava
         /// <param name="parameters"></param>
         /// <param name="output"></param>
         /// <returns></returns>
-        bool TryRenderTemplate( ILavaTemplate inputTemplate, LavaRenderParameters parameters, out string output );
+        bool TryRenderTemplate( ILavaTemplate inputTemplate, LavaRenderParameters parameters, out string output, out List<Exception> errors );
 
         /// <summary>
         /// Register a type that can be referenced in a template during the rendering process.

@@ -54,7 +54,7 @@ namespace Rock.Lava
         /// <param name="output"></param>
         /// <param name="errors"></param>
         /// <returns></returns>
-        bool TryRender( IDictionary<string, object> values, out string output, out IList<Exception> errors );
+        bool TryRender( IDictionary<string, object> values, out string output, out List<Exception> errors );
 
         /// <summary>
         /// Try to render the template using the provided context values.
@@ -63,7 +63,7 @@ namespace Rock.Lava
         /// <param name="output"></param>
         /// <param name="errors"></param>
         /// <returns></returns>
-        bool TryRender( ILavaContext context, out string output, out IList<Exception> errors );
+        bool TryRender( ILavaContext context, out string output, out List<Exception> errors );
 
         /// <summary>
         /// Try to render the template using the provided render parameters.
@@ -72,6 +72,6 @@ namespace Rock.Lava
         /// <param name="output"></param>
         /// <param name="errors"></param>
         /// <returns></returns>
-        bool TryRender( LavaRenderParameters parameters, out string output, out IList<Exception> errors );
+        bool TryRender( LavaRenderParameters parameters, out string output, out List<Exception> errors );
     }
 }

@@ -566,7 +566,7 @@ namespace Rock
 
                 LavaEngine.CurrentEngine.TryParseTemplate( content, out template );
 
-                IList<Exception> errors;
+                List<Exception> errors;
                 string output;
 
                 var isRendered = template.TryRender( context, out output, out errors );
@@ -670,7 +670,7 @@ namespace Rock
                 renderParameters.ShouldEncodeStringsAsXml = encodeStrings;
 
                 string result;
-                IList<Exception> errors;
+                List<Exception> errors;
 
                 ILavaTemplate template;
 

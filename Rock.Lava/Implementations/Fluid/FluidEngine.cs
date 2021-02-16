@@ -442,16 +442,16 @@ namespace Rock.Lava.Fluid
             }
         }
 
-        protected override bool OnTryRender( ILavaTemplate inputTemplate, LavaRenderParameters parameters, out string output )
+        protected override bool OnTryRender( ILavaTemplate inputTemplate, LavaRenderParameters parameters, out string output, out List<Exception> errors )
         {
             var templateProxy = inputTemplate as FluidTemplateProxy;
 
             var fluidTemplate = templateProxy?.FluidTemplate;
 
-            return TryRenderInternal( fluidTemplate, parameters, out output );
+            return TryRenderInternal( fluidTemplate, parameters, out output, out errors );
         }
 
-        private bool TryRenderInternal( LavaFluidTemplate template, LavaRenderParameters parameters, out string output )
+        private bool TryRenderInternal( LavaFluidTemplate template, LavaRenderParameters parameters, out string output, out List<Exception> errors )
         {
             var templateContext = parameters.LavaContext as FluidLavaContext;
 
@@ -472,12 +472,15 @@ namespace Rock.Lava.Fluid
             {
 
                 output = template.Render( templateContext.FluidContext );
+                errors = new List<Exception>();
 
                 return true;
             }
             catch ( Exception ex )
             {
                 ProcessException( ex, out output );
+
+                errors = new List<Exception> { ex };
 
                 return false;
             }
